@@ -21,7 +21,8 @@ import { useState } from 'react';
 import { within2HoursData } from '@/data/contact';
 
 export default function PricingContent() {
-    const [billingCycle, setBillingCycle] = useState('yearly');
+    // Billing cycle state removed as pricing is flat monthly
+
 
     return (
         <>
@@ -39,50 +40,8 @@ export default function PricingContent() {
                                 with our flexible pricing options.
                             </p>
 
-                            {/* Billing Toggle - Pill Style */}
-                            <div className="flex flex-col items-center mt-8 gap-4">
-                                <div className="relative flex w-max p-1 bg-background border border-border rounded-full shadow-sm">
-                                    {/* Sliding Active Background */}
-                                    <motion.div
-                                        className="absolute top-1 bottom-1 bg-primary rounded-full z-0"
-                                        initial={false}
-                                        animate={{
-                                            x: billingCycle === 'quarterly' ? 0 : '100%',
-                                            width: '50%'
-                                        }}
-                                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                                    />
+                            {/* Billing Toggle Removed */}
 
-                                    {/* Quarterly Option */}
-                                    <button
-                                        onClick={() => setBillingCycle('quarterly')}
-                                        className={`relative z-10 px-8 py-2.5 min-w-[120px] text-sm font-poppins font-semibold rounded-full transition-colors duration-200 ${billingCycle === 'quarterly' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                                    >
-                                        Quarterly
-                                    </button>
-
-                                    {/* Yearly Option */}
-                                    <button
-                                        onClick={() => setBillingCycle('yearly')}
-                                        className={`relative z-10 px-8 py-2.5 min-w-[120px] text-sm font-poppins font-semibold rounded-full transition-colors duration-200 ${billingCycle === 'yearly' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                                    >
-                                        Yearly
-                                    </button>
-                                </div>
-
-                                {/* Dynamic Offer Text */}
-                                <AnimatePresence mode="wait">
-                                    <motion.span
-                                        key={billingCycle}
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: 10 }}
-                                        className="text-sm font-bold text-primary bg-primary/10 px-4 py-1.5 rounded-full"
-                                    >
-                                        {billingCycle === 'quarterly' ? 'Save 5% on Quarterly' : 'Save 15% on Yearly'}
-                                    </motion.span>
-                                </AnimatePresence>
-                            </div>
                         </div>
                     </ScrollReveal>
                 </div>
@@ -97,7 +56,8 @@ export default function PricingContent() {
                                 key={plan.id}
                                 plan={{
                                     ...plan,
-                                    price: plan.prices[billingCycle]
+                                    ...plan,
+                                    price: plan.prices.monthly
                                 }}
                                 index={index}
                             />
@@ -160,7 +120,9 @@ export default function PricingContent() {
                                             <td className="py-4 px-4 text-sm">{feature.text}</td>
                                             {pricingPlans.map((plan) => (
                                                 <td key={plan.id} className="text-center py-4 px-4">
-                                                    {plan.features[idx].included ? (
+                                                    {typeof plan.features[idx].value === 'string' ? (
+                                                        <span className="text-sm font-medium text-foreground">{plan.features[idx].value}</span>
+                                                    ) : plan.features[idx].included ? (
                                                         <Check className="w-5 h-5 text-primary mx-auto" />
                                                     ) : (
                                                         <span className="text-muted-foreground/30">—</span>

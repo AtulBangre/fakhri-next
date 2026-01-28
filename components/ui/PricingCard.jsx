@@ -81,6 +81,11 @@ export const PricingCard = ({ plan, index }) => {
                                         : 'text-muted-foreground/40'
                                     }`}>
                                     {feature.text}
+                                    {feature.value && typeof feature.value === 'string' && (
+                                        <span className={`block text-xs font-semibold mt-0.5 ${plan.highlighted ? 'text-primary-foreground/90' : 'text-primary'}`}>
+                                            {feature.value}
+                                        </span>
+                                    )}
                                 </span>
                             </li>
                         ))}
