@@ -101,7 +101,7 @@ export const PricingCard = ({ plan, index }) => {
                     )}
 
                     {/* CTA */}
-                    <Link href="/sign-in" className="block">
+                    <Link href="/contact" className="block">
                         <motion.button
                             className={`w-full py-4 rounded-lg font-poppins font-semibold transition-all duration-300 ${plan.highlighted
                                 ? 'bg-background text-primary hover:bg-background/90'

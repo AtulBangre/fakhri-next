@@ -1,6 +1,7 @@
 'use client';
 
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
+import CompanyTimeline from './CompanyTimeline';
 import { motion } from 'framer-motion';
 import { Users, Target, Zap, BarChart, Shield, Trophy, ArrowRight, Quote } from 'lucide-react';
 import { aboutHero, companyOverview, leadershipTeam, whyChooseUs, aboutCTA } from '@/data/about';
@@ -98,6 +99,9 @@ export default function AboutContent() {
                     </div>
                 </div>
             </section>
+
+            {/* Company Timeline Section */}
+            <CompanyTimeline />
 
             {/* Team & Leadership */}
             <section className="section-padding bg-secondary/30">
