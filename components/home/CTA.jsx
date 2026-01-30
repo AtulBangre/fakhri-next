@@ -9,7 +9,7 @@ export default function CTA() {
         <section className="section-padding">
             <div className="container-custom">
                 <ScrollReveal>
-                    <div className="relative bg-gradient-to-br from-primary to-accent rounded-3xl p-12 md:p-16 text-primary-foreground overflow-hidden">
+                    <div className="relative bg-gradient-to-br from-primary to-brand-red-light rounded-3xl p-12 md:p-16 text-primary-foreground overflow-hidden">
                         {/* Background Pattern */}
                         <div className="absolute inset-0 opacity-10">
                             <div className="absolute top-0 right-0 w-64 h-64 border border-primary-foreground/30 rounded-full" />

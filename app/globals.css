@@ -29,12 +29,13 @@
   --color-secondary: hsl(20 10% 96%);
   --color-secondary-foreground: hsl(0 0% 15%);
 
-  --color-muted: hsl(20 10% 95%);
-  --color-muted-foreground: hsl(0 0% 40%);
+  --color-muted: hsl(20 10% 96%);
+  --color-muted-foreground: hsl(0 0% 45%);
 
   /* Accent */
-  --color-accent: hsl(0 85% 35%);
-  --color-accent-foreground: hsl(0 0% 100%);
+  --color-accent: hsl(20 10% 96%);
+  /* Changed from Strong Red to Light Gray for proper hovers */
+  --color-accent-foreground: hsl(0 0% 15%);
 
   --color-destructive: hsl(0 84% 60%);
   --color-destructive-foreground: hsl(0 0% 100%);
@@ -55,6 +56,23 @@
   --color-brand-light-gray: hsl(0 0% 96%);
   --color-brand-white: hsl(0 0% 100%);
 
+  /* Accent Red - for CTA gradients and strong visual elements */
+  --color-accent-red: hsl(0 85% 35%);
+
+  /* Sidebar Palette (Updated to Dark Theme) */
+  --color-sidebar: hsl(0 0% 10%);
+  /* Dark Sidebar */
+  --color-sidebar-foreground: hsl(0 0% 95%);
+  /* White Text */
+  --color-sidebar-primary: hsl(0 89% 28%);
+  /* Brand Red */
+  --color-sidebar-primary-foreground: hsl(0 0% 100%);
+  --color-sidebar-accent: hsl(0 0% 15%);
+  /* Dark Grey Hover */
+  --color-sidebar-accent-foreground: hsl(0 0% 100%);
+  --color-sidebar-border: hsl(0 0% 15%);
+  --color-sidebar-ring: hsl(0 89% 28%);
+
   /* Fonts */
   --font-poppins: 'Poppins', sans-serif;
   --font-inter: 'Inter', sans-serif;
@@ -65,6 +83,10 @@
   --shadow-lg: 0 16px 48px -12px hsla(0, 0%, 0%, 0.15);
   --shadow-xl: 0 24px 64px -16px hsla(0, 0%, 0%, 0.2);
   --shadow-red: 0 8px 32px -8px hsla(0, 89%, 28%, 0.3);
+
+  /* Animations (Added) */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
 }
 
 /* Root Variables */
@@ -74,6 +96,28 @@
   --shadow-lg: 0 16px 48px -12px hsla(0, 0%, 0%, 0.15);
   --shadow-xl: 0 24px 64px -16px hsla(0, 0%, 0%, 0.2);
   --shadow-red: 0 8px 32px -8px hsla(0, 89%, 28%, 0.3);
+
+  /* Sidebar Variables */
+  --sidebar-background: hsl(0 0% 100%);
+  --sidebar-foreground: hsl(0 0% 25%);
+  --sidebar-primary: hsl(0 89% 28%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(0 0% 96%);
+  --sidebar-accent-foreground: hsl(0 0% 10%);
+  --sidebar-border: hsl(0 0% 92%);
+  --sidebar-ring: hsl(0 89% 28%);
+}
+
+.dark {
+  /* Dark Mode Sidebar Variables */
+  --sidebar-background: hsl(0 0% 10%);
+  --sidebar-foreground: hsl(0 0% 85%);
+  --sidebar-primary: hsl(0 89% 35%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(0 0% 15%);
+  --sidebar-accent-foreground: hsl(0 0% 95%);
+  --sidebar-border: hsl(0 0% 18%);
+  --sidebar-ring: hsl(0 89% 35%);
 }
 
 html {
@@ -93,6 +137,27 @@ h5,
 h6 {
   font-family: var(--font-poppins);
   @apply font-semibold tracking-tight;
+}
+
+/* Animations */
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+
+  to {
+    height: 0;
+  }
 }
 
 /* ================================
@@ -173,7 +238,15 @@ h6 {
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-brand-red-light;
+  }
+
+  .bg-gradient-primary {
+    @apply bg-linear-to-r from-primary to-brand-red-light;
+  }
+
+  .font-heading {
+    font-family: var(--font-poppins);
   }
 
   .link-underline {

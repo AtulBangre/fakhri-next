@@ -54,10 +54,10 @@ export default function PricingContent() {
                         {pricingPlans.map((plan, index) => (
                             <PricingCard
                                 key={plan.id}
+
                                 plan={{
                                     ...plan,
-                                    ...plan,
-                                    price: plan.prices.monthly
+                                    price: plan.price
                                 }}
                                 index={index}
                             />

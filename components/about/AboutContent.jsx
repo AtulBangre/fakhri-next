@@ -226,7 +226,7 @@ export default function AboutContent() {
             <section className="section-padding py-24 mb-10">
                 <div className="container-custom">
                     <ScrollReveal>
-                        <div className="relative bg-gradient-to-br from-primary to-accent rounded-3xl p-12 md:p-20 text-center overflow-hidden">
+                        <div className="relative bg-gradient-to-br from-primary to-brand-red-light rounded-3xl p-12 md:p-20 text-center overflow-hidden">
                             {/* Background Pattern */}
                             <div className="absolute inset-0 opacity-10">
                                 <motion.div

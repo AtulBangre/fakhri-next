@@ -38,17 +38,18 @@ export default function BlogContent() {
             {/* Category Filter */}
             <section className="sticky top-16 md:top-20 z-30 bg-background/95 backdrop-blur-lg border-b border-border py-4 shadow-sm">
                 <div className="container-custom">
+
                     <div className="flex flex-wrap justify-center gap-2">
                         {blogCategories.map((category) => (
                             <button
-                                key={category}
-                                onClick={() => setSelectedCategory(category)}
-                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${selectedCategory === category
+                                key={category.name}
+                                onClick={() => setSelectedCategory(category.name)}
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${selectedCategory === category.name
                                     ? 'bg-primary text-primary-foreground shadow-md'
                                     : 'text-muted-foreground hover:text-primary hover:bg-primary/10 border border-border'
                                     }`}
                             >
-                                {category}
+                                {category.name}
                             </button>
                         ))}
                     </div>

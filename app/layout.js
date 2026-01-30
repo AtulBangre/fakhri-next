@@ -1,8 +1,6 @@
+
 import "./globals.css";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import ScrollToTop from "@/components/layout/ScrollToTop";
-import SmoothScrollProvider from "@/components/ui/SmoothScrollProvider";
+import Providers from "@/components/Providers";
 
 export const metadata = {
   title: "Fakhri IT Services | No.1 Amazon Seller Services Partner",
@@ -29,14 +27,9 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/site.webmanifest" />
       </head>
       <body>
-        <SmoothScrollProvider>
-          <ScrollToTop />
-          <Header />
-          <main className="min-h-screen pt-20">
-            {children}
-          </main>
-          <Footer />
-        </SmoothScrollProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -25,7 +25,9 @@ const iconMap = {
 export default function ServiceCard({ service, index, variant = 'default' }) {
     const Icon = iconMap[service.icon] || Settings;
 
+
     if (variant === 'compact') {
+        const description = service.shortDescription || service.description;
         return (
             <ScrollReveal delay={index * 0.1} direction="up">
                 <motion.div
@@ -40,7 +42,7 @@ export default function ServiceCard({ service, index, variant = 'default' }) {
                         {service.title}
                     </h3>
                     <p className="text-muted-foreground text-sm leading-relaxed flex-1">
-                        {service.shortDescription}
+                        {description}
                     </p>
                 </motion.div>
             </ScrollReveal>
@@ -87,19 +89,21 @@ export default function ServiceCard({ service, index, variant = 'default' }) {
                     </div>
 
                     {/* Benefits */}
-                    <div className="pt-6 border-t border-border">
-                        <h4 className="font-poppins font-semibold text-sm mb-3">Key Benefits:</h4>
-                        <div className="flex flex-wrap gap-2">
-                            {service.benefits.map((benefit, idx) => (
-                                <span
-                                    key={idx}
-                                    className="px-3 py-1 bg-primary/5 text-primary text-xs font-medium rounded-full"
-                                >
-                                    {benefit}
-                                </span>
-                            ))}
+                    {service.benefits && service.benefits.length > 0 && (
+                        <div className="pt-6 border-t border-border">
+                            <h4 className="font-poppins font-semibold text-sm mb-3">Key Benefits:</h4>
+                            <div className="flex flex-wrap gap-2">
+                                {service.benefits.map((benefit, idx) => (
+                                    <span
+                                        key={idx}
+                                        className="px-3 py-1 bg-primary/5 text-primary text-xs font-medium rounded-full"
+                                    >
+                                        {benefit}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </motion.div>
         </ScrollReveal>

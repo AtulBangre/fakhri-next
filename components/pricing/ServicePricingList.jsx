@@ -1,10 +1,11 @@
 'use client';
 
+
 import { useState } from 'react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { motion } from 'framer-motion';
 import { Minus, Plus, ShoppingCart } from 'lucide-react';
-import { within2HoursServices, within2HoursInfo } from '@/data/pricing';
+import { within2HoursPageServices as within2HoursServices, within2HoursPageInfo as within2HoursInfo } from '@/data/within2hours';
 
 export default function ServicePricingList() {
     const [quantities, setQuantities] = useState(

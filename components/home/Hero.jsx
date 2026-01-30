@@ -125,7 +125,7 @@ export default function Hero() {
                     >
                         <div className="relative">
                             {/* Main Visual Card */}
-                            <div className="relative bg-gradient-to-br from-primary to-accent rounded-3xl p-10 text-primary-foreground overflow-hidden">
+                            <div className="relative bg-gradient-to-br from-primary to-brand-red-light rounded-3xl p-10 text-primary-foreground overflow-hidden">
                                 <div className="absolute inset-0 opacity-10">
                                     <div className="absolute top-4 right-4 w-32 h-32 border border-primary-foreground/20 rounded-full" />
                                     <div className="absolute bottom-8 left-8 w-24 h-24 border border-primary-foreground/20 rounded-full" />

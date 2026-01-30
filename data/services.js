@@ -155,3 +155,6 @@ export const serviceCategories = [
     { name: "Operations", services: ["fba-operations"] },
     { name: "Growth", services: ["ads-management", "growth-strategy"] },
 ];
+
+// Alias for backward compatibility
+export const services = servicesData;

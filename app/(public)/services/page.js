@@ -1,8 +1,9 @@
+
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import ServiceCard from '@/components/ui/ServiceCard';
-import { servicesData, serviceCategories } from '@/data/services';
+import { services, serviceCategories } from '@/data/services';
 import { seoData } from '@/data/company';
 
 export const metadata = {
@@ -36,7 +37,7 @@ export default function ServicesPage() {
             <section className="sticky top-[72px] z-30 bg-background/95 backdrop-blur-lg border-b border-border py-4">
                 <div className="container-custom">
                     <div className="flex flex-wrap justify-center gap-2">
-                        {serviceCategories.map((category) => (
+                        {serviceCategories?.map((category) => (
                             <a
                                 key={category.name}
                                 href={`#${category.services[0]}`}
@@ -53,7 +54,7 @@ export default function ServicesPage() {
             <section className="section-padding">
                 <div className="container-custom">
                     <div className="space-y-8">
-                        {servicesData.map((service, index) => (
+                        {services?.map((service, index) => (
                             <ServiceCard key={service.id} service={service} index={index} variant="default" />
                         ))}
                     </div>

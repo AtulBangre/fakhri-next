@@ -220,7 +220,7 @@ export default function Within2HoursContent() {
             <section className="section-padding">
                 <div className="container-custom">
                     <ScrollReveal>
-                        <div className="relative bg-gradient-to-br from-primary to-accent rounded-3xl p-12 md:p-16 text-primary-foreground overflow-hidden">
+                        <div className="relative bg-gradient-to-br from-primary to-brand-red-light rounded-3xl p-12 md:p-16 text-primary-foreground overflow-hidden">
                             <div className="absolute inset-0 opacity-10">
                                 <motion.div
                                     animate={{ rotate: 360 }}
