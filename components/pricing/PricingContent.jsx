@@ -15,10 +15,11 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import FaQ from '../home/FaQ';
-import ServicePricingList from './ServicePricingList';
+import Within2HoursPricingList from '../within-2-hours/Within2HoursPricingList';
 
 import { useState } from 'react';
 import { within2HoursData } from '@/data/contact';
+import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
 export default function PricingContent() {
     // Billing cycle state removed as pricing is flat monthly
@@ -188,7 +189,7 @@ export default function PricingContent() {
             </section>
 
             {/* Service Pricing List */}
-            <ServicePricingList />
+            <Within2HoursPricingList />
 
             {/* FAQ Section */}
             <FaQ data={pricingFAQs} />
@@ -205,9 +206,13 @@ export default function PricingContent() {
                                 Contact us for a free consultation and let's discuss which plan
                                 works best for your business.
                             </p>
-                            <Link href="/contact" className="btn-primary">
-                                Schedule a Call
-                            </Link>
+                            <ContactDialog
+                                trigger={
+                                    <button className="btn-primary">
+                                        Schedule a Call
+                                    </button>
+                                }
+                            />
                         </div>
                     </ScrollReveal>
                 </div>

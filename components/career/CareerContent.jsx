@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { MapPin, Clock, Briefcase, ArrowRight } from 'lucide-react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
 import { jobPositions, careerBenefits } from '@/data/career';
+import { JobApplicationDialog } from '@/components/dialogs/JobApplicationDialog';
+import { Button } from '@/components/ui/button';
 
 const benefitIcons = {
     Globe: MapPin,
@@ -114,13 +116,15 @@ export default function CareerContent() {
                                             </div>
                                         </div>
 
-                                        <Link
-                                            href="/contact"
-                                            className="btn-primary whitespace-nowrap group"
-                                        >
-                                            Apply Now
-                                            <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                        </Link>
+                                        <JobApplicationDialog
+                                            job={job}
+                                            trigger={
+                                                <Button className="btn-primary whitespace-nowrap group">
+                                                    Apply Now
+                                                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                                </Button>
+                                            }
+                                        />
                                     </div>
                                 </motion.div>
                             </ScrollReveal>

@@ -5,6 +5,8 @@ import { LayoutDashboard, CreditCard, CheckSquare, FileText, Receipt, User, Menu
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
 import WhatsAppButton from "@/components/client/WhatsAppButton";
+import NotificationDropdown from "@/components/ui/NotificationDropdown";
+import { mockNotifications, notificationSettings } from "@/data/notifications";
 
 // Tabs
 import ClientDashboardTab from "@/components/client/tabs/DashboardTab";
@@ -28,6 +30,29 @@ const navigation = [
 export default function ClientDashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Dashboard");
+  const [notifications, setNotifications] = useState(mockNotifications.client);
+  const [notifSettings, setNotifSettings] = useState(notificationSettings);
+
+  const handleMarkAsRead = (id) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const handleDeleteNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleClearAll = () => {
+    setNotifications([]);
+  };
+
+  const handleSettingsChange = (newSettings) => {
+    setNotifSettings(newSettings);
+  };
+
 
   return (
     <div className="min-h-screen bg-[#F4F4F5]">
@@ -106,10 +131,15 @@ export default function ClientDashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="p-2 rounded-lg hover:bg-accent relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
-            </button>
+            <NotificationDropdown
+              notifications={notifications}
+              settings={notifSettings}
+              onSettingsChange={handleSettingsChange}
+              onMarkAsRead={handleMarkAsRead}
+              onMarkAllAsRead={handleMarkAllAsRead}
+              onDelete={handleDeleteNotification}
+              onClearAll={handleClearAll}
+            />
           </div>
         </header>
 

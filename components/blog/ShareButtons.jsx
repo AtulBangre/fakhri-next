@@ -16,13 +16,15 @@ import {
 } from 'lucide-react';
 
 export default function ShareButtons({ title, slug }) {
-    const [baseUrl, setBaseUrl] = useState('');
+    const [baseUrl, setBaseUrl] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.location.origin;
+        }
+        return '';
+    });
     const [copied, setCopied] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
-    useEffect(() => {
-        setBaseUrl(window.location.origin);
-    }, []);
 
     const url = `${baseUrl}/blog/${slug}`;
     const encodedUrl = encodeURIComponent(url);

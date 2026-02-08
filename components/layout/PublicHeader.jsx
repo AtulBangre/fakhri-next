@@ -1,81 +1,138 @@
 "use client";
+
 import { useState } from "react";
-import { , useLocation } from "next/link";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/ui/Logo";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu";
-const navigation = [
-    { name: "Home", href: "/" },
-    { name: "About", href: "/about" },
-    { name: "Services", href: "/services" },
-    { name: "Pricing", href: "/pricing" },
-    { name: "Within 2 Hours", href: "/within-2-hours" },
-    { name: "Blog", href: "/blog" },
-    { name: "Career", href: "/career" },
-    { name: "Contact Us", href: "/contact" },
-];
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { navigationItems } from "@/data/navigation";
+import { ContactDialog } from "@/components/dialogs/ContactDialog";
+
 const PublicHeader = () => {
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const pathname = usePathname();
-    const isActive = (href) => pathname === href;
-    return (<header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <Logo showTagline/>
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  const isActive = (href) => {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  };
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container-custom flex h-16 items-center justify-between">
+        <Logo showTagline={false} />
 
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-1">
-          {navigation.map((item) => (<Link key={item.name} href={item.href} className={`px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-accent ${isActive(item.href)
-                ? "text-primary font-semibold"
-                : "text-muted-foreground hover:text-foreground"}`}>
-              {item.name}
-            </Link>))}
+          {navigationItems.map((item) => {
+            if (item.children) {
+              return (
+                <DropdownMenu key={item.label}>
+                  <DropdownMenuTrigger asChild>
+                    <button className={`px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-accent flex items-center gap-1 text-muted-foreground hover:text-foreground`}>
+                      {item.label} <ChevronDown className="h-3 w-3" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {item.children.map((child) => (
+                      <DropdownMenuItem key={child.label} asChild>
+                        <Link href={child.href}>{child.label}</Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={`px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-accent ${isActive(item.href)
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* CTA Buttons */}
         <div className="hidden lg:flex items-center gap-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                Client Login <ChevronDown className="ml-1 h-4 w-4"/>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href="/client/dashboard">Client Portal</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button size="sm" asChild>
-            <Link href="/contact">Get Started</Link>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/client/dashboard">Client Login</Link>
           </Button>
+          <ContactDialog
+            trigger={<Button size="sm">Get Started</Button>}
+          />
         </div>
 
         {/* Mobile Menu Button */}
-        <button className="lg:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-          {mobileMenuOpen ? <X className="h-6 w-6"/> : <Menu className="h-6 w-6"/>}
+        <button
+          className="lg:hidden p-2"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
       {/* Mobile Navigation */}
-      {mobileMenuOpen && (<div className="lg:hidden animate-slide-down border-t bg-background">
-          <nav className="container py-4 space-y-1">
-            {navigation.map((item) => (<Link key={item.name} href={item.href} onClick={() => setMobileMenuOpen(false)} className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${isActive(item.href)
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-accent"}`}>
-                {item.name}
-              </Link>))}
+      {mobileMenuOpen && (
+        <div className="lg:hidden animate-slide-down border-t bg-background absolute w-full left-0 shadow-lg">
+          <nav className="container-custom py-4 space-y-1">
+            {navigationItems.map((item) => (
+              <div key={item.label}>
+                {item.children ? (
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-semibold text-muted-foreground mb-1">{item.label}</p>
+                    <div className="pl-2 space-y-1 border-l-2 border-border/50">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.label}
+                          href={child.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="block px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md"
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${isActive(item.href)
+                      ? "bg-primary/10 text-primary"
+                      : "text-foreground hover:bg-accent"
+                      }`}
+                  >
+                    {item.label}
+                  </Link>
+                )}
+              </div>
+            ))}
             <div className="pt-4 space-y-2 border-t mt-4">
               <Button variant="outline" className="w-full" asChild>
                 <Link href="/client/dashboard">Client Login</Link>
               </Button>
-              <Button className="w-full" asChild>
-                <Link href="/contact">Get Started</Link>
-              </Button>
+              <ContactDialog
+                trigger={<Button className="w-full">Get Started</Button>}
+              />
             </div>
           </nav>
-        </div>)}
-    </header>);
+        </div>
+      )}
+    </header>
+  );
 };
+
 export default PublicHeader;

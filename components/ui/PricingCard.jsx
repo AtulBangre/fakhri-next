@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Check, X, ChevronDown } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import Link from 'next/link';
+import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
 export const PricingCard = ({ plan, index }) => {
     const handleCardClick = (e) => {
@@ -101,18 +102,20 @@ export const PricingCard = ({ plan, index }) => {
                     )}
 
                     {/* CTA */}
-                    <Link href="/contact" className="block">
-                        <motion.button
-                            className={`w-full py-4 rounded-lg font-poppins font-semibold transition-all duration-300 ${plan.highlighted
-                                ? 'bg-background text-primary hover:bg-background/90'
-                                : 'bg-primary text-primary-foreground hover:shadow-red'
-                                }`}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            {plan.cta}
-                        </motion.button>
-                    </Link>
+                    <ContactDialog
+                        trigger={
+                            <motion.button
+                                className={`w-full py-4 rounded-lg font-poppins font-semibold transition-all duration-300 ${plan.highlighted
+                                    ? 'bg-background text-primary hover:bg-background/90'
+                                    : 'bg-primary text-primary-foreground hover:shadow-red'
+                                    }`}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                {plan.cta}
+                            </motion.button>
+                        }
+                    />
                 </div>
             </motion.div>
         </ScrollReveal>

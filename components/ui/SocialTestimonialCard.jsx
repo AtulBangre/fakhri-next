@@ -41,7 +41,7 @@ export default function SocialTestimonialCard({ testimonial, index }) {
                 </div>
             </div>
             <p className="text-sm leading-relaxed text-foreground/80 line-clamp-3">
-                "{testimonial.quote}"
+                &ldquo;{testimonial.quote}&rdquo;
             </p>
         </motion.div>
     );

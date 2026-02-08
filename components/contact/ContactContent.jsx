@@ -1,7 +1,11 @@
-'use client';
+"use client";
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { toast } from 'sonner';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
 import { contactData } from '@/data/contact';
 import {
@@ -16,25 +20,44 @@ import {
     Facebook,
     Instagram
 } from 'lucide-react';
+import { Button } from '@/components/ui/button'; // Using shadcn button for consistency if needed, but motion.button is fine too
+
+const contactSchema = z.object({
+    name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+    email: z.string().email({ message: "Invalid email address." }),
+    phone: z.string().optional(),
+    company: z.string().optional(),
+    service: z.string().optional(),
+    message: z.string().min(10, { message: "Message must be at least 10 characters." }),
+});
 
 export default function ContactContent() {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        company: '',
-        service: '',
-        message: '',
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm({
+        resolver: zodResolver(contactSchema),
+        defaultValues: {
+            name: '',
+            email: '',
+            phone: '',
+            company: '',
+            service: '',
+            message: '',
+        },
     });
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        console.log('Form submitted:', formData);
-        alert('Thank you for your message! We will get back to you soon.');
+    const onSubmit = (data) => {
+        console.log('Form submitted:', data);
+        // Simulate API call
+        setTimeout(() => {
+            toast.success("Message sent successfully!", {
+                description: "We'll get back to you soon.",
+            });
+            reset();
+        }, 1500);
     };
 
     const socialIcons = [
@@ -133,7 +156,7 @@ export default function ContactContent() {
                         <ScrollReveal direction="left" className="lg:col-span-3">
                             <div className="bg-card rounded-2xl p-8 md:p-10 border border-border">
                                 <h2 className="heading-md mb-6">Send Us a Message</h2>
-                                <form onSubmit={handleSubmit} className="space-y-6">
+                                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <div>
                                             <label htmlFor="name" className="block text-sm font-medium mb-2">
@@ -142,13 +165,11 @@ export default function ContactContent() {
                                             <input
                                                 type="text"
                                                 id="name"
-                                                name="name"
-                                                value={formData.name}
-                                                onChange={handleChange}
-                                                required
-                                                className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                                {...register('name')}
+                                                className={`w-full px-4 py-3 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${errors.name ? 'border-destructive' : 'border-border'}`}
                                                 placeholder="John Doe"
                                             />
+                                            {errors.name && <p className="text-destructive text-xs mt-1">{errors.name.message}</p>}
                                         </div>
                                         <div>
                                             <label htmlFor="email" className="block text-sm font-medium mb-2">
@@ -157,13 +178,11 @@ export default function ContactContent() {
                                             <input
                                                 type="email"
                                                 id="email"
-                                                name="email"
-                                                value={formData.email}
-                                                onChange={handleChange}
-                                                required
-                                                className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                                {...register('email')}
+                                                className={`w-full px-4 py-3 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${errors.email ? 'border-destructive' : 'border-border'}`}
                                                 placeholder="john@company.com"
                                             />
+                                            {errors.email && <p className="text-destructive text-xs mt-1">{errors.email.message}</p>}
                                         </div>
                                     </div>
 
@@ -175,9 +194,7 @@ export default function ContactContent() {
                                             <input
                                                 type="tel"
                                                 id="phone"
-                                                name="phone"
-                                                value={formData.phone}
-                                                onChange={handleChange}
+                                                {...register('phone')}
                                                 className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                                                 placeholder="+1 (555) 000-0000"
                                             />
@@ -189,9 +206,7 @@ export default function ContactContent() {
                                             <input
                                                 type="text"
                                                 id="company"
-                                                name="company"
-                                                value={formData.company}
-                                                onChange={handleChange}
+                                                {...register('company')}
                                                 className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                                                 placeholder="Your Company"
                                             />
@@ -204,9 +219,7 @@ export default function ContactContent() {
                                         </label>
                                         <select
                                             id="service"
-                                            name="service"
-                                            value={formData.service}
-                                            onChange={handleChange}
+                                            {...register('service')}
                                             className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                                         >
                                             <option value="">Select a service</option>
@@ -227,24 +240,23 @@ export default function ContactContent() {
                                         </label>
                                         <textarea
                                             id="message"
-                                            name="message"
-                                            value={formData.message}
-                                            onChange={handleChange}
-                                            required
+                                            {...register('message')}
                                             rows={5}
-                                            className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                                            className={`w-full px-4 py-3 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none ${errors.message ? 'border-destructive' : 'border-border'}`}
                                             placeholder="Tell us about your Amazon business and goals..."
                                         />
+                                        {errors.message && <p className="text-destructive text-xs mt-1">{errors.message.message}</p>}
                                     </div>
 
                                     <motion.button
                                         type="submit"
-                                        className="btn-primary w-full group"
-                                        whileHover={{ scale: 1.01 }}
-                                        whileTap={{ scale: 0.99 }}
+                                        disabled={isSubmitting}
+                                        className="btn-primary w-full group disabled:opacity-70 disabled:cursor-not-allowed"
+                                        whileHover={!isSubmitting ? { scale: 1.01 } : {}}
+                                        whileTap={!isSubmitting ? { scale: 0.99 } : {}}
                                     >
-                                        Send Message
-                                        <Send className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                        {isSubmitting ? 'Sending...' : 'Send Message'}
+                                        {!isSubmitting && <Send className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />}
                                     </motion.button>
                                 </form>
                             </div>

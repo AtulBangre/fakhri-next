@@ -5,6 +5,7 @@ import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { motion } from 'framer-motion';
 import { Minus, Plus, ShoppingCart } from 'lucide-react';
 import { within2HoursPageServices, within2HoursPageInfo } from '@/data/within2hours';
+import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
 export default function Within2HoursPricingList() {
     const [quantities, setQuantities] = useState(
@@ -99,16 +100,20 @@ export default function Within2HoursPricingList() {
                                                 </div>
 
                                                 {/* Add to Cart Button */}
-                                                <motion.button
-                                                    whileHover={{ scale: 1.02 }}
-                                                    whileTap={{ scale: 0.98 }}
-                                                    onClick={() => handleAddToCart(service)}
-                                                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground font-poppins font-semibold rounded-lg transition-all duration-300 hover:shadow-red whitespace-nowrap"
-                                                >
-                                                    <ShoppingCart className="w-4 h-4" />
-                                                    <span className="hidden sm:inline">Add to cart</span>
-                                                    <span className="sm:hidden">Add</span>
-                                                </motion.button>
+                                                <ContactDialog
+                                                    defaultService="Within 2 Hours Response"
+                                                    trigger={
+                                                        <motion.button
+                                                            whileHover={{ scale: 1.02 }}
+                                                            whileTap={{ scale: 0.98 }}
+                                                            className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground font-poppins font-semibold rounded-lg transition-all duration-300 hover:shadow-red whitespace-nowrap"
+                                                        >
+                                                            <ShoppingCart className="w-4 h-4" />
+                                                            <span className="hidden sm:inline">Book Now</span>
+                                                            <span className="sm:hidden">Book</span>
+                                                        </motion.button>
+                                                    }
+                                                />
                                             </div>
                                         </div>
                                     </motion.div>

@@ -15,6 +15,7 @@ import {
     Check,
 } from 'lucide-react';
 import Within2HoursPricingList from './Within2HoursPricingList';
+import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
 const iconMap = {
     Clock,
@@ -247,13 +248,15 @@ export default function Within2HoursContent() {
                                         <MessageCircle className="mr-2 w-5 h-5" />
                                         {within2HoursData.cta.whatsappText}
                                     </a>
-                                    <Link
-                                        href="/contact"
-                                        className="inline-flex items-center justify-center px-8 py-4 border-2 border-primary-foreground/30 text-primary-foreground font-poppins font-semibold rounded-lg transition-all duration-300 hover:bg-primary-foreground/10"
-                                    >
-                                        Contact Form
-                                        <ArrowRight className="ml-2 w-5 h-5" />
-                                    </Link>
+                                    <ContactDialog
+                                        defaultService="Within 2 Hours Response"
+                                        trigger={
+                                            <button className="inline-flex items-center justify-center px-8 py-4 border-2 border-primary-foreground/30 text-primary-foreground font-poppins font-semibold rounded-lg transition-all duration-300 hover:bg-primary-foreground/10">
+                                                Contact Form
+                                                <ArrowRight className="ml-2 w-5 h-5" />
+                                            </button>
+                                        }
+                                    />
                                 </div>
                             </div>
                         </div>

@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="manifest" href="/site.webmanifest" />
       </head>
-      <body>
+      <body suppressHydrationWarning={true}>
         <Providers>
           {children}
         </Providers>

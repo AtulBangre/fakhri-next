@@ -75,4 +75,9 @@ export const seoData = {
         description: "Contact Fakhri IT Services for Amazon seller solutions. Reach out via phone, email, or our contact form for a free consultation.",
         keywords: "contact Amazon services, seller support contact, Amazon consulting inquiry",
     },
+    about: {
+        title: "About Us | Fakhri IT Services - Your Amazon Growth Partner",
+        description: "Learn about Fakhri IT Services, a leading Amazon agency helping brands scale since 2016. Meet our expert team of account managers, creative designers, and strategists.",
+        keywords: "About Fakhri IT Services, Amazon agency team, Amazon seller consultants, e-commerce experts",
+    },
 };

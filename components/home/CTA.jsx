@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
+import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
 export default function CTA() {
     return (
@@ -25,13 +26,16 @@ export default function CTA() {
                                 for their Amazon success. Get started with a free consultation today.
                             </p>
                             <div className="flex flex-wrap justify-center gap-4">
-                                <Link
-                                    href="/contact"
-                                    className="inline-flex items-center justify-center px-8 py-4 bg-background text-primary font-poppins font-semibold rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5"
-                                >
-                                    Get Free Consultation
-                                    <ArrowRight className="ml-2 w-5 h-5" />
-                                </Link>
+                                <ContactDialog
+                                    trigger={
+                                        <button
+                                            className="inline-flex items-center justify-center px-8 py-4 bg-background text-primary font-poppins font-semibold rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5"
+                                        >
+                                            Get Free Consultation
+                                            <ArrowRight className="ml-2 w-5 h-5" />
+                                        </button>
+                                    }
+                                />
                                 <Link
                                     href="/pricing"
                                     className="inline-flex items-center justify-center px-8 py-4 border-2 border-primary-foreground/30 text-primary-foreground font-poppins font-semibold rounded-lg transition-all duration-300 hover:bg-primary-foreground/10"

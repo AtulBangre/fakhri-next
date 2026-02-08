@@ -7,6 +7,7 @@ import { Users, Target, Zap, BarChart, Shield, Trophy, ArrowRight, Quote } from 
 import { aboutHero, companyOverview, leadershipTeam, whyChooseUs, aboutCTA } from '@/data/about';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
 const iconMap = {
     Users,
@@ -71,7 +72,7 @@ export default function AboutContent() {
                                     <div className="text-white">
                                         <Quote className="w-8 h-8 mb-4 text-white/80" />
                                         <p className="text-lg font-medium italic">
-                                            "Our mission is to empower Amazon sellers with expert services that drive sustainable growth."
+                                            &ldquo;Our mission is to empower Amazon sellers with expert services that drive sustainable growth.&rdquo;
                                         </p>
                                     </div>
                                 </div>
@@ -244,9 +245,13 @@ export default function AboutContent() {
                                     {aboutCTA.description}
                                 </p>
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                    <Link href="/contact" className="btn bg-white text-primary hover:bg-gray-100 min-w-[200px] py-4 rounded-lg font-bold transition-all hover:scale-105">
-                                        {aboutCTA.primaryBtn}
-                                    </Link>
+                                    <ContactDialog
+                                        trigger={
+                                            <button className="btn bg-white text-primary hover:bg-gray-100 min-w-[200px] py-4 rounded-lg font-bold transition-all hover:scale-105">
+                                                {aboutCTA.primaryBtn}
+                                            </button>
+                                        }
+                                    />
                                     <Link href="/career" className="btn border-2 border-white/30 text-white hover:bg-white/10 min-w-[200px] py-4 rounded-lg font-bold transition-all hover:scale-105">
                                         {aboutCTA.secondaryBtn}
                                     </Link>

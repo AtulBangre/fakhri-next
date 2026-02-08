@@ -3,11 +3,13 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard, Users, UsersRound, UserCog, CheckSquare,
-  DollarSign, Settings, Menu, X, LogOut, Bell, Shield
+  DollarSign, Settings, Menu, X, LogOut, Bell, Shield, Globe
 } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import NotificationDropdown from "@/components/ui/NotificationDropdown";
+import { mockNotifications, notificationSettings } from "@/data/notifications";
 
 // Import Tabs
 import SuperAdminDashboardTab from "@/components/super-admin/tabs/DashboardTab";
@@ -17,6 +19,7 @@ import SuperAdminAdminsTab from "@/components/super-admin/tabs/AdminsTab";
 import SuperAdminTasksTab from "@/components/super-admin/tabs/TasksTab";
 import SuperAdminSalesTab from "@/components/super-admin/tabs/SalesTab";
 import SuperAdminSettingsTab from "@/components/super-admin/tabs/SettingsTab";
+import SuperAdminWebsiteTab from "@/components/super-admin/tabs/WebsiteManagementTab";
 
 
 const navigation = [
@@ -26,12 +29,37 @@ const navigation = [
   { name: "Admin Users", id: "Admins", icon: UserCog },
   { name: "Tasks", id: "Tasks", icon: CheckSquare },
   { name: "Sales & Revenue", id: "Sales", icon: DollarSign },
+  { name: "Website Management", id: "Website", icon: Globe },
   { name: "Settings", id: "Settings", icon: Settings },
 ];
 
 export default function SuperAdminDashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Dashboard");
+  const [notifications, setNotifications] = useState(mockNotifications.superAdmin);
+  const [notifSettings, setNotifSettings] = useState(notificationSettings);
+
+  const handleMarkAsRead = (id) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const handleDeleteNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleClearAll = () => {
+    setNotifications([]);
+  };
+
+  const handleSettingsChange = (newSettings) => {
+    setNotifSettings(newSettings);
+    console.log("Settings updated:", newSettings);
+  };
+
 
   return (
     <div className="min-h-screen bg-[#F4F4F5]">
@@ -116,10 +144,15 @@ export default function SuperAdminDashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="p-2 rounded-lg hover:bg-accent relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-            </button>
+            <NotificationDropdown
+              notifications={notifications}
+              settings={notifSettings}
+              onSettingsChange={handleSettingsChange}
+              onMarkAsRead={handleMarkAsRead}
+              onMarkAllAsRead={handleMarkAllAsRead}
+              onDelete={handleDeleteNotification}
+              onClearAll={handleClearAll}
+            />
           </div>
         </header>
 
@@ -131,6 +164,7 @@ export default function SuperAdminDashboardPage() {
           {activeTab === "Admins" && <SuperAdminAdminsTab />}
           {activeTab === "Tasks" && <SuperAdminTasksTab />}
           {activeTab === "Sales" && <SuperAdminSalesTab />}
+          {activeTab === "Website" && <SuperAdminWebsiteTab />}
           {activeTab === "Settings" && <SuperAdminSettingsTab />}
         </main>
       </div>

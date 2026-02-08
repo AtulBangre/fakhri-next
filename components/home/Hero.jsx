@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowRight, Shield, Award, Check, Clock } from 'lucide-react';
+import { ContactDialog } from '@/components/dialogs/ContactDialog';
 import { companyData } from '@/data/company';
 
 const sellerImages = [
@@ -91,10 +92,14 @@ export default function Hero() {
                             transition={{ duration: 0.6, delay: 0.3 }}
                             className="flex flex-wrap gap-4"
                         >
-                            <Link href="/contact" className="btn-primary group">
-                                Start Your Journey
-                                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                            </Link>
+                            <ContactDialog
+                                trigger={
+                                    <button className="btn-primary group inline-flex items-center">
+                                        Start Your Journey
+                                        <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                }
+                            />
                             <Link href="/services" className="btn-outline">
                                 Explore Services
                             </Link>
