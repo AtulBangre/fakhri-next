@@ -1,5 +1,5 @@
 "use client";
-import { LayoutDashboard, CheckSquare, Clock, CheckCircle2, Bell } from "lucide-react";
+import { LayoutDashboard, CheckSquare, Clock, CheckCircle2, Bell, Mail, Headphones } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 
@@ -36,14 +36,32 @@ const ClientDashboardTab = ({ setActiveTab }) => {
                 {/* Account Manager */}
                 <div className="bg-card rounded-xl border p-6">
                     <h2 className="font-heading font-semibold mb-4">Your Account Manager</h2>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 mb-4">
                         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-heading font-bold text-xl">
                             SM
                         </div>
                         <div>
                             <p className="font-medium">Sarah Mitchell</p>
                             <p className="text-sm text-muted-foreground">Senior Account Manager</p>
-                            <p className="text-sm text-primary mt-1">sarah@fakhriit.com</p>
+                            <a href="mailto:sarah@fakhriit.com" className="text-sm text-primary mt-1 flex items-center gap-1 hover:underline">
+                                <Mail className="h-3 w-3" />
+                                sarah@fakhriit.com
+                            </a>
+                        </div>
+                    </div>
+                    {/* Support Email */}
+                    <div className="pt-4 border-t">
+                        <div className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Headphones className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground">Need Support?</p>
+                                <a href="mailto:support@fakhriit.com" className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">
+                                    <Mail className="h-3 w-3" />
+                                    support@fakhriit.com
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, CreditCard, CheckSquare, FileText, Receipt, User, Menu, X, LogOut, Bell } from "lucide-react";
+import { LayoutDashboard, CreditCard, CheckSquare, FileText, Receipt, User, Menu, X, LogOut, Bell, HelpCircle } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
+import WhatsAppButton from "@/components/client/WhatsAppButton";
 
 // Tabs
 import ClientDashboardTab from "@/components/client/tabs/DashboardTab";
@@ -12,6 +13,7 @@ import ClientTasksTab from "@/components/client/tabs/TasksTab";
 import ClientFilesTab from "@/components/client/tabs/FilesTab";
 import ClientBillingTab from "@/components/client/tabs/BillingTab";
 import ClientProfileTab from "@/components/client/tabs/ProfileTab";
+import ClientSupportTab from "@/components/client/tabs/SupportTab";
 
 const navigation = [
   { name: "Dashboard", id: "Dashboard", icon: LayoutDashboard },
@@ -19,6 +21,7 @@ const navigation = [
   { name: "Tasks", id: "Tasks", icon: CheckSquare },
   { name: "Files", id: "Files", icon: FileText },
   { name: "Billing", id: "Billing", icon: Receipt },
+  { name: "Support", id: "Support", icon: HelpCircle },
   { name: "Profile", id: "Profile", icon: User },
 ];
 
@@ -27,15 +30,15 @@ export default function ClientDashboardPage() {
   const [activeTab, setActiveTab] = useState("Dashboard");
 
   return (
-    <div className="min-h-screen flex bg-[#F4F4F5]">
+    <div className="min-h-screen bg-[#F4F4F5]">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed on desktop */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border transform transition-transform duration-300
+        fixed inset-y-0 left-0 z-50 w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border transform transition-transform duration-300
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
         <div className="flex flex-col h-full">
@@ -78,7 +81,7 @@ export default function ClientDashboardPage() {
                 <p className="text-xs text-sidebar-foreground/70 truncate">Premium Plan</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="w-full border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent" asChild>
+            <Button variant="outline" size="sm" className="w-full border-white/20 text-white bg-white/10 hover:bg-white/20 hover:text-white" asChild>
               <Link href="/">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
@@ -88,10 +91,10 @@ export default function ClientDashboardPage() {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Bar */}
-        <header className="h-16 bg-card border-b flex items-center justify-between px-4 lg:px-6">
+      {/* Main Content - Offset by sidebar width on desktop */}
+      <div className="lg:ml-64 min-h-screen flex flex-col">
+        {/* Top Bar - Sticky */}
+        <header className="h-16 bg-card border-b flex items-center justify-between px-4 lg:px-6 sticky top-0 z-40">
           <button className="lg:hidden p-2" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-5 w-5" />
           </button>
@@ -111,15 +114,22 @@ export default function ClientDashboardPage() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
+        <main className="flex-1 p-4 lg:p-6">
           {activeTab === "Dashboard" && <ClientDashboardTab setActiveTab={setActiveTab} />}
           {activeTab === "Plan" && <ClientPlanTab />}
           {activeTab === "Tasks" && <ClientTasksTab />}
           {activeTab === "Files" && <ClientFilesTab />}
           {activeTab === "Billing" && <ClientBillingTab />}
+          {activeTab === "Support" && <ClientSupportTab />}
           {activeTab === "Profile" && <ClientProfileTab />}
         </main>
       </div>
+
+      {/* Floating WhatsApp Button */}
+      <WhatsAppButton
+        phoneNumber="919876543210"
+        message="Hi! I need assistance with my account."
+      />
     </div>
   );
 }
