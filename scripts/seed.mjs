@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 
 // Models
 import User from '../models/User.js';
+import Role from '../models/Role.js';
 import Plan from '../models/Plan.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
@@ -13,6 +14,8 @@ import Note from '../models/Note.js';
 import File from '../models/File.js';
 import Notification from '../models/Notification.js';
 import Service from '../models/Service.js';
+import ContactMessage from '../models/ContactMessage.js';
+
 
 // Load environment variables
 import dotenv from 'dotenv';
