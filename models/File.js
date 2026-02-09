@@ -62,7 +62,7 @@ const FileSchema = new mongoose.Schema({
 });
 
 // Indexes
-FileSchema.index({ fileId: 1 });
+
 FileSchema.index({ client: 1 });
 FileSchema.index({ uploadedBy: 1 });
 FileSchema.index({ type: 1 });

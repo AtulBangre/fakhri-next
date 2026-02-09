@@ -62,7 +62,7 @@ const NotificationSchema = new mongoose.Schema({
 });
 
 // Indexes
-NotificationSchema.index({ notificationId: 1 });
+
 NotificationSchema.index({ user: 1 });
 NotificationSchema.index({ isRead: 1 });
 NotificationSchema.index({ type: 1 });

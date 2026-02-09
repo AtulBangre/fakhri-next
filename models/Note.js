@@ -49,7 +49,7 @@ const NoteSchema = new mongoose.Schema({
 });
 
 // Indexes
-NoteSchema.index({ noteId: 1 });
+
 NoteSchema.index({ client: 1 });
 NoteSchema.index({ author: 1 });
 NoteSchema.index({ type: 1 });

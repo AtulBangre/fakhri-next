@@ -132,7 +132,7 @@ const ContactMessageSchema = new mongoose.Schema({
 });
 
 // Indexes
-ContactMessageSchema.index({ messageId: 1 });
+
 ContactMessageSchema.index({ email: 1 });
 ContactMessageSchema.index({ status: 1 });
 ContactMessageSchema.index({ priority: 1 });

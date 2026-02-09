@@ -80,7 +80,7 @@ const TransactionSchema = new mongoose.Schema({
 });
 
 // Indexes
-TransactionSchema.index({ transactionId: 1 });
+
 TransactionSchema.index({ order: 1 });
 TransactionSchema.index({ user: 1 });
 TransactionSchema.index({ status: 1 });

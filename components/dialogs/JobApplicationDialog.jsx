@@ -59,7 +59,7 @@ export function JobApplicationDialog({ job, trigger }) {
                 <DialogHeader>
                     <DialogTitle>Apply for {job?.title || "Position"}</DialogTitle>
                     <DialogDescription>
-                        Send us your details and resume. We'll get back to you shortly.
+                        Send us your details and resume. We&apos;ll get back to you shortly.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">

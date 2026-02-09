@@ -55,7 +55,7 @@ const RoleSchema = new mongoose.Schema({
 });
 
 // Indexes
-RoleSchema.index({ name: 1 });
+
 RoleSchema.index({ isActive: 1 });
 
 // Static method to get default permissions for a role

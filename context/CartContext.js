@@ -11,6 +11,7 @@ export function CartProvider({ children }) {
     const [isClient, setIsClient] = useState(false);
 
     // Hydrate cart from local storage on mount
+    // Hydrate cart from local storage on mount
     useEffect(() => {
         setIsClient(true);
         const savedCart = localStorage.getItem('cart');
@@ -21,6 +22,7 @@ export function CartProvider({ children }) {
                 console.error('Failed to parse cart data:', error);
             }
         }
+
     }, []);
 
     // Persist cart to local storage whenever it changes

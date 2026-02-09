@@ -87,7 +87,7 @@ export default function PricingContent() {
                         <div className="text-center mb-12">
                             <h2 className="heading-lg mb-4">Compare Plans</h2>
                             <p className="body-md max-w-2xl mx-auto">
-                                See a detailed breakdown of what's included in each plan
+                                See a detailed breakdown of what&apos;s included in each plan
                             </p>
                         </div>
                     </ScrollReveal>
@@ -213,7 +213,7 @@ export default function PricingContent() {
                                 Ready to Get Started?
                             </h2>
                             <p className="body-md mb-8">
-                                Contact us for a free consultation and let's discuss which plan
+                                Contact us for a free consultation and let&apos;s discuss which plan
                                 works best for your business.
                             </p>
                             <ContactDialog

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Linkedin, Twitter, Facebook, Instagram, Mail, Phone, MapPin } from 'lucide-react';
 import { companyData } from '@/data/company';
@@ -25,9 +26,11 @@ export default function Footer() {
                     {/* Company Info */}
                     <div className="lg:col-span-1">
                         <Link href="/" className="flex items-center gap-2 mb-6">
-                            <img
-                                src={'/Fakhri_White.png'}
+                            <Image
+                                src="/Fakhri_White.png"
                                 alt="Fakhri IT Services"
+                                width={150}
+                                height={32}
                                 className="h-8 w-auto brightness-0 invert"
                             />
                         </Link>

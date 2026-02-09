@@ -107,7 +107,7 @@ const OrderSchema = new mongoose.Schema({
 });
 
 // Indexes
-OrderSchema.index({ orderId: 1 });
+
 OrderSchema.index({ user: 1 });
 OrderSchema.index({ status: 1 });
 OrderSchema.index({ paymentStatus: 1 });

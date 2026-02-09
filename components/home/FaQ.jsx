@@ -19,7 +19,7 @@ export default function FaQ({ data = [] }) {
                         <span className="badge-primary mb-4">FAQs</span>
                         <h2 className="heading-lg mb-4">Frequently Asked Questions</h2>
                         <p className="body-md max-w-2xl mx-auto">
-                            Have questions? We've got answers.
+                            Have questions? We&apos;ve got answers.
                         </p>
                     </div>
                 </ScrollReveal>

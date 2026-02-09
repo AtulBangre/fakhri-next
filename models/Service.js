@@ -53,7 +53,7 @@ const ServiceSchema = new mongoose.Schema({
 });
 
 // Indexes
-ServiceSchema.index({ serviceId: 1 });
+
 ServiceSchema.index({ category: 1 });
 ServiceSchema.index({ isActive: 1 });
 ServiceSchema.index({ isFeatured: 1 });

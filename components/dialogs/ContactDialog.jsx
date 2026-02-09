@@ -75,7 +75,7 @@ export function ContactDialog({ trigger, defaultService }) {
                 <DialogHeader>
                     <DialogTitle>Get in Touch</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below and we'll get back to you as soon as possible.
+                        Fill out the form below and we&apos;ll get back to you as soon as possible.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">

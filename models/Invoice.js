@@ -99,7 +99,7 @@ const InvoiceSchema = new mongoose.Schema({
 });
 
 // Indexes
-InvoiceSchema.index({ invoiceId: 1 });
+
 InvoiceSchema.index({ invoiceNumber: 1 });
 InvoiceSchema.index({ user: 1 });
 InvoiceSchema.index({ status: 1 });

@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import {
-    Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, FileText, Image as ImageIcon
+    Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, FileText, Image as ImageIcon, Save
 } from "lucide-react";
 import { blogPosts, blogCategories } from "@/data/blog";
 import { seoData } from "@/data/company";

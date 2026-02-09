@@ -21,7 +21,7 @@ const ClientDashboardTab = ({ setActiveTab }) => {
             {/* Welcome Banner */}
             <div className="bg-gradient-primary text-white rounded-xl p-6">
                 <h1 className="font-heading text-2xl font-bold mb-2">Welcome back, John!</h1>
-                <p className="text-white/80">Your account is performing well. Here's your latest overview.</p>
+                <p className="text-white/80">Your account is performing well. Here&apos;s your latest overview.</p>
             </div>
 
             {/* Stats Grid */}

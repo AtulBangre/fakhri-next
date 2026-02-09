@@ -64,7 +64,7 @@ const ProductSchema = new mongoose.Schema({
 });
 
 // Indexes
-ProductSchema.index({ productId: 1 });
+
 ProductSchema.index({ category: 1 });
 ProductSchema.index({ type: 1 });
 ProductSchema.index({ isActive: 1 });

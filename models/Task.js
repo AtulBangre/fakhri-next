@@ -89,7 +89,7 @@ const TaskSchema = new mongoose.Schema({
 });
 
 // Indexes
-TaskSchema.index({ taskId: 1 });
+
 TaskSchema.index({ client: 1 });
 TaskSchema.index({ assignedTo: 1 });
 TaskSchema.index({ status: 1 });

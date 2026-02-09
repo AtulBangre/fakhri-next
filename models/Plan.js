@@ -69,7 +69,7 @@ const PlanSchema = new mongoose.Schema({
 });
 
 // Indexes
-PlanSchema.index({ planId: 1 });
+
 PlanSchema.index({ isActive: 1 });
 PlanSchema.index({ price: 1 });
 
