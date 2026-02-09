@@ -3,7 +3,15 @@ import crypto from 'crypto';
 import dbConnect from '@/lib/mongodb';
 import Order from '@/models/Order';
 import Transaction from '@/models/Transaction';
+import User from '@/models/User';
 import shortid from 'shortid';
+
+// Helper to add months
+const addMonths = (date, months) => {
+    const d = new Date(date);
+    d.setMonth(d.getMonth() + months);
+    return d;
+};
 
 export async function POST(req) {
     try {
@@ -46,13 +54,31 @@ export async function POST(req) {
         }
 
         // 3. Update Order Status
-        if (order.status !== 'completed') {
-            order.status = 'processing'; // Or 'completed' directly if instant
+        if (order.status !== 'completed' && order.paymentStatus !== 'paid') {
+            order.status = 'completed'; // Mark as completed for subscriptions
             order.paymentStatus = 'paid';
             order.completedDate = new Date();
             // Store razorpay details in metadata or notes if needed
             order.notes = (order.notes || '') + `\nPayment Verified. ID: ${razorpay_payment_id}`;
+
+            // Set subscription dates if not already present
+            if (order.type === 'subscription') {
+                order.subscriptionStartDate = new Date();
+                order.subscriptionEndDate = addMonths(new Date(), order.planDuration || 1);
+            }
+
             await order.save();
+
+            // 3.5 Update User Plan
+            if (order.type === 'subscription') {
+                await User.findByIdAndUpdate(order.user, {
+                    plan: order.plan,
+                    planName: order.planName,
+                    planStartDate: order.subscriptionStartDate,
+                    planEndDate: order.subscriptionEndDate,
+                    status: 'active',
+                });
+            }
         }
 
         // 4. Create Transaction Record

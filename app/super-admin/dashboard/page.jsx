@@ -125,7 +125,7 @@ export default function SuperAdminDashboardPage() {
               variant="outline"
               size="sm"
               className="w-full border-white/20 text-white hover:bg-white/10"
-              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+              onClick={() => signOut({ callbackUrl: '/' })}
             >
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out

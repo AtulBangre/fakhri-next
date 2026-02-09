@@ -112,7 +112,7 @@ export default function AdminDashboardPage() {
               variant="outline"
               size="sm"
               className="w-full border-white/20 text-white bg-white/10 hover:bg-white/20 hover:text-white"
-              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+              onClick={() => signOut({ callbackUrl: '/' })}
             >
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
