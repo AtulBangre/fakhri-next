@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { motion } from 'framer-motion';
 import { Minus, Plus, ShoppingCart } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
 
 export default function Within2HoursPricingList({ services, pageInfo, noticeContent }) {
+    const { addToCart } = useCart();
     const [quantities, setQuantities] = useState(
         services.reduce((acc, service) => ({ ...acc, [service.id]: 1 }), {})
     );
@@ -19,8 +21,14 @@ export default function Within2HoursPricingList({ services, pageInfo, noticeCont
     };
 
     const handleAddToCart = (service) => {
-        console.log(`Adding ${quantities[service.id]} x ${service.name} to cart`);
-        // TODO: Integrate with cart functionality
+        const quantity = quantities[service.id];
+        addToCart({
+            id: service.id,
+            name: service.name,
+            price: service.price,
+            category: service.category,
+            quantity: quantity
+        });
     };
 
     return (
