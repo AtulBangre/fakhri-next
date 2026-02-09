@@ -5,18 +5,24 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { useState } from "react";
 import SmoothScrollProvider from "@/components/ui/SmoothScrollProvider";
+import { SessionProvider } from "next-auth/react";
+import { CartProvider } from "@/context/CartContext";
 
 export default function Providers({ children }) {
     const [queryClient] = useState(() => new QueryClient());
 
     return (
-        <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-                <SmoothScrollProvider>
-                    {children}
-                    <Sonner />
-                </SmoothScrollProvider>
-            </TooltipProvider>
-        </QueryClientProvider>
+        <SessionProvider>
+            <QueryClientProvider client={queryClient}>
+                <CartProvider>
+                    <TooltipProvider>
+                        <SmoothScrollProvider>
+                            {children}
+                            <Sonner />
+                        </SmoothScrollProvider>
+                    </TooltipProvider>
+                </CartProvider>
+            </QueryClientProvider>
+        </SessionProvider>
     );
 }
