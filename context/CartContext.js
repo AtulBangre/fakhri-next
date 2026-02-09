@@ -13,7 +13,7 @@ export function CartProvider({ children }) {
     // Hydrate cart from local storage on mount
     // Hydrate cart from local storage on mount
     useEffect(() => {
-        setIsClient(true);
+        setTimeout(() => setIsClient(true), 0);
         const savedCart = localStorage.getItem('cart');
         if (savedCart) {
             try {

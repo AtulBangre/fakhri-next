@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 export default function SocialTestimonialCard({ testimonial, index }) {
     return (
@@ -10,12 +11,13 @@ export default function SocialTestimonialCard({ testimonial, index }) {
             transition={{ duration: 0.3 }}
         >
             <div className="flex gap-3 mb-4">
-                <img
+                <Image
                     className="size-12 rounded-full object-cover ring-2 ring-primary/10"
                     src={testimonial.image}
                     alt={testimonial.name}
                     height={48}
                     width={48}
+                    unoptimized
                 />
                 <div className="flex flex-col flex-1">
                     <div className="flex items-center gap-1.5">

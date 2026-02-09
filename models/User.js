@@ -108,6 +108,11 @@ const UserSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    // Session Management
+    sessionVersion: {
+        type: Number,
+        default: 0,
+    },
 }, {
     timestamps: true,
 });

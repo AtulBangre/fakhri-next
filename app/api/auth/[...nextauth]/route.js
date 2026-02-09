@@ -39,8 +39,10 @@ export const authOptions = {
                     throw new Error('Your account has been suspended. Please contact support.');
                 }
 
-                // Update last login
-                await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
+                // Update last login and increment session version (invalidate old sessions)
+                user.lastLogin = new Date();
+                user.sessionVersion = (user.sessionVersion || 0) + 1;
+                await user.save();
 
                 return {
                     id: user._id.toString(),
@@ -50,6 +52,7 @@ export const authOptions = {
                     image: user.avatar,
                     company: user.company,
                     planName: user.planName,
+                    sessionVersion: user.sessionVersion,
                 };
             },
         }),
@@ -60,12 +63,13 @@ export const authOptions = {
     ],
     callbacks: {
         async jwt({ token, user, account }) {
-            // Initial sign in
+            // Initial sign in (Credentials or Google)
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
                 token.company = user.company;
                 token.planName = user.planName;
+                token.sessionVersion = user.sessionVersion;
             }
 
             // Google OAuth - create or update user
@@ -85,20 +89,40 @@ export const authOptions = {
                         avatar: token.picture,
                         googleId: account.providerAccountId,
                         isGoogleUser: true,
+                        sessionVersion: 1, // Start with version 1
                     });
                 } else {
                     // Update existing user
+                    let updates = { lastLogin: new Date() };
+
                     if (!dbUser.googleId) {
-                        dbUser.googleId = account.providerAccountId;
-                        dbUser.isGoogleUser = true;
-                        await dbUser.save();
+                        updates.googleId = account.providerAccountId;
+                        updates.isGoogleUser = true;
                     }
+
+                    // Increment session version to invalidate other sessions
+                    updates.sessionVersion = (dbUser.sessionVersion || 0) + 1;
+
+                    dbUser = await User.findByIdAndUpdate(dbUser._id, updates, { new: true });
                 }
 
                 token.id = dbUser._id.toString();
                 token.role = dbUser.role;
                 token.company = dbUser.company;
                 token.planName = dbUser.planName;
+                token.sessionVersion = dbUser.sessionVersion;
+            }
+
+            // Session Validation (Single Session Enforcement)
+            if (!user && !account && token.id) {
+                await dbConnect();
+                // Check if session version matches DB
+                const dbUser = await User.findById(token.id).select('sessionVersion');
+
+                // If user doesn't exist or version mismatch, invalidate token
+                if (!dbUser || dbUser.sessionVersion !== token.sessionVersion) {
+                    return null; // Force sign out
+                }
             }
 
             return token;

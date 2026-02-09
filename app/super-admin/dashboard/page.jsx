@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import {
   LayoutDashboard, Users, UsersRound, UserCog, CheckSquare,
   DollarSign, Settings, Menu, X, LogOut, Bell, Shield, Globe
@@ -34,6 +35,7 @@ const navigation = [
 ];
 
 export default function SuperAdminDashboardPage() {
+  const { data: session } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [notifications, setNotifications] = useState(mockNotifications.superAdmin);
@@ -112,18 +114,21 @@ export default function SuperAdminDashboardPage() {
           <div className="p-4 border-t border-white/10">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center font-medium">
-                AD
+                {session?.user?.name?.slice(0, 2)?.toUpperCase() || "AD"}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">Admin User</p>
-                <p className="text-xs text-sidebar-foreground/70 truncate">Super Administrator</p>
+                <p className="text-sm font-medium truncate">{session?.user?.name || "Admin User"}</p>
+                <p className="text-xs text-sidebar-foreground/70 truncate">{session?.user?.role || "Super Administrator"}</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="w-full border-white/20 text-white hover:bg-white/10" asChild>
-              <Link href="/">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-white/20 text-white hover:bg-white/10"
+              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
             </Button>
           </div>
         </div>

@@ -62,8 +62,18 @@ export async function middleware(req) {
             return NextResponse.redirect(url);
         }
         if (token.role !== "client") {
-            // Maybe allow admins to view client pages? Prompt says "If role != client".
-            // I'll stick to strict role for now.
+            return NextResponse.redirect(new URL("/auth/signin?error=Unauthorized", req.url));
+        }
+    }
+
+    // Protect Checkout Routes
+    if (pathname.startsWith("/checkout")) {
+        if (!token) {
+            const url = new URL("/auth/signin", req.url);
+            url.searchParams.set("callbackUrl", pathname);
+            return NextResponse.redirect(url);
+        }
+        if (token.role !== "client") {
             return NextResponse.redirect(new URL("/auth/signin?error=Unauthorized", req.url));
         }
     }
@@ -77,5 +87,6 @@ export const config = {
         "/admin/:path*",
         "/client/:path*",
         "/auth/:path*",
+        "/checkout/:path*",
     ],
 };

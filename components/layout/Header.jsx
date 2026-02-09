@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, ShoppingCart, Trash2 } from 'lucide-react';
 import { navigationItems } from '@/data/navigation';
@@ -21,6 +22,7 @@ export default function Header() {
     const [activeDesktopDropdown, setActiveDesktopDropdown] = useState(null);
     const [mobileExpanded, setMobileExpanded] = useState({});
     const pathname = usePathname();
+    const { data: session } = useSession();
     const { cartItems, removeFromCart, updateQuantity, totalItems, totalAmount } = useCart();
 
     useEffect(() => {
@@ -227,15 +229,7 @@ export default function Header() {
                                             </div>
                                             <Button
                                                 className="w-full"
-                                                onClick={() => {
-                                                    // Check if user is logged in (simulated for now)
-                                                    const isLoggedIn = false; // TODO: Replace with actual auth check
-                                                    if (!isLoggedIn) {
-                                                        window.location.href = '/auth/login?redirect=/checkout';
-                                                    } else {
-                                                        window.location.href = '/checkout';
-                                                    }
-                                                }}
+                                                onClick={() => window.location.href = '/checkout'}
                                             >
                                                 Checkout
                                             </Button>
@@ -245,10 +239,10 @@ export default function Header() {
                             </DropdownMenu>
 
                             <Link
-                                href="/sign-in"
+                                href={session ? "/client/dashboard" : "/auth/signin"}
                                 className="btn-primary text-sm py-3 px-6"
                             >
-                                Get Started
+                                {session ? "Dashboard" : "Get Started"}
                             </Link>
                         </div>
 
@@ -358,10 +352,10 @@ export default function Header() {
                                     className="pt-4"
                                 >
                                     <Link
-                                        href="/contact"
+                                        href={session ? "/client/dashboard" : "/auth/signin"}
                                         className="btn-primary w-full text-center"
                                     >
-                                        Get Started
+                                        {session ? "Dashboard" : "Get Started"}
                                     </Link>
                                 </motion.div>
                             </nav>
