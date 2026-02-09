@@ -49,15 +49,33 @@ export default function ContactContent() {
         },
     });
 
-    const onSubmit = (data) => {
-        console.log('Form submitted:', data);
-        // Simulate API call
-        setTimeout(() => {
+    const onSubmit = async (data) => {
+        try {
+            console.log('Using API/Contact for submission', data);
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to send message');
+            }
+
             toast.success("Message sent successfully!", {
                 description: "We'll get back to you soon.",
             });
             reset();
-        }, 1500);
+        } catch (error) {
+            console.error('Contact form error:', error);
+            toast.error("Failed to send message", {
+                description: error.message || "Please try again later.",
+            });
+        }
     };
 
     const socialIcons = [

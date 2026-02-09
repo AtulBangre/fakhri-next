@@ -53,17 +53,32 @@ export function ContactDialog({ trigger, defaultService }) {
         },
     });
 
-    const onSubmit = (data) => {
-        // Mock API call
-        console.log("Submitting contact form:", data);
+    const onSubmit = async (data) => {
+        try {
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
 
-        // Simulate network request
-        setTimeout(() => {
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to send message');
+            }
+
             toast.success("Message sent successfully!", {
                 description: "We'll get back to you within 24 hours.",
             });
             reset();
-        }, 1000);
+        } catch (error) {
+            console.error('Contact form error:', error);
+            toast.error("Failed to send message", {
+                description: error.message || "Please try again later.",
+            });
+        }
     };
 
     return (

@@ -160,6 +160,7 @@ export async function POST(request) {
             phone: validation.data.phone || '',
             company: validation.data.company || '',
             subject: validation.data.subject || 'General Inquiry',
+            interestedService: validation.data.service,
             message: validation.data.message,
             category: validation.data.category || 'general',
             priority: 'medium',
@@ -168,6 +169,66 @@ export async function POST(request) {
             ipAddress: ip,
             userAgent,
             referrer,
+        });
+
+        // Send confirmation email to user
+        const userEmailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #EF4444;">Thank you for contacting Fakhri IT Services</h2>
+                <p>Hi ${validation.data.name},</p>
+                <p>We have received your message regarding <strong>${validation.data.subject || 'your inquiry'}</strong>.</p>
+                <p>Here is a copy of your message:</p>
+                <blockquote style="background-color: #f9fafb; padding: 15px; border-left: 4px solid #EF4444; margin: 20px 0;">
+                    ${validation.data.message}
+                </blockquote>
+                <p>One of our team members will review your request and get back to you within 24-48 hours.</p>
+                <p>Best regards,<br>Fakhri IT Services Team</p>
+            </div>
+        `;
+
+        // Send notification email to admin
+        const adminEmailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #3B82F6;">New Contact Message Received</h2>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f3f4f6; font-weight: bold;">Name</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${validation.data.name}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f3f4f6; font-weight: bold;">Email</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${validation.data.email}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f3f4f6; font-weight: bold;">Subject</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${validation.data.subject || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f3f4f6; font-weight: bold;">Service</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${validation.data.service || 'N/A'}</td>
+                    </tr>
+                </table>
+                <h3 style="margin-top: 20px;">Message:</h3>
+                <blockquote style="background-color: #f9fafb; padding: 15px; border-left: 4px solid #3B82F6;">
+                    ${validation.data.message}
+                </blockquote>
+                <p style="margin-top: 20px; font-size: 12px; color: #666;">Message ID: ${messageId} | IP: ${ip}</p>
+            </div>
+        `;
+
+        // Import sendEmail dynamically to avoid import issues if not created before
+        const { sendEmail } = await import('@/lib/email');
+
+        // Send emails asynchronously (don't block response)
+        Promise.allSettled([
+            sendEmail({ to: validation.data.email, subject: 'We received your message - Fakhri IT Services', html: userEmailHtml }),
+            sendEmail({ to: process.env.ADMIN_EMAIL || process.env.SMTP_USER, subject: `New Contact: ${validation.data.subject || 'Inquiry'}`, html: adminEmailHtml })
+        ]).then(results => {
+            results.forEach((result, index) => {
+                if (result.status === 'rejected') {
+                    console.error(`Email ${index === 0 ? 'user' : 'admin'} delivery failed:`, result.reason);
+                }
+            });
         });
 
         // Response for frontend

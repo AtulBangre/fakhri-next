@@ -150,12 +150,11 @@ ContactMessageSchema.virtual('responseTime').get(function () {
 });
 
 // Pre-save middleware to generate messageId
-ContactMessageSchema.pre('save', async function (next) {
+ContactMessageSchema.pre('save', async function () {
     if (!this.messageId) {
         const count = await mongoose.model('ContactMessage').countDocuments();
         this.messageId = `MSG-${(count + 1).toString().padStart(6, '0')}`;
     }
-    next();
 });
 
 export default mongoose.models.ContactMessage || mongoose.model('ContactMessage', ContactMessageSchema);
