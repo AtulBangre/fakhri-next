@@ -2,6 +2,7 @@
 
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
 import { within2HoursData, contactData } from '@/data/contact';
+import { within2HoursPageServices, within2HoursPageInfo } from '@/data/within2hours';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -215,7 +216,16 @@ export default function Within2HoursContent() {
             </section>
 
             {/* Service Pricing List */}
-            <Within2HoursPricingList />
+            <Within2HoursPricingList
+                services={within2HoursPageServices}
+                pageInfo={within2HoursPageInfo}
+                noticeContent={
+                    <>
+                        <span className="font-semibold text-primary">⚡ Guaranteed 2-Hour Response:</span> Our expert team will acknowledge and begin working on your issue within 2 hours of order confirmation.
+                        <span className="text-foreground ml-1">Dedicated priority support channel</span>
+                    </>
+                }
+            />
 
             {/* CTA Section */}
             <section className="section-padding">

@@ -4,6 +4,7 @@ import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { PricingCard } from '@/components/ui/PricingCard';
 import { pricingPlans, pricingDisclaimer } from '@/data/pricing';
 import { pricingFAQs } from '@/data/faq';
+import { pricingPageServices, pricingPageInfo } from '@/data/within2hours';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from "framer-motion";
@@ -189,7 +190,16 @@ export default function PricingContent() {
             </section>
 
             {/* Service Pricing List */}
-            <Within2HoursPricingList />
+            <Within2HoursPricingList
+                services={pricingPageServices}
+                pageInfo={pricingPageInfo}
+                noticeContent={
+                    <>
+                        <span className="font-semibold text-primary">💡 Pro Tip:</span> Combine add-on services with your subscription plan for maximum impact and better ROI.
+                        <span className="text-foreground ml-1">Custom packages available on request</span>
+                    </>
+                }
+            />
 
             {/* FAQ Section */}
             <FaQ data={pricingFAQs} />
