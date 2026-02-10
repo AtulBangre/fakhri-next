@@ -1,5 +1,6 @@
 # Fakhri IT Services
 
+
 Official website for Fakhri IT Services, a premier agency dedicated to empowering Amazon sellers with expert account management, advertising strategies, and growth solutions. This modern, responsive web application is built using Next.js and Tailwind CSS.
 
 ## 🚀 Features
