@@ -24,20 +24,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import {
-    Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, FileText, Image as ImageIcon, Save
+    Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, FileText, Image as ImageIcon, Save, Loader2
 } from "lucide-react";
-import { blogPosts, blogCategories } from "@/data/blog";
+
+// import { blogPosts, blogCategories } from "@/data/blog"; // Removed
+import { blogCategories } from "@/data/blog";
 import { seoData } from "@/data/company";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export default function BlogManager() {
-    // Using real data structure from @/data/blog
-    const [blogs, setBlogs] = useState(blogPosts);
-    const [seo, setSeo] = useState(seoData.blog || { title: "", description: "", keywords: "" });
+    const [blogs, setBlogs] = useState([]);
+    const [hero, setHero] = useState({ title: "", subtitle: "" });
+    const [seo, setSeo] = useState({ title: "", description: "", keywords: "" });
     const [searchQuery, setSearchQuery] = useState("");
     const [isCreating, setIsCreating] = useState(false);
-
-    // Toggle for SEO editing in main view
     const [isEditingSeo, setIsEditingSeo] = useState(false);
+    const [isSavingSeo, setIsSavingSeo] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // New Blog State matching data properties
     const [newBlog, setNewBlog] = useState({
@@ -57,28 +61,102 @@ export default function BlogManager() {
         blog.category.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const handleDelete = (id) => {
-        if (confirm("Are you sure you want to delete this blog post?")) {
-            setBlogs(blogs.filter(blog => blog.id !== id));
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [blogsRes, contentRes] = await Promise.all([
+                fetch('/api/website/blog'),
+                fetch('/api/website/content?page=blog')
+            ]);
+
+            if (blogsRes.ok) setBlogs(await blogsRes.json());
+            if (contentRes.ok) {
+                const data = await contentRes.json();
+                if (data) {
+                    if (data.hero) setHero(data.hero || { title: "", subtitle: "" });
+                    if (data.seo) setSeo(data.seo);
+                }
+            }
+        } catch (error) {
+            toast.error("Failed to load blog data");
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleCreate = () => {
-        const id = blogs.length + 1;
-        setBlogs([...blogs, { ...newBlog, id }]);
-        setIsCreating(false);
-        setNewBlog({
-            title: "",
-            excerpt: "",
-            category: "",
-            author: "Admin",
-            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-            publishDate: new Date().toISOString().split('T')[0],
-            readTime: "5 min read",
-            slug: "",
-            thumbnail: ""
-        });
+    const handleSaveSeo = async () => {
+        setIsSavingSeo(true);
+        try {
+            await fetch('/api/website/content', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: 'blog',
+                    hero,
+                    seo
+                })
+            });
+            toast.success("Blog content updated!");
+            setIsEditingSeo(false);
+        } catch (error) {
+            toast.error("Failed to save content");
+        } finally {
+            setIsSavingSeo(false);
+        }
     };
+
+    const handleDelete = async (id) => {
+        if (confirm("Are you sure you want to delete this blog post?")) {
+            try {
+                const res = await fetch(`/api/website/blog?id=${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Failed to delete');
+                toast.success("Blog post deleted");
+                fetchData();
+            } catch (error) {
+                toast.error("Failed to delete post");
+            }
+        }
+    };
+
+    const handleCreate = async () => {
+        try {
+            const res = await fetch('/api/website/blog', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newBlog)
+            });
+            if (!res.ok) throw new Error('Failed to create post');
+
+            toast.success("Blog post created!");
+            setIsCreating(false);
+            setNewBlog({
+                title: "",
+                excerpt: "",
+                category: "",
+                author: "Admin",
+                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                publishDate: new Date().toISOString().split('T')[0],
+                readTime: "5 min read",
+                slug: "",
+                thumbnail: ""
+            });
+            fetchData();
+        } catch (error) {
+            toast.error("Failed to create blog post");
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex h-64 items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     if (isCreating) {
         return (
@@ -244,8 +322,8 @@ export default function BlogManager() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredBlogs.map((blog) => (
-                                <TableRow key={blog.id}>
+                            filteredBlogs.map((blog, index) => (
+                                <TableRow key={blog._id || blog.id || index}>
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
                                             <FileText className="h-4 w-4 text-muted-foreground" />
@@ -281,7 +359,7 @@ export default function BlogManager() {
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem
                                                     className="text-destructive focus:text-destructive"
-                                                    onClick={() => handleDelete(blog.id)}
+                                                    onClick={() => handleDelete(blog._id || blog.id)}
                                                 >
                                                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                                                 </DropdownMenuItem>
@@ -301,9 +379,9 @@ export default function BlogManager() {
                         <CardTitle>SEO Settings (Blog Page)</CardTitle>
                         {isEditingSeo ? (
                             <div className="space-x-2">
-                                <Button variant="outline" size="sm" onClick={() => setIsEditingSeo(false)}>Cancel</Button>
-                                <Button size="sm" onClick={() => { console.log("Saving Blog SEO:", seo); setIsEditingSeo(false); }}>
-                                    <Save className="w-4 h-4 mr-2" />
+                                <Button variant="outline" size="sm" onClick={() => setIsEditingSeo(false)} disabled={isSavingSeo}>Cancel</Button>
+                                <Button size="sm" onClick={handleSaveSeo} disabled={isSavingSeo}>
+                                    {isSavingSeo ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                                     Save SEO
                                 </Button>
                             </div>
@@ -316,6 +394,24 @@ export default function BlogManager() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label>Hero Title</Label>
+                            <Input
+                                disabled={!isEditingSeo}
+                                value={hero.title}
+                                onChange={(e) => setHero({ ...hero, title: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Hero Subtitle</Label>
+                            <Input
+                                disabled={!isEditingSeo}
+                                value={hero.subtitle}
+                                onChange={(e) => setHero({ ...hero, subtitle: e.target.value })}
+                            />
+                        </div>
+                    </div>
                     <div className="space-y-2">
                         <Label>Meta Title</Label>
                         <Input

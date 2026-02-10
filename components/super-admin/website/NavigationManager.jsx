@@ -3,16 +3,37 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Save, RefreshCw, ChevronRight, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Save, RefreshCw, ChevronDown, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { navigationItems, footerLinks } from "@/data/navigation";
+import { useEffect } from "react";
 
 export default function NavigationManager() {
-    const [mainNav, setMainNav] = useState(navigationItems);
-    const [footerData, setFooterData] = useState(footerLinks);
+    const [mainNav, setMainNav] = useState([]);
+    const [footerData, setFooterData] = useState({ services: [], company: [], support: [] });
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/website/content?page=navigation');
+            const data = await res.json();
+            if (data && data.sections) {
+                setMainNav(data.sections.main || []);
+                setFooterData(data.sections.footer || { services: [], company: [], support: [] });
+            }
+        } catch (error) {
+            toast.error("Failed to fetch navigation data");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Helper to manage main nav updates
     const handleNavChange = (index, field, value) => {
@@ -68,15 +89,42 @@ export default function NavigationManager() {
         setFooterData(updated);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         setIsSaving(true);
-        setTimeout(() => {
-            console.log("Saving Navigation Data:", { navigationItems: mainNav, footerLinks: footerData });
+        try {
+            const res = await fetch('/api/website/content', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: 'navigation',
+                    sections: {
+                        main: mainNav,
+                        footer: footerData
+                    }
+                })
+            });
+
+            if (res.ok) {
+                toast.success("Navigation updated successfully!");
+                setIsEditing(false);
+            } else {
+                const error = await res.json();
+                toast.error(error.error || "Failed to update navigation");
+            }
+        } catch (error) {
+            toast.error("An error occurred while saving");
+        } finally {
             setIsSaving(false);
-            setIsEditing(false);
-            toast.success("Navigation updated successfully!");
-        }, 1000);
+        }
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex h-64 items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8">

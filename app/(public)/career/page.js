@@ -1,12 +1,20 @@
 import CareerContent from '@/components/career/CareerContent';
-import { seoData } from '@/data/company';
+import { getPageContent, getJobs } from '@/lib/content';
 
-export const metadata = {
-    title: seoData.career.title,
-    description: seoData.career.description,
-    keywords: seoData.career.keywords,
-};
+export async function generateMetadata() {
+    const content = await getPageContent('career');
+    return {
+        title: content?.seo?.title || 'Careers',
+        description: content?.seo?.description || '',
+        keywords: content?.seo?.keywords || '',
+    };
+}
 
-export default function CareerPage() {
-    return <CareerContent />;
+export default async function CareerPage() {
+    const [content, jobs] = await Promise.all([
+        getPageContent('career'),
+        getJobs()
+    ]);
+
+    return <CareerContent initialContent={content} initialJobs={jobs} />;
 }

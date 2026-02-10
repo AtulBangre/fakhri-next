@@ -1,8 +1,6 @@
 'use client';
 
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
-import { within2HoursData, contactData } from '@/data/contact';
-import { within2HoursPageServices, within2HoursPageInfo } from '@/data/within2hours';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -25,7 +23,35 @@ const iconMap = {
     MessageCircle,
 };
 
-export default function Within2HoursContent() {
+export default function Within2HoursContent({ initialContent, initialContactInfo, initialServices }) {
+    const sections = initialContent?.sections || {};
+    const contactData = initialContactInfo?.sections?.contactInfo || {
+        phone: { primary: '' },
+        whatsapp: ''
+    };
+    const within2HoursData = initialContent?.hero || {
+        title: 'Within 2 Hours',
+        subtitle: 'Emergency Support',
+        description: 'Get priority response for your urgent Amazon tasks.',
+        cta: { whatsappText: 'Chat on WhatsApp', callText: 'Call Now' }
+    };
+
+    const data = {
+        title: within2HoursData.title,
+        subtitle: within2HoursData.subtitle,
+        description: within2HoursData.description,
+        scenarios: sections.scenarios || [],
+        features: sections.features || [],
+        serviceInfo: sections.serviceInfo || {},
+        cta: within2HoursData.cta || { whatsappText: 'Chat on WhatsApp', callText: 'Call Now' }
+    };
+
+    const within2HoursPageServices = initialServices || [];
+    // Page Info fallback
+    const within2HoursPageInfo = {
+        title: "Priority Services Pricing",
+        description: "Transparent pricing for urgent tasks"
+    };
     return (
         <>
             {/* Hero Section */}
@@ -52,27 +78,27 @@ export default function Within2HoursContent() {
                                 </motion.div>
 
                                 <h1 className="heading-xl mb-6">
-                                    <span className="text-primary">{within2HoursData.title}</span>
+                                    <span className="text-primary">{data.title}</span>
                                     <br />
-                                    {within2HoursData.subtitle}
+                                    {data.subtitle}
                                 </h1>
 
                                 <p className="body-lg mb-8">
-                                    {within2HoursData.description}
+                                    {data.description}
                                 </p>
 
                                 <div className="flex flex-wrap gap-4">
                                     <a
-                                        href={`https://wa.me/${contactData.whatsapp}`}
+                                        href={`https://wa.me/${contactData?.whatsapp}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="btn-primary group"
                                     >
                                         <MessageCircle className="mr-2 w-5 h-5" />
-                                        {within2HoursData.cta.whatsappText}
+                                        {data.cta?.whatsappText}
                                     </a>
                                     <a
-                                        href={`tel:${contactData.phone.primary}`}
+                                        href={`tel:${contactData?.phone?.primary}`}
                                         className="btn-outline"
                                     >
                                         <Phone className="mr-2 w-5 h-5" />
@@ -104,7 +130,7 @@ export default function Within2HoursContent() {
                                     </p>
 
                                     <ul className="space-y-3">
-                                        {within2HoursData.scenarios.slice(0, 4).map((scenario, idx) => (
+                                        {data.scenarios?.slice(0, 4).map((scenario, idx) => (
                                             <li key={idx} className="flex items-start gap-3">
                                                 <AlertTriangle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                                                 <span className="text-muted-foreground">{scenario}</span>
@@ -133,7 +159,7 @@ export default function Within2HoursContent() {
                     </ScrollReveal>
 
                     <StaggerContainer className="grid md:grid-cols-3 lg:grid-cols-3 gap-6">
-                        {within2HoursData.features.map((feature, index) => {
+                        {data.features?.map((feature, index) => {
                             const Icon = iconMap[feature.icon] || Clock;
                             return (
                                 <StaggerItem key={index}>
@@ -167,16 +193,16 @@ export default function Within2HoursContent() {
                             <ScrollReveal direction="left">
                                 <div>
                                     <h2 className="heading-lg mb-6">
-                                        {within2HoursData.serviceInfo.title}
+                                        {data.serviceInfo?.title}
                                     </h2>
                                     <p className="text-muted-foreground leading-relaxed mb-8">
-                                        {within2HoursData.serviceInfo.description}
+                                        {data.serviceInfo?.description}
                                     </p>
                                     <Link
-                                        href={within2HoursData.serviceInfo.buttonLink}
+                                        href={data.serviceInfo?.buttonLink || '#'}
                                         className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground font-poppins font-semibold rounded-lg transition-all duration-300 hover:shadow-lg group"
                                     >
-                                        {within2HoursData.serviceInfo.buttonText}
+                                        {data.serviceInfo?.buttonText}
                                         <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                     </Link>
                                 </div>
@@ -192,7 +218,7 @@ export default function Within2HoursContent() {
                                         This service ensures :
                                     </h3>
                                     <ul className="space-y-4 mb-8">
-                                        {within2HoursData.serviceInfo.benefits.map((benefit, index) => (
+                                        {data.serviceInfo?.benefits?.map((benefit, index) => (
                                             <li key={index} className="flex items-start gap-3">
                                                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                                                 <span className="text-foreground">{benefit}</span>
@@ -204,7 +230,7 @@ export default function Within2HoursContent() {
                                         <div className="flex items-start gap-2">
                                             <AlertTriangle className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                                             <p className="text-sm text-muted-foreground">
-                                                {within2HoursData.serviceInfo.disclaimer}
+                                                {data.serviceInfo?.disclaimer}
                                             </p>
                                         </div>
                                     </div>
@@ -243,20 +269,20 @@ export default function Within2HoursContent() {
                             <div className="relative z-10 max-w-2xl mx-auto text-center">
                                 <Clock className="w-16 h-16 mx-auto mb-6" />
                                 <h2 className="heading-lg mb-6">
-                                    {within2HoursData.cta.title}
+                                    {data.cta?.title}
                                 </h2>
                                 <p className="text-primary-foreground/90 text-lg mb-8">
-                                    {within2HoursData.cta.description}
+                                    {data.cta?.description}
                                 </p>
                                 <div className="flex flex-wrap justify-center gap-4">
                                     <a
-                                        href={`https://wa.me/${contactData.whatsapp}`}
+                                        href={`https://wa.me/${contactData?.whatsapp}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center justify-center px-8 py-4 bg-background text-primary font-poppins font-semibold rounded-lg transition-all duration-300 hover:shadow-xl"
                                     >
                                         <MessageCircle className="mr-2 w-5 h-5" />
-                                        {within2HoursData.cta.whatsappText}
+                                        {data.cta?.whatsappText}
                                     </a>
                                     <ContactDialog
                                         defaultService="Within 2 Hours Response"

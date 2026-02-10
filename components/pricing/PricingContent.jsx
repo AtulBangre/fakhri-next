@@ -2,27 +2,32 @@
 
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { PricingCard } from '@/components/ui/PricingCard';
-import { pricingPlans, pricingDisclaimer } from '@/data/pricing';
-import { pricingFAQs } from '@/data/faq';
-import { pricingPageServices, pricingPageInfo } from '@/data/within2hours';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, ArrowRight, Check, HelpCircle } from 'lucide-react';
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from "@/components/ui/accordion";
 import FaQ from '../home/FaQ';
 import Within2HoursPricingList from '../within-2-hours/Within2HoursPricingList';
-
-import { useState } from 'react';
-import { within2HoursData } from '@/data/contact';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
-export default function PricingContent() {
+export default function PricingContent({ initialPlans, initialFaqs, initialWithin2Hours, initialContent, initialWithin2HoursContent }) {
+    const plans = initialPlans || [];
+    const faqs = initialFaqs || [];
+    const services = initialWithin2Hours || [];
+    const { sections } = initialContent || {};
+    const { disclaimer: pricingDisclaimer } = sections || {};
+    // Extract within2Hours info from page content
+    const w2hSections = initialWithin2HoursContent?.sections || {};
+    const within2HoursData = w2hSections.info || {
+        serviceInfo: { title: 'Add-on Services', description: '', buttonText: 'Explore Add-ons', buttonLink: '/within-2-hours' }
+    };
+
+    // Fallback for pricingPageInfo if not in DB directly
+    const pricingPageInfo = {
+        title: "Add-on Services",
+        description: "Enhance your plan with these powerful add-ons"
+    };
+
     // Billing cycle state removed as pricing is flat monthly
 
 
@@ -53,13 +58,13 @@ export default function PricingContent() {
             <section className="section-padding pt-8">
                 <div className="container-custom">
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                        {pricingPlans.map((plan, index) => (
+                        {plans.map((plan, index) => (
                             <PricingCard
                                 key={plan.id}
 
                                 plan={{
                                     ...plan,
-                                    price: plan.price
+                                    price: Number(plan.price) || 0 // Ensure price is a number
                                 }}
                                 index={index}
                             />
@@ -98,7 +103,7 @@ export default function PricingContent() {
                                 <thead>
                                     <tr className="border-b border-border">
                                         <th className="text-left py-4 px-4 font-poppins font-semibold">Feature</th>
-                                        {pricingPlans.map((plan) => (
+                                        {plans.map((plan) => (
                                             <th
                                                 key={plan.id}
                                                 className={`text-center py-4 px-4 font-poppins font-semibold ${plan.highlighted ? 'text-primary' : ''
@@ -110,7 +115,7 @@ export default function PricingContent() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {pricingPlans[0].features.map((feature, idx) => (
+                                    {plans[0]?.features?.map((feature, idx) => (
                                         <motion.tr
                                             key={idx}
                                             className="border-b border-border/50"
@@ -120,11 +125,11 @@ export default function PricingContent() {
                                             viewport={{ once: true }}
                                         >
                                             <td className="py-4 px-4 text-sm">{feature.text}</td>
-                                            {pricingPlans.map((plan) => (
+                                            {plans.map((plan) => (
                                                 <td key={plan.id} className="text-center py-4 px-4">
-                                                    {typeof plan.features[idx].value === 'string' ? (
+                                                    {typeof plan.features[idx]?.value === 'string' ? (
                                                         <span className="text-sm font-medium text-foreground">{plan.features[idx].value}</span>
-                                                    ) : plan.features[idx].included ? (
+                                                    ) : plan.features[idx]?.included ? (
                                                         <Check className="w-5 h-5 text-primary mx-auto" />
                                                     ) : (
                                                         <span className="text-muted-foreground/30">—</span>
@@ -191,7 +196,7 @@ export default function PricingContent() {
 
             {/* Service Pricing List */}
             <Within2HoursPricingList
-                services={pricingPageServices}
+                services={services}
                 pageInfo={pricingPageInfo}
                 noticeContent={
                     <>
@@ -202,7 +207,7 @@ export default function PricingContent() {
             />
 
             {/* FAQ Section */}
-            <FaQ data={pricingFAQs} />
+            <FaQ data={faqs} />
 
             {/* CTA Section */}
             <section className="section-padding">

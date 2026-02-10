@@ -3,15 +3,38 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Save, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Save, RefreshCw, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { homeFAQs, pricingFAQs } from "@/data/faq";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export default function FAQManager() {
-    const [homeFaqData, setHomeFaqData] = useState(homeFAQs);
-    const [pricingFaqData, setPricingFaqData] = useState(pricingFAQs);
+    const [homeFaqData, setHomeFaqData] = useState([]);
+    const [pricingFaqData, setPricingFaqData] = useState([]);
     const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/website/faq');
+            if (res.ok) {
+                const data = await res.json();
+                setHomeFaqData(data.filter(f => !f.category || f.category === 'General' || f.category === 'home'));
+                setPricingFaqData(data.filter(f => f.category === 'Pricing' || f.category === 'pricing'));
+            }
+        } catch (error) {
+            toast.error("Failed to load FAQs");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const [newFaq, setNewFaq] = useState({ question: "", answer: "", type: "home" });
 
@@ -37,10 +60,38 @@ export default function FAQManager() {
         }
     };
 
-    const handleSave = () => {
-        console.log("Saving FAQ Data:", { homeFAQs: homeFaqData, pricingFAQs: pricingFaqData });
-        setIsEditing(false);
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            // Prepare data with correct categories
+            const home = homeFaqData.map((f, i) => ({ ...f, category: 'General', sortOrder: i }));
+            const pricing = pricingFaqData.map((f, i) => ({ ...f, category: 'Pricing', sortOrder: i }));
+            const allFaqs = [...home, ...pricing];
+
+            const res = await fetch('/api/website/faq', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(allFaqs)
+            });
+
+            if (!res.ok) throw new Error('Failed to update');
+            toast.success("FAQs updated!");
+            setIsEditing(false);
+            fetchData();
+        } catch (error) {
+            toast.error("Failed to save FAQs");
+        } finally {
+            setIsSaving(false);
+        }
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex h-64 items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     const renderFaqList = (title, data, setData) => (
         <Card>

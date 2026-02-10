@@ -6,7 +6,16 @@ import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 
-export default function WhyChooseUs() {
+export default function WhyChooseUs({ initialContent }) {
+    const { sections } = initialContent || {};
+    // Extract whyChooseUs data if available or use default static content
+    const features = sections?.whyChooseUs || [
+        "Certified Amazon SPN Partner with proven track record",
+        "Dedicated account managers for personalized support",
+        "Transparent reporting and clear communication",
+        "Results-driven strategies tailored to your brand",
+    ];
+
     return (
         <section className="section-padding bg-secondary/30">
             <div className="container-custom">
@@ -24,12 +33,7 @@ export default function WhyChooseUs() {
                             </p>
 
                             <ul className="space-y-4">
-                                {[
-                                    "Certified Amazon SPN Partner with proven track record",
-                                    "Dedicated account managers for personalized support",
-                                    "Transparent reporting and clear communication",
-                                    "Results-driven strategies tailored to your brand",
-                                ].map((item, index) => (
+                                {features.map((item, index) => (
                                     <li key={index} className="flex items-start gap-3">
                                         <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                                             <Check className="w-3.5 h-3.5 text-primary" />

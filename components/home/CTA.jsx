@@ -5,7 +5,13 @@ import { ArrowRight } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
-export default function CTA() {
+export default function CTA({ initialContent }) {
+    const { sections } = initialContent || {};
+    const cta = sections?.cta || {
+        title: "Ready to Accelerate Your Amazon Growth?",
+        description: "Join 500+ successful sellers who trust Fakhri IT Services for their Amazon success. Get started with a free consultation today."
+    };
+
     return (
         <section className="section-padding">
             <div className="container-custom">
@@ -19,11 +25,10 @@ export default function CTA() {
 
                         <div className="relative z-10 max-w-3xl mx-auto text-center">
                             <h2 className="heading-lg mb-6">
-                                Ready to Accelerate Your Amazon Growth?
+                                {cta.title}
                             </h2>
                             <p className="text-primary-foreground/90 text-lg mb-8 max-w-2xl mx-auto">
-                                Join 500+ successful sellers who trust Fakhri IT Services
-                                for their Amazon success. Get started with a free consultation today.
+                                {cta.description}
                             </p>
                             <div className="flex flex-wrap justify-center gap-4">
                                 <ContactDialog

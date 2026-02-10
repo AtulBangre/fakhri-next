@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, ShoppingCart, Trash2 } from 'lucide-react';
-import { navigationItems } from '@/data/navigation';
+import { navigationItems as staticNavigationItems } from '@/data/navigation';
 import { useCart } from '@/context/CartContext';
 import {
     DropdownMenu,
@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 
-export default function Header() {
+export default function Header({ initialNavigation }) {
+    const navigationItems = initialNavigation || staticNavigationItems;
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDesktopDropdown, setActiveDesktopDropdown] = useState(null);
@@ -239,7 +240,7 @@ export default function Header() {
                             </DropdownMenu>
 
                             <Link
-                                href={session ? "/client/dashboard" : "/auth/signin"}
+                                href={session ? "/client/dashboard" : "auth/signin"}
                                 className="btn-primary text-sm py-3 px-6"
                             >
                                 {session ? "Dashboard" : "Get Started"}

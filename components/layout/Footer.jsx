@@ -4,11 +4,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Linkedin, Twitter, Facebook, Instagram, Mail, Phone, MapPin } from 'lucide-react';
-import { companyData } from '@/data/company';
-import { contactData } from '@/data/contact';
-import { footerLinks } from '@/data/navigation';
+import { companyData as staticCompanyData } from '@/data/company';
+import { contactData as staticContactData } from '@/data/contact';
+import { footerLinks as staticFooterLinks } from '@/data/navigation';
 
-export default function Footer() {
+export default function Footer({ initialFooterLinks, companyInfo, contactInfo }) {
+    const footerLinks = initialFooterLinks || staticFooterLinks;
+    const companyData = companyInfo || staticCompanyData;
+    const contactData = contactInfo || staticContactData;
     const currentYear = new Date().getFullYear();
 
     const socialIcons = [

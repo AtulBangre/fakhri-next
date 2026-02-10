@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowRight, Shield, Award, Check, Clock } from 'lucide-react';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
-import { companyData } from '@/data/company';
 
 const sellerImages = [
     "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60",
@@ -15,7 +14,16 @@ const sellerImages = [
     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60",
 ];
 
-export default function Hero() {
+export default function Hero({ initialContent }) {
+    const { hero, sections } = initialContent || {};
+    // Fallback if hero content is structured differently or missing
+    const description = hero?.subtitle || "We help Amazon sellers scale their business with expert account management and advertising strategies.";
+    const stats = hero?.stats || [
+        { value: "500+", label: "Clients Served" },
+        { value: "$50M+", label: "Revenue Generated" },
+        { value: "98%", label: "Client Retention" }
+    ];
+
     return (
         <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-background">
             {/* Background Elements */}
@@ -82,7 +90,7 @@ export default function Hero() {
                             transition={{ duration: 0.6, delay: 0.2 }}
                             className="body-lg mb-8 max-w-xl"
                         >
-                            {companyData.description}
+                            {description}
                         </motion.p>
 
                         {/* CTAs */}
@@ -112,7 +120,7 @@ export default function Hero() {
                             transition={{ duration: 0.6, delay: 0.4 }}
                             className="flex flex-wrap gap-8 mt-12 pt-8 border-t border-border"
                         >
-                            {companyData.stats.slice(0, 3).map((stat, index) => (
+                            {stats.slice(0, 3).map((stat, index) => (
                                 <div key={index}>
                                     <p className="text-3xl font-poppins font-bold text-primary">{stat.value}</p>
                                     <p className="text-sm text-muted-foreground">{stat.label}</p>

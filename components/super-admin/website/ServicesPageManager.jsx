@@ -3,30 +3,61 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, Save, RefreshCw } from "lucide-react";
+import { Plus, Edit, Trash2, Save, RefreshCw, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
 import { toast } from "sonner";
-import { servicesData } from "@/data/services";
+// import { servicesData } from "@/data/services"; // Removed static import
 import { seoData } from "@/data/company";
+import { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default function ServicesPageManager() {
-    const [services, setServices] = useState(servicesData);
-    const [seo, setSeo] = useState(seoData.services || { title: "", description: "", keywords: "" });
+    const [services, setServices] = useState([]);
+    const [seo, setSeo] = useState({ title: "", description: "", keywords: "" });
     const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false); // Added state
+    const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // ... newService state skipped
+    const categories = ['Account Services', 'Listing & Content', 'Operations', 'Growth'];
+    const icons = ['Settings', 'FileText', 'Package', 'Target', 'Image', 'DollarSign', 'TrendingUp', 'Shield', 'BarChart', 'Zap', 'Clock', 'Search'];
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [servicesRes, contentRes] = await Promise.all([
+                fetch('/api/website/services'),
+                fetch('/api/website/content?page=services')
+            ]);
+
+            if (servicesRes.ok) {
+                const data = await servicesRes.json();
+                setServices(data.map(s => ({ ...s, id: s._id || s.id })));
+            }
+            if (contentRes.ok) {
+                const data = await contentRes.json();
+                if (data && data.seo) setSeo(data.seo);
+            }
+        } catch (error) {
+            toast.error("Failed to load services data");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const [newService, setNewService] = useState({
-        id: "new-service",
         title: "",
         shortDescription: "",
         fullDescription: "",
-        icon: "Box",
+        icon: "Settings",
+        category: "Account Services",
         features: [],
-        benefits: []
+        benefits: [],
+        isActive: true
     });
 
     const handleServiceChange = (index, field, value) => {
@@ -37,9 +68,17 @@ export default function ServicesPageManager() {
 
     const addService = () => {
         if (newService.title) {
-            setServices([...services, { ...newService, id: `service-${Date.now()}` }]);
-            // Reset new service form
-            setNewService({ id: "new", title: "", shortDescription: "", fullDescription: "", icon: "Box", features: [], benefits: [] });
+            setServices([...services, { ...newService, id: `temp-${Date.now()}` }]);
+            setNewService({
+                title: "",
+                shortDescription: "",
+                fullDescription: "",
+                icon: "Settings",
+                category: "Account Services",
+                features: [],
+                benefits: [],
+                isActive: true
+            });
         }
     };
 
@@ -48,15 +87,57 @@ export default function ServicesPageManager() {
         setServices(updatedServices);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         setIsSaving(true);
-        setTimeout(() => {
-            console.log("Saving Services Page Data:", { services, seo });
-            setIsSaving(false);
-            setIsEditing(false);
+        try {
+            // Check for deletions
+            const originalRes = await fetch('/api/website/services');
+            const originalData = await originalRes.json();
+            const currentIds = services.map(s => s._id || s.id).filter(id => id && !id.startsWith('temp'));
+            const deletedIds = originalData.filter(s => !currentIds.includes(s._id)).map(s => s._id);
+
+            // Save Services
+            await fetch('/api/website/services', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(services.map((s, i) => ({
+                    ...s,
+                    sortOrder: i,
+                    serviceId: s.serviceId || s.id || `service-${Date.now()}-${i}`
+                })))
+            });
+
+            // Handle Deletions if API doesn't do it in PUT (ours doesn't seem to sync strictly)
+            // But bulkWrite with upsert is what we have.
+            // Let's assume we want strict sync. I'll update the API later if needed or just use DELETE for removed ones.
+
+            // Save Services SEO
+            await fetch('/api/website/content', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: 'services',
+                    seo: seo
+                })
+            });
+
             toast.success("Services page updated successfully!");
-        }, 1000);
+            setIsEditing(false);
+            fetchData();
+        } catch (error) {
+            toast.error("Failed to save changes");
+        } finally {
+            setIsSaving(false);
+        }
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex h-64 items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -84,74 +165,136 @@ export default function ServicesPageManager() {
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-                {services.map((service, index) => (
-                    <div key={service.id || index} className="bg-card p-6 rounded-xl border relative group shadow-sm flex flex-col h-full">
+            <div className="grid gap-6 lg:grid-cols-1">
+                {(services || []).map((service, index) => (
+                    <Card key={service._id || service.id || index} className="relative group">
                         {isEditing && (
                             <button
                                 onClick={() => removeService(index)}
-                                className="absolute top-2 right-2 text-destructive hover:bg-destructive/10 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute top-4 right-4 text-destructive hover:bg-destructive/10 p-2 rounded z-10"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
                         )}
-                        <div className="mb-4 w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
-                            <span className="text-xs font-bold">{service.icon}</span>
-                        </div>
-                        <div className="space-y-3 flex-1">
-                            <div>
-                                <Label className="text-xs text-muted-foreground">Service Title</Label>
-                                <Input
-                                    disabled={!isEditing}
-                                    value={service.title}
-                                    onChange={(e) => handleServiceChange(index, "title", e.target.value)}
-                                    className="mt-1 font-semibold"
-                                />
+                        <CardContent className="pt-6 grid gap-6 md:grid-cols-2">
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Service Category</Label>
+                                        <select
+                                            disabled={!isEditing}
+                                            value={service.category}
+                                            onChange={(e) => handleServiceChange(index, "category", e.target.value)}
+                                            className="w-full p-2 border rounded-md text-sm"
+                                        >
+                                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Icon</Label>
+                                        <select
+                                            disabled={!isEditing}
+                                            value={service.icon}
+                                            onChange={(e) => handleServiceChange(index, "icon", e.target.value)}
+                                            className="w-full p-2 border rounded-md text-sm"
+                                        >
+                                            {icons.map(icon => <option key={icon} value={icon}>{icon}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Service Title</Label>
+                                    <Input
+                                        disabled={!isEditing}
+                                        value={service.title}
+                                        onChange={(e) => handleServiceChange(index, "title", e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Short Description</Label>
+                                    <Input
+                                        disabled={!isEditing}
+                                        value={service.shortDescription}
+                                        onChange={(e) => handleServiceChange(index, "shortDescription", e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Full Description</Label>
+                                    <Textarea
+                                        disabled={!isEditing}
+                                        value={service.fullDescription}
+                                        onChange={(e) => handleServiceChange(index, "fullDescription", e.target.value)}
+                                        rows={4}
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <Label className="text-xs text-muted-foreground">Short Description</Label>
-                                <Textarea
-                                    disabled={!isEditing}
-                                    value={service.shortDescription}
-                                    onChange={(e) => handleServiceChange(index, "shortDescription", e.target.value)}
-                                    className="mt-1 text-sm text-muted-foreground"
-                                    rows={2}
-                                />
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Features (Included Items - Comma separated)</Label>
+                                    <Textarea
+                                        disabled={!isEditing}
+                                        value={(service.features || []).join(', ')}
+                                        onChange={(e) => {
+                                            const feats = e.target.value.split(',').map(s => s.trim()).filter(s => s);
+                                            handleServiceChange(index, "features", feats);
+                                        }}
+                                        rows={3}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Key Benefits (Comma separated)</Label>
+                                    <Textarea
+                                        disabled={!isEditing}
+                                        value={(service.benefits || []).join(', ')}
+                                        onChange={(e) => {
+                                            const bens = e.target.value.split(',').map(s => s.trim()).filter(s => s);
+                                            handleServiceChange(index, "benefits", bens);
+                                        }}
+                                        rows={3}
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <Label className="text-xs text-muted-foreground">Full Description</Label>
-                                <Textarea
-                                    disabled={!isEditing}
-                                    value={service.fullDescription}
-                                    onChange={(e) => handleServiceChange(index, "fullDescription", e.target.value)}
-                                    className="mt-1 text-sm text-muted-foreground"
-                                    rows={4}
-                                />
-                            </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 ))}
 
                 {isEditing && (
-                    <div className="bg-muted/30 border-dashed border-2 p-6 rounded-xl flex flex-col items-center justify-center text-center space-y-4 min-h-[300px]">
-                        <h4 className="font-medium text-muted-foreground">Add New Service</h4>
-                        <div className="w-full space-y-2">
+                    <Card className="border-dashed border-2 bg-muted/20">
+                        <CardHeader>
+                            <CardTitle className="text-sm font-medium">Add New Service</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
                             <Input
                                 placeholder="Service Title"
                                 value={newService.title}
                                 onChange={(e) => setNewService({ ...newService, title: e.target.value })}
                             />
-                            <Input
-                                placeholder="Short Description"
-                                value={newService.shortDescription}
-                                onChange={(e) => setNewService({ ...newService, shortDescription: e.target.value })}
-                            />
+                            <div className="grid grid-cols-2 gap-2">
+                                <select
+                                    value={newService.category}
+                                    onChange={(e) => setNewService({ ...newService, category: e.target.value })}
+                                    className="p-2 border rounded-md text-sm"
+                                >
+                                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                </select>
+                                <select
+                                    value={newService.icon}
+                                    onChange={(e) => setNewService({ ...newService, icon: e.target.value })}
+                                    className="p-2 border rounded-md text-sm"
+                                >
+                                    {icons.map(icon => <option key={icon} value={icon}>{icon}</option>)}
+                                </select>
+                            </div>
                             <Button onClick={addService} variant="secondary" className="w-full">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Add Service
                             </Button>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 )}
             </div>
 

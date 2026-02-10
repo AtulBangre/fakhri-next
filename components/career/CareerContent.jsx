@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { MapPin, Clock, Briefcase, ArrowRight } from 'lucide-react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
-import { jobPositions, careerBenefits } from '@/data/career';
 import { JobApplicationDialog } from '@/components/dialogs/JobApplicationDialog';
 import { Button } from '@/components/ui/button';
 
@@ -17,7 +16,10 @@ const benefitIcons = {
     Calendar: Clock,
 };
 
-export default function CareerContent() {
+export default function CareerContent({ initialContent, initialJobs }) {
+    const sections = initialContent?.sections || {};
+    const careerBenefits = sections.benefits || [];
+    const jobPositions = initialJobs || [];
     return (
         <>
             {/* Hero Section */}

@@ -4,7 +4,6 @@ import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animat
 import CompanyTimeline from './CompanyTimeline';
 import { motion } from 'framer-motion';
 import { Users, Target, Zap, BarChart, Shield, Trophy, ArrowRight, Quote } from 'lucide-react';
-import { aboutHero, companyOverview, leadershipTeam, whyChooseUs, aboutCTA } from '@/data/about';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
@@ -18,7 +17,25 @@ const iconMap = {
     Trophy
 };
 
-export default function AboutContent() {
+export default function AboutContent({ initialTeam, initialContent }) {
+    const aboutHero = initialContent?.hero || { badge: 'About Us', title: 'Our Story', subtitle: '', stats: [] };
+    const sections = initialContent?.sections || {};
+    const companyOverview = sections.overview || { title: 'Overview', description: '', points: [], image: '/images/about/overview.jpg' };
+    const timelineData = sections.timeline || [];
+    const whyChooseUs = sections.whyChooseUs || [];
+    const aboutCTA = sections.cta || {
+        title: 'Ready to Start?',
+        description: 'Empower your brand with expert Amazon account management and strategic growth services.',
+        primaryBtn: 'Contact Us',
+        secondaryBtn: 'View Careers'
+    };
+
+    const team = {
+        core: Array.isArray(initialTeam) ? initialTeam.filter(m => m.category === 'Core') : [],
+        senior: Array.isArray(initialTeam) ? initialTeam.filter(m => m.category === 'Senior') : [],
+        members: Array.isArray(initialTeam) ? initialTeam.filter(m => m.category === 'Member') : [],
+    };
+
     return (
         <>
             {/* Hero Section */}
@@ -41,7 +58,7 @@ export default function AboutContent() {
 
                     <ScrollReveal delay={0.2}>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-                            {aboutHero.stats.map((stat, index) => (
+                            {(aboutHero.stats || []).map((stat, index) => (
                                 <div key={index} className="card-premium text-center p-8 border border-border">
                                     <p className="text-4xl md:text-5xl font-bold text-primary mb-2 font-poppins">
                                         {stat.value}
@@ -86,7 +103,7 @@ export default function AboutContent() {
                                     {companyOverview.description}
                                 </p>
                                 <ul className="space-y-4">
-                                    {companyOverview.points.map((point, index) => (
+                                    {(companyOverview.points || []).map((point, index) => (
                                         <li key={index} className="flex items-center gap-3">
                                             <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                                                 <div className="w-2 h-2 rounded-full bg-primary" />
@@ -102,7 +119,7 @@ export default function AboutContent() {
             </section>
 
             {/* Company Timeline Section */}
-            <CompanyTimeline />
+            {timelineData && <CompanyTimeline items={timelineData} />}
 
             {/* Team & Leadership */}
             <section className="section-padding bg-secondary/30">
@@ -116,7 +133,7 @@ export default function AboutContent() {
 
                     {/* Core Leadership */}
                     <div className="grid md:grid-cols-3 gap-8 mb-16">
-                        {leadershipTeam.core.map((member, index) => (
+                        {team.core.map((member, index) => (
                             <ScrollReveal key={index} delay={index * 0.1}>
                                 <div className="group bg-card rounded-2xl overflow-hidden border border-border hover:shadow-xl transition-all duration-300">
                                     <div className="aspect-[4/5] relative overflow-hidden">
@@ -143,7 +160,7 @@ export default function AboutContent() {
                     <div className="mb-16">
                         <h3 className="heading-md text-center mb-10">Senior Management</h3>
                         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
-                            {leadershipTeam.senior.map((member, index) => (
+                            {team.senior.map((member, index) => (
                                 <ScrollReveal key={index} delay={index * 0.05}>
                                     <div className="flex flex-col items-center text-center group w-full">
                                         <div className="w-32 h-32 rounded-full overflow-hidden relative mb-4 flex-shrink-0 grayscale group-hover:grayscale-0 transition-all duration-300 border-4 border-transparent group-hover:border-primary/5">
@@ -167,7 +184,7 @@ export default function AboutContent() {
                     <div>
                         <h3 className="heading-md text-center mb-10">Our Rising Stars</h3>
                         <StaggerContainer className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {leadershipTeam.members.map((member, index) => (
+                            {team.members.map((member, index) => (
                                 <StaggerItem key={index}>
                                     <div className="bg-card rounded-xl p-4 flex items-center gap-4 border border-border hover:border-primary/30 transition-colors hover:-translate-y-1 duration-300">
                                         <div className="w-16 h-16 rounded-full overflow-hidden relative flex-shrink-0">

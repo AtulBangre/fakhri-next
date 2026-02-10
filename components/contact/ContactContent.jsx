@@ -7,7 +7,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
-import { contactData } from '@/data/contact';
 import {
     MapPin,
     Phone,
@@ -31,7 +30,15 @@ const contactSchema = z.object({
     message: z.string().min(10, { message: "Message must be at least 10 characters." }),
 });
 
-export default function ContactContent() {
+export default function ContactContent({ initialContent }) {
+    const { sections } = initialContent || {};
+    const contactData = sections?.contactInfo || {
+        phone: { primary: '', secondary: '' },
+        email: { general: '' },
+        address: { full: '', street: '', city: '', zip: '' },
+        social: { linkedin: '#', twitter: '#', facebook: '#', instagram: '#' },
+        hours: { weekdays: '', weekend: '' }
+    };
     const {
         register,
         handleSubmit,

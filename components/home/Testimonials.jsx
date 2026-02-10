@@ -2,10 +2,11 @@
 
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import SocialTestimonialCard from '@/components/ui/SocialTestimonialCard';
-import { socialTestimonials } from '@/data/testimonials';
 import Marquee from 'react-fast-marquee';
 
-export default function Testimonials() {
+export default function Testimonials({ initialTestimonials }) {
+    const socialTestimonials = initialTestimonials || [];
+
     return (
         <section className="section-padding bg-background relative">
             {/* Semicircular Fade Overlays */}

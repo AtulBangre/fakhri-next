@@ -15,6 +15,24 @@ import File from '../models/File.js';
 import Notification from '../models/Notification.js';
 import Service from '../models/Service.js';
 import ContactMessage from '../models/ContactMessage.js';
+import BlogPost from '../models/BlogPost.js';
+import TeamMember from '../models/TeamMember.js';
+import Testimonial from '../models/Testimonial.js';
+import Faq from '../models/Faq.js';
+import PageContent from '../models/PageContent.js';
+import Job from '../models/Job.js';
+
+// Data Imports
+import { blogPosts } from '../data/blog.js';
+import { leadershipTeam } from '../data/about.js';
+import { testimonials, socialTestimonials } from '../data/testimonials.js';
+import { homeFAQs, pricingFAQs } from '../data/faq.js';
+import { jobPositions, careerBenefits } from '../data/career.js';
+import { aboutHero, companyOverview, timelineData, whyChooseUs, aboutCTA } from '../data/about.js';
+import { contactData, within2HoursData } from '../data/contact.js';
+import { seoData } from '../data/company.js';
+import { navigationItems, footerLinks } from '../data/navigation.js';
+import { pricingDisclaimer } from '../data/pricing.js';
 
 
 // Load environment variables
@@ -51,7 +69,14 @@ async function seedDatabase() {
             Note.deleteMany({}),
             File.deleteMany({}),
             Notification.deleteMany({}),
+            Notification.deleteMany({}),
             Service.deleteMany({}),
+            BlogPost.deleteMany({}),
+            TeamMember.deleteMany({}),
+            Testimonial.deleteMany({}),
+            Faq.deleteMany({}),
+            PageContent.deleteMany({}),
+            Job.deleteMany({}),
         ]);
         console.log('✅ Cleared existing data');
 
@@ -1201,6 +1226,157 @@ async function seedDatabase() {
         console.log(`✅ Created ${notifications.length} notifications`);
 
         // ============================================
+        // 13. SEED BLOG POSTS
+        // ============================================
+        console.log('📝 Seeding Blog Posts...');
+        const blogsToInsert = blogPosts.map(post => ({
+            title: post.title,
+            slug: post.slug,
+            excerpt: post.excerpt,
+            content: post.excerpt + " (Full content to be added)",
+            thumbnail: post.thumbnail,
+            author: post.author,
+            category: post.category,
+            readTime: post.readTime,
+            publishDate: new Date(post.publishDate),
+            isPublished: true,
+        }));
+        const blogs = await BlogPost.insertMany(blogsToInsert);
+        console.log(`✅ Created ${blogs.length} blog posts`);
+
+        // ============================================
+        // 14. SEED TEAM MEMBERS
+        // ============================================
+        console.log('👥 Seeding Team Members...');
+        const members = [];
+        if (leadershipTeam.core) members.push(...leadershipTeam.core.map((m, i) => ({ ...m, category: 'Core', sortOrder: i })));
+        if (leadershipTeam.senior) members.push(...leadershipTeam.senior.map((m, i) => ({ ...m, category: 'Senior', sortOrder: i })));
+        if (leadershipTeam.members) members.push(...leadershipTeam.members.map((m, i) => ({ ...m, category: 'Member', sortOrder: i })));
+
+        const teamMembers = await TeamMember.insertMany(members);
+        console.log(`✅ Created ${teamMembers.length} team members`);
+
+        // ============================================
+        // 15. SEED TESTIMONIALS
+        // ============================================
+        console.log('⭐ Seeding Testimonials...');
+        const mainTestimonials = testimonials.map(t => ({
+            clientName: t.name,
+            clientDesignation: t.role,
+            clientCompany: t.company,
+            content: t.content,
+            rating: t.rating,
+            sortOrder: parseInt(t.id) || 0
+        }));
+        const socialTestimonialsData = socialTestimonials.map((t, i) => ({
+            clientName: t.name,
+            clientDesignation: t.handle,
+            clientImage: t.image,
+            content: t.quote,
+            rating: 5,
+            sortOrder: 100 + i
+        }));
+        const allTestimonials = await Testimonial.insertMany([...mainTestimonials, ...socialTestimonialsData]);
+        console.log(`✅ Created ${allTestimonials.length} testimonials`);
+
+        // ============================================
+        // 16. SEED FAQS
+        // ============================================
+        console.log('❓ Seeding FAQs...');
+        const faqsData = [];
+        faqsData.push(...homeFAQs.map((f, i) => ({ ...f, category: 'General', sortOrder: i })));
+        faqsData.push(...pricingFAQs.map((f, i) => ({ ...f, category: 'Pricing', sortOrder: i })));
+        const faqs = await Faq.insertMany(faqsData);
+        console.log(`✅ Created ${faqs.length} FAQs`);
+
+        // ============================================
+        // 17. SEED JOBS
+        // ============================================
+        console.log('💼 Seeding Jobs...');
+        const jobsData = jobPositions.map((job, i) => ({
+            ...job,
+            jobId: job.id,
+            sortOrder: i
+        }));
+        const jobs = await Job.insertMany(jobsData);
+        console.log(`✅ Created ${jobs.length} jobs`);
+
+        // ============================================
+        // 18. SEED PAGE CONTENT
+        // ============================================
+        console.log('📄 Seeding Page Content...');
+        const contentData = [
+            {
+                page: 'home',
+                seo: seoData.home,
+                // Hero and other home sections would go here if they were in data files
+                // Assuming home content is structural or hardcoded in components mainly, 
+                // but can add placeholder or extracted data if available.
+                // For now, we seed what we have.
+            },
+            {
+                page: 'about',
+                hero: aboutHero,
+                sections: {
+                    overview: companyOverview,
+                    timeline: timelineData,
+                    whyChooseUs: whyChooseUs,
+                    cta: aboutCTA
+                },
+                seo: seoData.about
+            },
+            {
+                page: 'career',
+                sections: {
+                    benefits: careerBenefits
+                },
+                seo: seoData.career
+            },
+            {
+                page: 'services',
+                seo: seoData.services
+            },
+            {
+                page: 'contact',
+                sections: {
+                    contactInfo: contactData // includes address, phone, social, hours
+                },
+                seo: seoData.contact
+            },
+            {
+                page: 'pricing',
+                sections: {
+                    disclaimer: pricingDisclaimer
+                },
+                seo: seoData.pricing
+            },
+            {
+                page: 'within2hours',
+                sections: {
+                    info: within2HoursData // full object structure
+                },
+                seo: seoData.within2hours
+            },
+            {
+                page: 'navigation',
+                sections: {
+                    main: navigationItems,
+                    footer: footerLinks
+                }
+            },
+            {
+                page: 'company',
+                sections: {
+                    info: companyData,
+                    contact: contactData
+                }
+            }
+        ];
+
+        const pageContents = await PageContent.insertMany(contentData);
+        console.log(`✅ Created ${pageContents.length} page content documents`);
+
+        // ============================================
         // DONE!
         // ============================================
         console.log('\n🎉 Database seeding completed successfully!');
@@ -1216,6 +1392,12 @@ async function seedDatabase() {
         console.log(`   - Notes: ${notes.length}`);
         console.log(`   - Files: ${files.length}`);
         console.log(`   - Notifications: ${notifications.length}`);
+        console.log(`   - Blog Posts: ${blogs.length}`);
+        console.log(`   - Team Members: ${teamMembers.length}`);
+        console.log(`   - Testimonials: ${allTestimonials.length}`);
+        console.log(`   - FAQs: ${faqs.length}`);
+        console.log(`   - Jobs: ${jobs.length}`);
+        console.log(`   - Page Content: ${pageContents.length}`);
         console.log('\n🔐 Login Credentials:');
         console.log('   Super Admin: kuldeepmaurya4296@gmail.com / 123456');
         console.log('   Admin: k6263638053@gmail.com / 123456');

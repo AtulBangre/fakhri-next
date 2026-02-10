@@ -12,4 +12,7 @@ export { default as File } from './File.js';
 export { default as Notification } from './Notification.js';
 export { default as Service } from './Service.js';
 export { default as ContactMessage } from './ContactMessage.js';
-
+export { default as BlogPost } from './BlogPost.js';
+export { default as TeamMember } from './TeamMember.js';
+export { default as Testimonial } from './Testimonial.js';
+export { default as Faq } from './Faq.js';

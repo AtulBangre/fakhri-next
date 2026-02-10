@@ -5,26 +5,94 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit, Trash2, Save, RefreshCw } from "lucide-react";
-import { contactData } from "@/data/contact";
-import { seoData } from "@/data/company";
+import { Plus, Edit, Trash2, Save, RefreshCw, Loader2 } from "lucide-react";
+import { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default function ContactPageManager() {
-    const [contact, setContact] = useState(contactData);
-    const [seo, setSeo] = useState(seoData.contact || { title: "", description: "", keywords: "" });
+    const [contact, setContact] = useState({
+        phone: { primary: "", secondary: "" },
+        email: { general: "" },
+        address: { full: "", street: "", city: "", zip: "" },
+        social: { linkedin: "", facebook: "", instagram: "", twitter: "" },
+        hours: { weekdays: "", weekend: "" }
+    });
+    const [seo, setSeo] = useState({ title: "", description: "", keywords: "" });
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const handleSave = () => {
-        setIsSaving(true);
-        setTimeout(() => {
-            console.log("Saving Contact Page Data:", { contact, seo });
-            setIsSaving(false);
-            setIsEditing(false);
-            toast.success("Contact page updated successfully!");
-        }, 1000);
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/website/content?page=contact');
+            const data = await res.json();
+            if (data) {
+                if (data.sections && data.sections.contactInfo) {
+                    setContact(data.sections.contactInfo);
+                }
+                if (data.seo) setSeo(data.seo);
+            }
+        } catch (error) {
+            toast.error("Failed to fetch contact data");
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            // Save Contact Page Content
+            await fetch('/api/website/content', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: 'contact',
+                    sections: {
+                        contactInfo: contact
+                    },
+                    seo: seo
+                })
+            });
+
+            // Also update Global Company Contact Info
+            const companyRes = await fetch('/api/website/content?page=company');
+            const currentCompany = await companyRes.json();
+
+            await fetch('/api/website/content', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: 'company',
+                    sections: {
+                        ...(currentCompany.sections || {}),
+                        contact: contact
+                    }
+                })
+            });
+
+            toast.success("Contact settings updated!");
+            setIsEditing(false);
+            fetchData();
+        } catch (error) {
+            toast.error("Failed to save changes");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex h-64 items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

@@ -1,12 +1,16 @@
 import ContactContent from '@/components/contact/ContactContent';
-import { seoData } from '@/data/company';
+import { getPageContent } from '@/lib/content';
 
-export const metadata = {
-    title: seoData.contact.title,
-    description: seoData.contact.description,
-    keywords: seoData.contact.keywords,
-};
+export async function generateMetadata() {
+    const content = await getPageContent('contact');
+    return {
+        title: content?.seo?.title || 'Contact Us',
+        description: content?.seo?.description || '',
+        keywords: content?.seo?.keywords || '',
+    };
+}
 
-export default function ContactPage() {
-    return <ContactContent />;
+export default async function ContactPage() {
+    const content = await getPageContent('contact');
+    return <ContactContent initialContent={content} />;
 }

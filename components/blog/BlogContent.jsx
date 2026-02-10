@@ -6,14 +6,23 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, ArrowRight } from 'lucide-react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
-import { blogPosts, blogCategories } from '@/data/blog';
 
-export default function BlogContent() {
+export default function BlogContent({ initialPosts, initialContent }) {
     const [selectedCategory, setSelectedCategory] = useState('All');
+    const { hero } = initialContent || {};
+
+    const posts = initialPosts || [];
+
+    // Derive unique categories dynamically from the posts
+    const dynamicCategories = ['All', ...new Set(posts.map(p => p.category))].sort();
+
+    // Map to object structure expected by UI if needed, or just use strings
+    // Original UI uses `category.name`
+    const categories = dynamicCategories.map(cat => ({ name: cat }));
 
     const filteredPosts = selectedCategory === 'All'
-        ? blogPosts
-        : blogPosts.filter(post => post.category === selectedCategory);
+        ? posts
+        : posts.filter(post => post.category === selectedCategory);
 
     return (
         <>
@@ -24,11 +33,14 @@ export default function BlogContent() {
                         <div className="text-center max-w-3xl mx-auto">
                             <span className="badge-primary mb-4">Blog</span>
                             <h1 className="heading-xl mb-6">
-                                Amazon Seller <span className="text-primary">Insights</span> & Tips
+                                {hero?.title ? <span dangerouslySetInnerHTML={{ __html: hero.title }} /> : (
+                                    <>
+                                        Amazon Seller <span className="text-primary">Insights</span> & Tips
+                                    </>
+                                )}
                             </h1>
                             <p className="body-lg">
-                                Expert insights, strategies, and tips to help you grow your Amazon business.
-                                Stay updated with the latest marketplace trends.
+                                {hero?.subtitle || "Expert insights, strategies, and tips to help you grow your Amazon business. Stay updated with the latest marketplace trends."}
                             </p>
                         </div>
                     </ScrollReveal>
@@ -40,7 +52,7 @@ export default function BlogContent() {
                 <div className="container-custom">
 
                     <div className="flex flex-wrap justify-center gap-2">
-                        {blogCategories.map((category) => (
+                        {categories.map((category) => (
                             <button
                                 key={category.name}
                                 onClick={() => setSelectedCategory(category.name)}

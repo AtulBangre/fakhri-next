@@ -3,14 +3,16 @@
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
-import { timelineData } from '@/data/about';
 
-export default function CompanyTimeline() {
+
+export default function CompanyTimeline({ items }) {
     const containerRef = useRef(null);
     const { scrollYProgress } = useScroll({
         target: containerRef,
         offset: ["start start", "end end"]
     });
+
+    const timelineItems = items || []; // safe accessor
 
     // Translate the timeline content vertically based on scroll
     // From 0% (start) to -85% but with shorter container
@@ -39,12 +41,12 @@ export default function CompanyTimeline() {
                         {/* Central Line */}
                         <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/5 via-primary/20 to-primary/5 -translate-x-1/2 z-0" />
 
-                        {timelineData.map((item, index) => (
+                        {timelineItems.map((item, index) => (
                             <TimelineItem
                                 key={index}
                                 item={{ ...item, id: index }}
                                 index={index}
-                                isLast={index === timelineData.length - 1}
+                                isLast={index === timelineItems.length - 1}
                             />
                         ))}
                     </motion.div>

@@ -1,23 +1,43 @@
-'use client';
-
-import { use } from 'react';
 import { notFound } from 'next/navigation';
-import { blogPosts } from '@/data/blog';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Calendar, Clock, ArrowLeft, Tag, Share2 } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft, Tag } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import ShareButtons from '@/components/blog/ShareButtons';
+import { getBlogPostBySlug, getBlogPosts } from '@/lib/content';
 
-export default function BlogPostPage({ params }) {
-    // Unwrap the params Promise in Next.js 15+
-    const { slug } = use(params);
+export async function generateMetadata({ params }) {
+    const { slug } = await params;
+    const post = await getBlogPostBySlug(slug);
 
-    const post = blogPosts.find(p => p.slug === slug);
+    if (!post) {
+        return {
+            title: 'Post Not Found',
+        };
+    }
+
+    return {
+        title: post.seo?.title || post.title,
+        description: post.seo?.description || post.excerpt,
+        keywords: post.seo?.keywords || post.tags.join(', '),
+    };
+}
+
+export default async function BlogPostPage({ params }) {
+    const { slug } = await params;
+    const [post, allPosts] = await Promise.all([
+        getBlogPostBySlug(slug),
+        getBlogPosts()
+    ]);
 
     if (!post) {
         notFound();
     }
+
+    // Filter related posts
+    const relatedPosts = allPosts
+        .filter(p => p._id !== post._id && p.category === post.category)
+        .slice(0, 3);
 
     return (
         <>
@@ -160,34 +180,31 @@ export default function BlogPostPage({ params }) {
                     <ScrollReveal>
                         <h2 className="heading-lg mb-8 text-center">Related Articles</h2>
                         <div className="grid md:grid-cols-3 gap-8">
-                            {blogPosts
-                                .filter(p => p.id !== post.id && p.category === post.category)
-                                .slice(0, 3)
-                                .map((relatedPost) => (
-                                    <Link
-                                        key={relatedPost.id}
-                                        href={`/blog/${relatedPost.slug}`}
-                                        className="card-premium group"
-                                    >
-                                        <div className="relative w-full h-48 rounded-lg overflow-hidden mb-4 bg-muted">
-                                            <Image
-                                                src={relatedPost.thumbnail}
-                                                alt={relatedPost.title}
-                                                fill
-                                                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                            />
-                                        </div>
-                                        <span className="badge-primary text-xs mb-2">
-                                            {relatedPost.category}
-                                        </span>
-                                        <h3 className="font-poppins font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
-                                            {relatedPost.title}
-                                        </h3>
-                                        <p className="text-sm text-muted-foreground line-clamp-2">
-                                            {relatedPost.excerpt}
-                                        </p>
-                                    </Link>
-                                ))}
+                            {relatedPosts.map((relatedPost) => (
+                                <Link
+                                    key={relatedPost._id}
+                                    href={`/blog/${relatedPost.slug}`}
+                                    className="card-premium group"
+                                >
+                                    <div className="relative w-full h-48 rounded-lg overflow-hidden mb-4 bg-muted">
+                                        <Image
+                                            src={relatedPost.thumbnail}
+                                            alt={relatedPost.title}
+                                            fill
+                                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                    </div>
+                                    <span className="badge-primary text-xs mb-2">
+                                        {relatedPost.category}
+                                    </span>
+                                    <h3 className="font-poppins font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
+                                        {relatedPost.title}
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground line-clamp-2">
+                                        {relatedPost.excerpt}
+                                    </p>
+                                </Link>
+                            ))}
                         </div>
                     </ScrollReveal>
                 </div>

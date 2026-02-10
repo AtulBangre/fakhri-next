@@ -3,17 +3,57 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Save, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Save, RefreshCw, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { within2HoursPageServices, within2HoursPageInfo } from "@/data/within2hours";
-import { seoData } from "@/data/company";
+import { toast } from "sonner";
+import { useEffect } from "react";
 
 export default function Within2HoursManager() {
-    const [services, setServices] = useState(within2HoursPageServices);
-    const [info, setInfo] = useState(within2HoursPageInfo);
-    const [seo, setSeo] = useState(seoData.within2hours || { title: "", description: "", keywords: "" });
+    const [services, setServices] = useState([]);
+    const [info, setInfo] = useState({ title: "", subtitle: "", badge: "" });
+    const [seo, setSeo] = useState({ title: "", description: "", keywords: "" });
     const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [contentRes, productsRes] = await Promise.all([
+                fetch('/api/website/content?page=within2hours'),
+                fetch('/api/website/within2hours')
+            ]);
+
+            const contentData = await contentRes.json();
+            const productsData = await productsRes.json();
+
+            if (contentData) {
+                if (contentData.sections && contentData.sections.info) {
+                    setInfo(contentData.sections.info);
+                }
+                if (contentData.seo) setSeo(contentData.seo);
+            }
+
+            if (productsData) {
+                setServices(productsData.map(p => ({
+                    ...p,
+                    id: p._id,
+                    name: p.name,
+                    price: p.price,
+                    category: p.category
+                })));
+            }
+        } catch (error) {
+            toast.error("Failed to fetch within 2 hours data");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Simplistic handling of new service
     const [newService, setNewService] = useState({
@@ -43,10 +83,56 @@ export default function Within2HoursManager() {
         setServices(updatedServices);
     };
 
-    const handleSave = () => {
-        console.log("Saving Within 2 Hours Page Data:", { services, info, seo });
-        setIsEditing(false);
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            // Map services to DB Product structure
+            const products = services.map((s, i) => ({
+                ...(s.id && !s.id.toString().startsWith('new') && s.id.length > 10 ? { _id: s.id } : {}),
+                name: s.name,
+                price: parseFloat(s.price),
+                category: s.category || "Urgent",
+                sortOrder: i,
+                isWithin2Hours: true
+            }));
+
+            // Save Products
+            await fetch('/api/website/within2hours', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(products)
+            });
+
+            // Save Page Content
+            await fetch('/api/website/content', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: 'within2hours',
+                    sections: {
+                        info: info
+                    },
+                    seo: seo
+                })
+            });
+
+            toast.success("Content updated!");
+            setIsEditing(false);
+            fetchData();
+        } catch (error) {
+            toast.error("Failed to save changes");
+        } finally {
+            setIsSaving(false);
+        }
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex h-64 items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8">
