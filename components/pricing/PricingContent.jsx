@@ -18,8 +18,15 @@ export default function PricingContent({ initialPlans, initialFaqs, initialWithi
     const { disclaimer: pricingDisclaimer } = sections || {};
     // Extract within2Hours info from page content
     const w2hSections = initialWithin2HoursContent?.sections || {};
-    const within2HoursData = w2hSections.info || {
-        serviceInfo: { title: 'Add-on Services', description: '', buttonText: 'Explore Add-ons', buttonLink: '/within-2-hours' }
+    const w2hInfo = w2hSections.info || {};
+    const within2HoursData = {
+        ...w2hInfo,
+        serviceInfo: w2hInfo.serviceInfo || {
+            title: 'Add-on Services',
+            description: '',
+            buttonText: 'Explore Add-ons',
+            buttonLink: '/within-2-hours'
+        }
     };
 
     // Fallback for pricingPageInfo if not in DB directly
