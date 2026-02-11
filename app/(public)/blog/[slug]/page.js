@@ -85,30 +85,10 @@ export default function BlogPostPage({ params }) {
                     <div className="max-w-4xl mx-auto">
                         <ScrollReveal>
                             <article className="prose prose-lg max-w-none">
-                                {/* Introduction */}
-                                <div className="text-lg text-muted-foreground leading-relaxed mb-12">
-                                    {post.content.introduction}
-                                </div>
-
-                                {/* Content Sections */}
-                                {post.content.sections.map((section, index) => (
-                                    <div key={index} className="mb-10">
-                                        <h2 className="heading-md mb-4 text-foreground">
-                                            {section.heading}
-                                        </h2>
-                                        <p className="text-muted-foreground leading-relaxed">
-                                            {section.content}
-                                        </p>
-                                    </div>
-                                ))}
-
-                                {/* Conclusion */}
-                                <div className="mt-12 p-6 bg-secondary/30 rounded-xl border border-border">
-                                    <h3 className="heading-sm mb-3 text-foreground">Conclusion</h3>
-                                    <p className="text-muted-foreground leading-relaxed">
-                                        {post.content.conclusion}
-                                    </p>
-                                </div>
+                                <div
+                                    className="text-muted-foreground leading-relaxed [&>h2]:text-foreground [&>h2]:heading-md [&>h2]:mt-10 [&>h2]:mb-4 [&>p]:mb-6"
+                                    dangerouslySetInnerHTML={{ __html: post.content }}
+                                />
                             </article>
 
                             {/* Tags */}

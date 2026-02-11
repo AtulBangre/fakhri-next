@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, Edit, Trash2, Save, X, ChevronRight, FileText, MessageSquare, HelpCircle, Briefcase, Building, Users, DollarSign, List, Shield, Eye, Check, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import dynamic from 'next/dynamic';
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+import 'react-quill-new/dist/quill.snow.css';
 
 // Import Initial Data
 import { allBlogPosts } from "@/data/allBlogPosts";
@@ -378,6 +381,16 @@ function CatalogManager({ data }) {
     );
 }
 
+const quillModules = {
+    toolbar: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        ['link', 'image', 'code-block'],
+        ['clean']
+    ]
+};
+
 // 5. Blog Manager
 function BlogManager({ data }) {
     const [posts, setPosts] = useState(data);
@@ -385,21 +398,72 @@ function BlogManager({ data }) {
     const [currentPost, setCurrentPost] = useState(null);
     const [isViewMode, setIsViewMode] = useState(false);
     const [tags, setTags] = useState([]);
+    const [content, setContent] = useState("");
+    const [title, setTitle] = useState("");
+    const [slug, setSlug] = useState("");
+
+    // Category Management
+    const [availableCategories, setAvailableCategories] = useState(Array.from(new Set(data.map(p => p.category))));
+    const [selectedCategory, setSelectedCategory] = useState("");
+    const [customCategory, setCustomCategory] = useState("");
+
+    // Thumbnail Management
+    const [thumbnailMode, setThumbnailMode] = useState("link"); // "link" or "upload"
+    const [thumbnailUrl, setThumbnailUrl] = useState("");
+
+    useEffect(() => {
+        if (!currentPost && title) {
+            setSlug(title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''));
+        }
+    }, [title, currentPost]);
 
     const handleOpen = (post, view) => {
-        setCurrentPost(post); setIsViewMode(view); setTags(post?.tags || []); setIsDialogOpen(true);
+        setCurrentPost(post);
+        setIsViewMode(view);
+        setTags(post?.tags || []);
+        setContent(post?.content || "");
+        setTitle(post?.title || "");
+        setSlug(post?.slug || "");
+        setSelectedCategory(post?.category && availableCategories.includes(post.category) ? post.category : (post?.category ? "Other" : ""));
+        setCustomCategory(post?.category && !availableCategories.includes(post.category) ? post.category : "");
+        setThumbnailUrl(post?.thumbnail || "");
+        setThumbnailMode("link");
+        setIsDialogOpen(true);
+    };
+
+    const handleThumbnailUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setThumbnailUrl(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleSave = (e) => {
         e.preventDefault(); const formData = new FormData(e.target);
+
+        const finalCategory = selectedCategory === "Other" ? customCategory : selectedCategory;
+        if (selectedCategory === "Other" && customCategory && !availableCategories.includes(customCategory)) {
+            setAvailableCategories([...availableCategories, customCategory]);
+        }
+
         const newPost = {
             id: currentPost ? currentPost.id : Date.now(),
-            title: formData.get("title"), excerpt: formData.get("excerpt"), category: formData.get("category"),
-            date: currentPost?.date || new Date().toLocaleDateString(), publishDate: formData.get("publishDate"),
-            readTime: formData.get("readTime"), slug: formData.get("slug"), thumbnail: formData.get("thumbnail"),
+            title: title,
+            excerpt: formData.get("excerpt"),
+            category: finalCategory,
+            category: finalCategory,
+            date: currentPost?.date || new Date().toLocaleDateString(),
+            publishDate: currentPost?.publishDate || new Date().toISOString().split('T')[0],
+            readTime: formData.get("readTime"),
+            slug: slug,
+            thumbnail: thumbnailUrl,
             tags: tags,
             author: { name: formData.get("authorName"), role: formData.get("authorRole"), image: formData.get("authorImage") },
-            content: { introduction: formData.get("intro"), conclusion: formData.get("conclusion") } // Simplified content structure
+            content: content
         };
         if (currentPost) { setPosts(posts.map(p => p.id === currentPost.id ? { ...p, ...newPost } : p)); toast.success("Updated"); } else { setPosts([newPost, ...posts]); toast.success("Created"); }
         setIsDialogOpen(false);
@@ -433,29 +497,76 @@ function BlogManager({ data }) {
                             <div className="flex gap-2 text-sm text-muted-foreground"><span>{currentPost?.date}</span><span>•</span><span>{currentPost?.readTime}</span><span>•</span><span>{currentPost?.author?.name}</span></div>
                             <div className="flex gap-2">{currentPost?.tags?.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}</div>
                             <p className="italic border-l-4 border-primary pl-4">{currentPost?.excerpt}</p>
-                            <div className="space-y-2"><h4 className="font-semibold">Introduction</h4><p className="text-sm">{currentPost?.content?.introduction}</p></div>
+                            <div className="space-y-2"><h4 className="font-semibold">Content</h4><div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: currentPost?.content }} /></div>
                         </div>
                     ) : (
                         <form onSubmit={handleSave} className="space-y-4">
                             <div className="grid md:grid-cols-2 gap-4">
-                                <div className="space-y-2"><Label>Title</Label><Input name="title" defaultValue={currentPost?.title} required /></div>
-                                <div className="space-y-2"><Label>Slug</Label><Input name="slug" defaultValue={currentPost?.slug} /></div>
+                                <div className="space-y-2"><Label>Title</Label><Input name="title" value={title} onChange={(e) => setTitle(e.target.value)} required /></div>
+                                <div className="space-y-2"><Label>Slug (Auto-generated)</Label><Input name="slug" value={slug} onChange={(e) => setSlug(e.target.value)} /></div>
                             </div>
                             <div className="space-y-2"><Label>Excerpt</Label><Textarea name="excerpt" defaultValue={currentPost?.excerpt} /></div>
                             <div className="grid md:grid-cols-3 gap-4">
-                                <div className="space-y-2"><Label>Category</Label><Input name="category" defaultValue={currentPost?.category} /></div>
+                                <div className="space-y-2">
+                                    <Label>Category</Label>
+                                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                        <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
+                                        <SelectContent>
+                                            {availableCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                            <SelectItem value="Other">Other (Add New)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {selectedCategory === "Other" && (
+                                        <Input
+                                            placeholder="Enter new category"
+                                            value={customCategory}
+                                            onChange={(e) => setCustomCategory(e.target.value)}
+                                            className="mt-2 animate-in fade-in slide-in-from-top-1"
+                                        />
+                                    )}
+                                </div>
                                 <div className="space-y-2"><Label>Read Time</Label><Input name="readTime" defaultValue={currentPost?.readTime} /></div>
-                                <div className="space-y-2"><Label>Publish Date</Label><Input name="publishDate" defaultValue={currentPost?.publishDate} type="date" /></div>
                             </div>
                             <div className="grid md:grid-cols-3 gap-4 border p-4 rounded">
                                 <div className="space-y-2"><Label>Author Name</Label><Input name="authorName" defaultValue={currentPost?.author?.name} /></div>
                                 <div className="space-y-2"><Label>Author Role</Label><Input name="authorRole" defaultValue={currentPost?.author?.role} /></div>
                                 <div className="space-y-2"><Label>Author Image</Label><Input name="authorImage" defaultValue={currentPost?.author?.image} /></div>
                             </div>
-                            <div className="space-y-2"><Label>Thumbnail URL</Label><Input name="thumbnail" defaultValue={currentPost?.thumbnail} /></div>
+                            <div className="space-y-4 border p-4 rounded">
+                                <div className="flex items-center justify-between">
+                                    <Label>Thumbnail Image</Label>
+                                    <Tabs value={thumbnailMode} onValueChange={setThumbnailMode} className="w-[200px]">
+                                        <TabsList className="grid w-full grid-cols-2 h-8">
+                                            <TabsTrigger value="link" className="text-xs">Link</TabsTrigger>
+                                            <TabsTrigger value="upload" className="text-xs">Upload</TabsTrigger>
+                                        </TabsList>
+                                    </Tabs>
+                                </div>
+                                {thumbnailMode === "link" ? (
+                                    <Input placeholder="https://example.com/image.jpg" value={thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} />
+                                ) : (
+                                    <Input type="file" accept="image/*" onChange={handleThumbnailUpload} />
+                                )}
+                                {thumbnailUrl && (
+                                    <div className="relative w-full h-40 bg-muted rounded-md overflow-hidden">
+                                        <img src={thumbnailUrl} alt="Thumbnail Preview" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Content</Label>
+                                <div className="h-64 mb-12">
+                                    <ReactQuill
+                                        theme="snow"
+                                        value={content}
+                                        onChange={setContent}
+                                        className="h-full"
+                                        modules={quillModules}
+                                    />
+                                </div>
+                            </div>
                             <ArrayInput values={tags} onChange={setTags} label="Tags" placeholder="Add tag..." />
-                            <div className="space-y-2"><Label>Introduction</Label><Textarea name="intro" defaultValue={currentPost?.content?.introduction} rows={3} /></div>
-                            <div className="space-y-2"><Label>Conclusion</Label><Textarea name="conclusion" defaultValue={currentPost?.content?.conclusion} rows={3} /></div>
                             <DialogFooter><Button type="submit">Save</Button></DialogFooter>
                         </form>
                     )}
