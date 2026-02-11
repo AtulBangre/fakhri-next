@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Clock, Briefcase, ArrowRight, Search, Globe, BookOpen, DollarSign, Heart, Users, Calendar, Filter } from 'lucide-react';
+import { MapPin, Clock, Briefcase, ArrowRight, Search, Globe, BookOpen, IndianRupee, Heart, Users, Calendar, Filter } from 'lucide-react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
 import { jobPositions } from '@/data/jobs';
 import { JobApplicationDialog } from '@/components/dialogs/JobApplicationDialog';
@@ -24,7 +24,7 @@ const careerBenefits = [
     {
         title: "Competitive Compensation",
         description: "Industry-leading salaries with performance bonuses",
-        icon: DollarSign,
+        icon: IndianRupee,
     },
     {
         title: "Health & Wellness",
@@ -137,8 +137,8 @@ export default function CareerContent() {
                                     key={dept}
                                     onClick={() => setActiveDept(dept)}
                                     className={`px-5 py-2 rounded-full text-xs md:text-sm font-bold transition-all duration-300 border ${activeDept === dept
-                                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105"
-                                            : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-primary"
+                                        ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105"
+                                        : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-primary"
                                         }`}
                                 >
                                     {dept}

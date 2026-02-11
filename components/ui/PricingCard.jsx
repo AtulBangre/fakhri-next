@@ -48,7 +48,7 @@ export const PricingCard = ({ plan, index }) => {
                         </p>
                         <h3 className="heading-md mb-2">{plan.name}</h3>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-4xl font-poppins font-bold">{plan.prices.monthlyUSD || plan.prices.monthly || 1000}</span>
+                            <span className="text-4xl font-poppins font-bold">{plan.prices.monthly || plan.prices.monthlyUSD || "₹15,000"}</span>
                             {plan.period && (
                                 <span className={`text-sm ${plan.highlighted ? 'text-primary-foreground/70' : 'text-muted-foreground'
                                     }`}>

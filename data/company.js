@@ -15,7 +15,7 @@ export const companyData = {
         { value: "500+", label: "Clients Served", description: "Trusted by leading brands" },
         { value: "8+", label: "Years Experience", description: "Industry expertise" },
         { value: "35+", label: "Team Members", description: "Dedicated professionals" },
-        { value: "$50M+", label: "Client Revenue", description: "Generated for sellers" },
+        { value: "₹400Cr+", label: "Client Revenue", description: "Generated for sellers" },
     ],
     contact: {
         address: {
@@ -55,7 +55,7 @@ export const companyData = {
             "Started in 2016 with a vision to democratize Amazon success",
             "Grew from 2 founders to 35+ expert team members",
             "Served 500+ clients across multiple Amazon marketplaces",
-            "Generated over $50M in revenue for our clients",
+            "Generated over ₹400Cr in revenue for our clients",
         ],
     },
     culture: {

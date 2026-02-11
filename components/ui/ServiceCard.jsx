@@ -9,7 +9,8 @@ import {
     Target,
     Image,
     DollarSign,
-    TrendingUp
+    TrendingUp,
+    IndianRupee
 } from 'lucide-react';
 
 const iconMap = {
@@ -20,6 +21,7 @@ const iconMap = {
     Image,
     DollarSign,
     TrendingUp,
+    IndianRupee,
 };
 
 export default function ServiceCard({ service, index, variant = 'default' }) {

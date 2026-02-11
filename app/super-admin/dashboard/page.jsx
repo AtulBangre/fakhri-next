@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard, Users, UsersRound, UserCog, CheckSquare,
-  DollarSign, Settings, Menu, X, LogOut, Bell, Shield, Globe
+  IndianRupee, Settings, Menu, X, LogOut, Bell, Shield, Globe
 } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ const navigation = [
   { name: "Teams", id: "Teams", icon: UsersRound },
   { name: "Admin Users", id: "Admins", icon: UserCog },
   { name: "Tasks", id: "Tasks", icon: CheckSquare },
-  { name: "Sales & Revenue", id: "Sales", icon: DollarSign },
+  { name: "Sales & Revenue", id: "Sales", icon: IndianRupee },
   { name: "Website CMS", id: "Website", icon: Globe },
   { name: "Settings", id: "Settings_App", icon: Settings },
 ];

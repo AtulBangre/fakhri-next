@@ -120,7 +120,7 @@ export const allServices = [
         title: "Reconciliation & Finance",
         shortDescription: "Recover lost revenue and optimize your financials.",
         fullDescription: "Don't leave money on the table. Our reconciliation services identify and recover funds from Amazon for lost inventory, damaged goods, and overcharged fees. We analyze your financial reports to ensure you're getting every dollar you deserve.",
-        icon: "DollarSign",
+        icon: "IndianRupee",
         features: [
             "FBA reimbursement claims",
             "Lost inventory recovery",

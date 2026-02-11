@@ -17,8 +17,8 @@ export const superAdminStats = [
     },
     {
         title: "Total Revenue",
-        value: "$285K", // This would ideally be calculated from invoices
-        icon: "DollarSign",
+        value: "₹2.85Cr", // Mock value updated to INR style if needed, or just ₹ value
+        icon: "IndianRupee",
         trend: { value: "+18% vs last month", positive: true }
     },
     {
@@ -77,10 +77,10 @@ export const clientPlanDetails = {
 // Billing summary
 export const billingSummary = {
     currentPlan: "Premium",
-    monthlyRate: 1999,
+    monthlyRate: 20000,
     nextPaymentDate: "Feb 15, 2026",
-    nextPaymentAmount: 1999,
-    totalPaid: 5997,
+    nextPaymentAmount: 20000,
+    totalPaid: 60000,
     invoiceCount: 3,
     paymentMethod: {
         type: "VISA",

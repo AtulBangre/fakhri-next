@@ -23,7 +23,7 @@ const ClientBillingTab = () => {
     );
 
     // Default to a fallback if plan not found (shouldn't happen with correct data)
-    const planPrice = currentPlan ? currentPlan.prices.monthlyUSD : "$0";
+    const planPrice = currentPlan ? currentPlan.prices.monthly : "₹0";
 
     // Calculate next payment date (mock: 30 days from last invoice or today)
     const lastInvoiceDate = invoices.length > 0 ? new Date(invoices[0].date) : new Date();
@@ -61,7 +61,7 @@ const ClientBillingTab = () => {
                         <CreditCard className="h-5 w-5 text-primary" />
                         <span className="text-sm text-muted-foreground">Total Paid</span>
                     </div>
-                    <p className="text-2xl font-heading font-bold">${billingSummary.totalPaid.toLocaleString()}</p>
+                    <p className="text-2xl font-heading font-bold">₹{billingSummary.totalPaid.toLocaleString()}</p>
                     <p className="text-sm text-muted-foreground">{billingSummary.paidCount} invoices</p>
                 </div>
             </div>

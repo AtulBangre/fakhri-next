@@ -1,5 +1,5 @@
 "use client";
-import { DollarSign, TrendingUp, TrendingDown, Users } from "lucide-react";
+import { TrendingUp, TrendingDown, Users, IndianRupee } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,8 +26,8 @@ const calculateRevenue = () => {
     plans.forEach(plan => {
         const key = plan.id.toLowerCase();
         if (revenueByPlan[key]) {
-            // Using USD price for calculation standard, fallback to 0
-            revenueByPlan[key].price = getPriceValue(plan.prices.monthlyUSD);
+            // Using monthly price for calculation standard, fallback to 0
+            revenueByPlan[key].price = getPriceValue(plan.prices.monthly);
         }
     });
 
@@ -65,7 +65,7 @@ const topClients = clients
             name: client.name,
             company: client.company,
             plan: client.plan,
-            revenue: `$${revenue.toLocaleString()}`,
+            revenue: `₹${revenue.toLocaleString()}`,
             rawRevenue: revenue,
             since: new Date(client.joinedDate).getFullYear().toString()
         };
@@ -100,18 +100,18 @@ const SuperAdminSalesTab = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     title="Total Revenue (Jan)"
-                    value={`$${totalRevenue.toLocaleString()}`}
-                    icon={<DollarSign className="h-5 w-5" />}
+                    value={`₹${totalRevenue.toLocaleString()}`}
+                    icon={<IndianRupee className="h-5 w-5" />}
                     trend={{ value: "+8.6% vs Dec", positive: true }}
                 />
                 <StatCard
                     title="MRR"
-                    value={`$${totalRevenue.toLocaleString()}`}
+                    value={`₹${totalRevenue.toLocaleString()}`}
                     icon={<TrendingUp className="h-5 w-5" />}
                 />
                 <StatCard
                     title="Avg. Revenue per Client"
-                    value={`$${avgRevenue.toFixed(0)}`}
+                    value={`₹${avgRevenue.toFixed(0)}`}
                     icon={<Users className="h-5 w-5" />}
                 />
                 <StatCard
@@ -140,7 +140,7 @@ const SuperAdminSalesTab = () => {
                                             </Badge>
                                             <span className="text-sm text-muted-foreground">{data.count} clients</span>
                                         </div>
-                                        <span className="font-semibold">${data.revenue.toLocaleString()}</span>
+                                        <span className="font-semibold">₹{data.revenue.toLocaleString()}</span>
                                     </div>
                                     <div className="w-full h-3 bg-accent rounded-full overflow-hidden">
                                         <div
@@ -165,7 +165,7 @@ const SuperAdminSalesTab = () => {
                                     <p className="text-sm text-muted-foreground">{data.clients} clients</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-semibold">${(data.revenue / 1000).toFixed(1)}K</p>
+                                    <p className="font-semibold">₹{(data.revenue / 1000).toFixed(1)}K</p>
                                     {i > 0 && (
                                         <p className={`text-xs ${monthlyData[i - 1].revenue < data.revenue ? 'text-green-600' : 'text-red-600'}`}>
                                             {monthlyData[i - 1].revenue < data.revenue ? '↑' : '↓'}

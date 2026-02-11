@@ -269,7 +269,7 @@ function PricingManager({ data }) {
         e.preventDefault(); const formData = new FormData(e.target);
         const updated = {
             ...currentPlan, name: formData.get("name"), subtitle: formData.get("subtitle"),
-            prices: { monthly: formData.get("monthly"), monthlyUSD: formData.get("monthlyUSD") },
+            prices: { monthly: formData.get("monthly"), monthlyUSD: formData.get("monthly") },
             description: formData.get("description"), cta: formData.get("cta"), period: formData.get("period"),
             highlighted: formData.get("highlighted") === "on"
         };
@@ -289,7 +289,7 @@ function PricingManager({ data }) {
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div><div className="text-3xl font-bold">{plan.prices.monthly}</div><div className="text-sm text-muted-foreground">{plan.prices.monthlyUSD} / {plan.period}</div></div>
+                            <div><div className="text-3xl font-bold">{plan.prices.monthly}</div><div className="text-sm text-muted-foreground">{plan.period}</div></div>
                             <div className="flex gap-2">
                                 <Button variant="outline" className="flex-1" onClick={() => { setCurrentPlan(plan); setIsViewMode(false); setIsDialogOpen(true); }}>Edit</Button>
                                 <Button variant="ghost" size="icon" onClick={() => { setCurrentPlan(plan); setIsViewMode(true); setIsDialogOpen(true); }}><Eye className="h-4 w-4" /></Button>
@@ -304,13 +304,13 @@ function PricingManager({ data }) {
                     {isViewMode ? (
                         <div className="space-y-4">
                             <div className="flex justify-between"><div><h3 className="text-lg font-bold">{currentPlan?.name}</h3><p className="text-muted-foreground">{currentPlan?.subtitle}</p></div>{currentPlan?.highlighted && <Badge>Popular</Badge>}</div>
-                            <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg"><div><Label>Monthly (INR)</Label><p className="font-mono">{currentPlan?.prices.monthly}</p></div><div><Label>Monthly (USD)</Label><p className="font-mono">{currentPlan?.prices.monthlyUSD}</p></div></div>
+                            <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg"><div><Label>Monthly Price (INR)</Label><p className="font-mono">{currentPlan?.prices.monthly}</p></div></div>
                             <div><Label>Description</Label><p>{currentPlan?.description}</p></div><div><Label>CTA Text</Label><p>{currentPlan?.cta}</p></div>
                         </div>
                     ) : (
                         <form onSubmit={handleSave} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>Name</Label><Input name="name" defaultValue={currentPlan?.name} required /></div><div className="grid gap-2"><Label>Subtitle</Label><Input name="subtitle" defaultValue={currentPlan?.subtitle} /></div></div>
-                            <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>Price (INR)</Label><Input name="monthly" defaultValue={currentPlan?.prices.monthly} required /></div><div className="grid gap-2"><Label>Price (USD)</Label><Input name="monthlyUSD" defaultValue={currentPlan?.prices.monthlyUSD} required /></div></div>
+                            <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>Monthly Price (e.g. ₹20,000)</Label><Input name="monthly" defaultValue={currentPlan?.prices.monthly} required /></div></div>
                             <div className="grid gap-2"><Label>Description</Label><Textarea name="description" defaultValue={currentPlan?.description} /></div>
                             <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>CTA Text</Label><Input name="cta" defaultValue={currentPlan?.cta} /></div><div className="grid gap-2"><Label>Period</Label><Input name="period" defaultValue={currentPlan?.period} /></div></div>
                             <div className="flex items-center space-x-2"><Checkbox id="highlighted" name="highlighted" defaultChecked={currentPlan?.highlighted} /><Label htmlFor="highlighted">Highlight as Popular</Label></div>
@@ -354,7 +354,7 @@ function CatalogManager({ data }) {
                     <TableBody>{services.filter(s => s.name.toLowerCase().includes(search.toLowerCase())).map(s => (
                         <TableRow key={s.id}>
                             <TableCell className="font-medium">{s.name}</TableCell><TableCell><Badge variant="outline">{s.category}</Badge></TableCell>
-                            <TableCell>{s.pricing.standard ? `$${s.pricing.standard.price}` : "-"}</TableCell><TableCell>{s.pricing.priority ? `$${s.pricing.priority.price}` : "-"}</TableCell>
+                            <TableCell>{s.pricing.standard ? `₹${s.pricing.standard.price}` : "-"}</TableCell><TableCell>{s.pricing.priority ? `₹${s.pricing.priority.price}` : "-"}</TableCell>
                             <TableCell className="text-right">
                                 <Button variant="ghost" size="icon" onClick={() => { setCurrentService(s); setIsViewMode(true); setIsDialogOpen(true); }}><Eye className="w-4 h-4" /></Button>
                                 <Button variant="ghost" size="icon" onClick={() => { setCurrentService(s); setIsViewMode(false); setIsDialogOpen(true); }}><Edit className="w-4 h-4" /></Button>
@@ -371,8 +371,8 @@ function CatalogManager({ data }) {
                         <div className="space-y-4">
                             <div><Label>Name</Label><p>{currentService?.name}</p></div><div><Label>Category</Label><Badge>{currentService?.category}</Badge></div>
                             <div className="grid grid-cols-2 gap-4 border p-4 rounded text-center">
-                                <div><Label>Standard</Label><p className="text-xl font-bold">{currentService?.pricing.standard ? `$${currentService?.pricing.standard.price}` : "N/A"}</p><p className="text-xs text-muted-foreground">{currentService?.pricing.standard?.label}</p></div>
-                                <div><Label>Priority</Label><p className="text-xl font-bold text-amber-600">{currentService?.pricing.priority ? `$${currentService?.pricing.priority.price}` : "N/A"}</p><p className="text-xs text-muted-foreground">{currentService?.pricing.priority?.label}</p></div>
+                                <div><Label>Standard</Label><p className="text-xl font-bold">{currentService?.pricing.standard ? `₹${currentService?.pricing.standard.price}` : "N/A"}</p><p className="text-xs text-muted-foreground">{currentService?.pricing.standard?.label}</p></div>
+                                <div><Label>Priority</Label><p className="text-xl font-bold text-amber-600">{currentService?.pricing.priority ? `₹${currentService?.pricing.priority.price}` : "N/A"}</p><p className="text-xs text-muted-foreground">{currentService?.pricing.priority?.label}</p></div>
                             </div>
                         </div>
                     ) : (

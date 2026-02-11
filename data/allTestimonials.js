@@ -102,11 +102,11 @@ export const allTestimonials = [
             company: "Pet Paradise",
             image: null
         },
-        content: "The reconciliation service alone recovered over $50,000 in the first year. Their attention to financial details is exceptional. Highly recommend!",
+        content: "The reconciliation service alone recovered over ₹5,00,000 in the first year. Their attention to financial details is exceptional. Highly recommend!",
         rating: 5,
         metric: {
             label: "Recovered",
-            value: "$50K+",
+            value: "₹5L+",
         },
         featured: false
     },

@@ -55,7 +55,7 @@ const ClientPlanTab = () => {
             id: s.id,
             name: s.name,
             description: s.shortDescription || "Professional service for your Amazon business.",
-            price: `$${s.pricing.standard.price}`,
+            price: `₹${s.pricing.standard.price}`,
             priceType: s.pricing.standard.label || "per service",
             icon: Package, // Default icon
             popular: false
@@ -105,7 +105,7 @@ const ClientPlanTab = () => {
                                 <div>
                                     <Badge className="bg-white/20 text-white mb-2">Current Plan</Badge>
                                     <h2 className="font-heading text-3xl font-bold">{currentPlan?.name || client.plan}</h2>
-                                    <p className="text-white/80 mt-1">{currentPlan?.prices.monthlyUSD || "$0"} / month</p>
+                                    <p className="text-white/80 mt-1">{currentPlan?.prices.monthly || "₹0"} / month</p>
                                 </div>
                                 <div className="text-right">
                                     <div className="flex items-center gap-1 text-yellow-300 mb-2">

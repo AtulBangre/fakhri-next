@@ -6,8 +6,8 @@ export const invoices = [
         clientId: 1,
         client: "John Doe",
         date: "Jan 15, 2026",
-        amount: "$1,999.00",
-        amountNumeric: 1999,
+        amount: "₹20,000",
+        amountNumeric: 20000,
         plan: "Premium",
         status: "paid",
         dueDate: "Jan 15, 2026"
@@ -17,8 +17,8 @@ export const invoices = [
         clientId: 1,
         client: "John Doe",
         date: "Dec 15, 2025",
-        amount: "$1,999.00",
-        amountNumeric: 1999,
+        amount: "₹20,000",
+        amountNumeric: 20000,
         plan: "Premium",
         status: "paid",
         dueDate: "Dec 15, 2025"
@@ -28,8 +28,8 @@ export const invoices = [
         clientId: 1,
         client: "John Doe",
         date: "Nov 15, 2025",
-        amount: "$1,999.00",
-        amountNumeric: 1999,
+        amount: "₹20,000",
+        amountNumeric: 20000,
         plan: "Premium",
         status: "paid",
         dueDate: "Nov 15, 2025"
@@ -49,6 +49,6 @@ export const getBillingSummaryByClientId = (clientId) => {
     return {
         invoiceCount: clientInvoices.length,
         totalPaid,
-        totalPaidFormatted: `$${totalPaid.toLocaleString()}.00`,
+        totalPaidFormatted: `₹${totalPaid.toLocaleString()}`,
     };
 };

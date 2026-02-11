@@ -1,5 +1,5 @@
 "use client";
-import { Users, DollarSign, CheckSquare, AlertTriangle } from "lucide-react";
+import { Users, CheckSquare, AlertTriangle, IndianRupee } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table";
@@ -25,7 +25,7 @@ const DashboardTab = ({ setActiveTab }) => {
     const revenueByPlan = plans.map(plan => {
         const planClients = clients.filter(c => c.plan.toLowerCase() === plan.id || c.plan.toLowerCase() === plan.name.toLowerCase());
         const clientCount = planClients.length;
-        const priceString = plan.prices.monthlyUSD.replace(/[^0-9.]/g, ''); // Remove $ and commas
+        const priceString = plan.prices.monthly.replace(/[^0-9.]/g, ''); // Remove ₹ and commas
         const price = parseFloat(priceString) || 0;
         const revenue = clientCount * price;
 
@@ -33,7 +33,7 @@ const DashboardTab = ({ setActiveTab }) => {
             name: plan.name,
             revenue: revenue,
             clientCount: clientCount,
-            price: plan.prices.monthlyUSD
+            price: plan.prices.monthly
         };
     }).sort((a, b) => b.revenue - a.revenue);
 
@@ -58,8 +58,8 @@ const DashboardTab = ({ setActiveTab }) => {
         },
         {
             title: "Total Revenue",
-            value: `$${totalRevenue.toLocaleString()}`,
-            icon: <DollarSign className="h-5 w-5" />,
+            value: `₹${totalRevenue.toLocaleString()}`,
+            icon: <IndianRupee className="h-5 w-5" />,
             trend: { value: "+18% vs last month", positive: true }
         },
         {
@@ -132,7 +132,7 @@ const DashboardTab = ({ setActiveTab }) => {
                             <div key={plan.name} className="p-4 rounded-lg bg-accent/30">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="font-medium">{plan.name}</span>
-                                    <span className="text-sm text-primary font-semibold">${plan.revenue.toLocaleString()}</span>
+                                    <span className="text-sm text-primary font-semibold">₹{plan.revenue.toLocaleString()}</span>
                                 </div>
                                 <div className="w-full h-2 bg-accent rounded-full overflow-hidden">
                                     <div
