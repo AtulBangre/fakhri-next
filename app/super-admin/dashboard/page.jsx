@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard, Users, UsersRound, UserCog, CheckSquare,
-  DollarSign, Settings, Menu, X, LogOut, Bell, Shield
+  DollarSign, Settings, Menu, X, LogOut, Bell, Shield, Globe
 } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,7 @@ import SuperAdminTeamsTab from "@/components/super-admin/tabs/TeamsTab";
 import SuperAdminAdminsTab from "@/components/super-admin/tabs/AdminsTab";
 import SuperAdminTasksTab from "@/components/super-admin/tabs/TasksTab";
 import SuperAdminSalesTab from "@/components/super-admin/tabs/SalesTab";
-import SuperAdminSettingsTab from "@/components/super-admin/tabs/SettingsTab";
-
+import SuperAdminWebsiteTab from "@/components/super-admin/tabs/WebsiteTab";
 
 const navigation = [
   { name: "Dashboard", id: "Dashboard", icon: LayoutDashboard },
@@ -28,7 +27,8 @@ const navigation = [
   { name: "Admin Users", id: "Admins", icon: UserCog },
   { name: "Tasks", id: "Tasks", icon: CheckSquare },
   { name: "Sales & Revenue", id: "Sales", icon: DollarSign },
-  { name: "Settings", id: "Settings", icon: Settings },
+  { name: "Website CMS", id: "Website", icon: Globe },
+  { name: "Settings", id: "Settings_App", icon: Settings },
 ];
 
 export default function SuperAdminDashboardPage() {
@@ -90,7 +90,7 @@ export default function SuperAdminDashboardPage() {
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navigation.map((item) => (
               <button
-                key={item.name}
+                key={item.id}
                 onClick={() => {
                   setActiveTab(item.id);
                   setSidebarOpen(false); // Close mobile sidebar on selection
@@ -162,7 +162,8 @@ export default function SuperAdminDashboardPage() {
           {activeTab === "Admins" && <SuperAdminAdminsTab />}
           {activeTab === "Tasks" && <SuperAdminTasksTab />}
           {activeTab === "Sales" && <SuperAdminSalesTab />}
-          {activeTab === "Settings" && <SuperAdminSettingsTab />}
+          {activeTab === "Website" && <SuperAdminWebsiteTab />}
+          {activeTab === "Settings_App" && <SuperAdminSettingsTab />}
         </main>
       </div>
     </div>

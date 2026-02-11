@@ -1,8 +1,17 @@
 "use client";
 import { useState } from "react";
-import { HelpCircle, MessageSquarePlus, ChevronDown, ChevronUp, Send, X, CheckCircle2 } from "lucide-react";
+import { allFAQs } from "@/data/allFAQs";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
+
+import { HelpCircle, MessageSquarePlus, CheckCircle2, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { clientDashboardFAQs as faqData } from "@/data/allFAQs";
+
+const faqData = allFAQs.filter(f => f.categories.dashboard);
 
 const feedbackCategories = [
     { value: "general", label: "General Feedback" },
@@ -13,7 +22,6 @@ const feedbackCategories = [
 ];
 
 const SupportTab = () => {
-    const [expandedFaq, setExpandedFaq] = useState(null);
     const [showFeedbackForm, setShowFeedbackForm] = useState(false);
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
     const [formData, setFormData] = useState({
@@ -23,9 +31,6 @@ const SupportTab = () => {
         rating: 0
     });
 
-    const toggleFaq = (id) => {
-        setExpandedFaq(expandedFaq === id ? null : id);
-    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -74,30 +79,19 @@ const SupportTab = () => {
                         </div>
                     </div>
 
-                    <div className="bg-card rounded-xl border overflow-hidden">
-                        {faqData.map((faq, index) => (
-                            <div
-                                key={faq.id}
-                                className={`${index !== faqData.length - 1 ? 'border-b' : ''}`}
-                            >
-                                <button
-                                    onClick={() => toggleFaq(faq.id)}
-                                    className="w-full flex items-center justify-between p-4 text-left hover:bg-accent/50 transition-colors"
-                                >
-                                    <span className="font-medium text-sm pr-4">{faq.question}</span>
-                                    {expandedFaq === faq.id ? (
-                                        <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                    ) : (
-                                        <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                    )}
-                                </button>
-                                {expandedFaq === faq.id && (
-                                    <div className="px-4 pb-4 text-sm text-muted-foreground animate-in slide-in-from-top-1 duration-200">
+                    <div className="bg-card rounded-xl border overflow-hidden p-4">
+                        <Accordion type="single" collapsible className="w-full">
+                            {faqData.map((faq, index) => (
+                                <AccordionItem key={faq.id || index} value={`item-${index}`}>
+                                    <AccordionTrigger className="text-left font-medium text-sm">
+                                        {faq.question}
+                                    </AccordionTrigger>
+                                    <AccordionContent className="text-muted-foreground">
                                         {faq.answer}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
                     </div>
                 </div>
 

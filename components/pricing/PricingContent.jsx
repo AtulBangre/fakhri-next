@@ -4,7 +4,7 @@ import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { PricingCard } from '@/components/ui/PricingCard';
 import { pricingPlans, pricingDisclaimer, pricingPageInfo } from '@/data/pricingPlans';
 import { servicesCatalog, within2HoursPageData as within2HoursData } from '@/data/servicesCatalog';
-import { pricingFAQs } from '@/data/allFAQs';
+import { allFAQs } from '@/data/allFAQs';
 
 const pricingPageServices = servicesCatalog
     .filter(s => s.pricing.standard !== null)
@@ -209,7 +209,7 @@ export default function PricingContent() {
             />
 
             {/* FAQ Section */}
-            <FaQ data={pricingFAQs} />
+            <FaQ data={allFAQs.filter(f => f.categories.pricing)} />
 
             {/* CTA Section */}
             <section className="section-padding">

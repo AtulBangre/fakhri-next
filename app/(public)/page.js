@@ -5,7 +5,7 @@ import WhyChooseUs from '@/components/home/WhyChooseUs';
 import CTA from '@/components/home/CTA';
 import Testimonials from '@/components/home/Testimonials';
 
-import { homeFAQs } from '@/data/allFAQs';
+import { allFAQs } from '@/data/allFAQs';
 import FaQ from '@/components/home/FaQ';
 
 export const metadata = {
@@ -23,7 +23,7 @@ export default function Home() {
       <WhyChooseUs />
       <CTA />
       <Testimonials />
-      <FaQ data={homeFAQs} />
+      <FaQ data={allFAQs.filter(f => f.categories.home)} />
     </>
   );
 }
