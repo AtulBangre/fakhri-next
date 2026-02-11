@@ -8,13 +8,25 @@ import { ScrollReveal } from '@/components/animations/ScrollReveal';
 
 export default function WhyChooseUs({ initialContent }) {
     const { sections } = initialContent || {};
-    // Extract whyChooseUs data if available or use default static content
-    const features = sections?.whyChooseUs || [
-        "Certified Amazon SPN Partner with proven track record",
-        "Dedicated account managers for personalized support",
-        "Transparent reporting and clear communication",
-        "Results-driven strategies tailored to your brand",
-    ];
+
+    // Read structured data from DB: sections.whyChooseUs
+    const wcu = sections?.whyChooseUs || {};
+
+    const badge = wcu.badge || "Why Choose Us";
+    const title = wcu.title || "We're Not Just Service Providers, We're Your Growth Partners";
+    const description = wcu.description || "With over 8 years of experience and a team of 50+ Amazon experts, we understand what it takes to succeed on Amazon. We treat your business as our own and work relentlessly to achieve your goals.";
+    const overlayTitle = wcu.overlayTitle || "Trusted by 500+ Sellers";
+    const overlayDescription = wcu.overlayDescription || "Join the network of successful Amazon brands.";
+
+    // Support both array of strings (features) and legacy array of strings
+    const features = Array.isArray(wcu.features) && wcu.features.length > 0
+        ? wcu.features
+        : (Array.isArray(wcu) ? wcu : [
+            "Certified Amazon SPN Partner with proven track record",
+            "Dedicated account managers for personalized support",
+            "Transparent reporting and clear communication",
+            "Results-driven strategies tailored to your brand",
+        ]);
 
     return (
         <section className="section-padding bg-secondary/30">
@@ -22,14 +34,12 @@ export default function WhyChooseUs({ initialContent }) {
                 <div className="grid lg:grid-cols-2 gap-16 items-center">
                     <ScrollReveal direction="left">
                         <div>
-                            <span className="badge-primary mb-4">Why Choose Us</span>
+                            <span className="badge-primary mb-4">{badge}</span>
                             <h2 className="heading-lg mb-6">
-                                We&apos;re Not Just Service Providers, We&apos;re Your <span className="text-primary">Growth Partners</span>
+                                {title}
                             </h2>
                             <p className="body-md mb-8">
-                                With over 8 years of experience and a team of 50+ Amazon experts,
-                                we understand what it takes to succeed on Amazon. We treat your business
-                                as our own and work relentlessly to achieve your goals.
+                                {description}
                             </p>
 
                             <ul className="space-y-4">
@@ -61,8 +71,8 @@ export default function WhyChooseUs({ initialContent }) {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                             <div className="absolute bottom-6 left-6 right-6 text-white bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20">
-                                <p className="font-poppins font-semibold text-lg mb-1">Trusted by 500+ Sellers</p>
-                                <p className="text-white/80 text-sm">Join the network of successful Amazon brands.</p>
+                                <p className="font-poppins font-semibold text-lg mb-1">{overlayTitle}</p>
+                                <p className="text-white/80 text-sm">{overlayDescription}</p>
                             </div>
                         </div>
                     </ScrollReveal>

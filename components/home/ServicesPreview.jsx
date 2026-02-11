@@ -5,29 +5,34 @@ import { ArrowRight } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import ServiceCard from '@/components/ui/ServiceCard';
 
-export default function ServicesPreview({ initialServices }) {
+export default function ServicesPreview({ initialServices, initialContent }) {
     const services = initialServices || [];
+    const { sections } = initialContent || {};
+
+    // Read heading from DB: sections.servicesPreview
+    const sp = sections?.servicesPreview || {};
+    const badge = sp.badge || "Our Services";
+    const title = sp.title || "Complete Amazon Seller Solutions";
+    const description = sp.description || "From account setup to strategic growth, we provide end-to-end services that help you succeed on Amazon.";
 
     return (
         <section className="section-padding">
             <div className="container-custom">
                 <ScrollReveal>
                     <div className="text-center max-w-3xl mx-auto mb-16">
-                        <span className="badge-primary mb-4">Our Services</span>
+                        <span className="badge-primary mb-4">{badge}</span>
                         <h2 className="heading-lg mb-4">
-                            Complete Amazon Seller Solutions
+                            {title}
                         </h2>
                         <p className="body-md">
-                            From account setup to strategic growth, we provide end-to-end services
-                            that help you succeed on Amazon.
+                            {description}
                         </p>
                     </div>
                 </ScrollReveal>
 
-
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {services.slice(0, 6).map((service, index) => (
-                        <ServiceCard key={service.id} service={service} index={index} variant="compact" />
+                        <ServiceCard key={service.id || service._id || index} service={service} index={index} variant="compact" />
                     ))}
                 </div>
 

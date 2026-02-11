@@ -4,7 +4,7 @@ import { StaggerContainer, StaggerItem } from '@/components/animations/ScrollRev
 
 export default function TrustBadges({ initialContent }) {
     const { sections } = initialContent || {};
-    // Fallback if badges are not in sections or structure differs
+    // Read from DB: sections.badges
     const badges = sections?.badges || [
         { title: "2016", subtitle: "Founded" },
         { title: "Ind & UAE", subtitle: "Locations" },

@@ -7,10 +7,11 @@ import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
 export default function CTA({ initialContent }) {
     const { sections } = initialContent || {};
-    const cta = sections?.cta || {
-        title: "Ready to Accelerate Your Amazon Growth?",
-        description: "Join 500+ successful sellers who trust Fakhri IT Services for their Amazon success. Get started with a free consultation today."
-    };
+
+    // Read from DB: sections.cta
+    const cta = sections?.cta || {};
+    const title = cta.title || "Ready to Accelerate Your Amazon Growth?";
+    const description = cta.description || "Join 500+ successful sellers who trust Fakhri IT Services for their Amazon success. Get started with a free consultation today.";
 
     return (
         <section className="section-padding">
@@ -25,10 +26,10 @@ export default function CTA({ initialContent }) {
 
                         <div className="relative z-10 max-w-3xl mx-auto text-center">
                             <h2 className="heading-lg mb-6">
-                                {cta.title}
+                                {title}
                             </h2>
                             <p className="text-primary-foreground/90 text-lg mb-8 max-w-2xl mx-auto">
-                                {cta.description}
+                                {description}
                             </p>
                             <div className="flex flex-wrap justify-center gap-4">
                                 <ContactDialog

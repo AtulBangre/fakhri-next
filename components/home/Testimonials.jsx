@@ -4,8 +4,15 @@ import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import SocialTestimonialCard from '@/components/ui/SocialTestimonialCard';
 import Marquee from 'react-fast-marquee';
 
-export default function Testimonials({ initialTestimonials }) {
+export default function Testimonials({ initialTestimonials, initialContent }) {
     const socialTestimonials = initialTestimonials || [];
+    const { sections } = initialContent || {};
+
+    // Read Heading from DB: sections.testimonialsHeading
+    const heading = sections?.testimonialsHeading || {};
+    const badge = heading.badge || "Testimonials";
+    const title = heading.title || "Loved by Amazon Sellers";
+    const description = heading.description || "See how our Amazon services are helping businesses grow their sales and dominate their niches.";
 
     return (
         <section className="section-padding bg-background relative">
@@ -27,12 +34,12 @@ export default function Testimonials({ initialTestimonials }) {
                 {/* Section Header */}
                 <ScrollReveal>
                     <div className="text-center mb-16">
-                        <span className="badge-primary mb-4">Testimonials</span>
+                        <span className="badge-primary mb-4">{badge}</span>
                         <h2 className="heading-lg mb-4">
-                            Loved by Amazon Sellers
+                            {title}
                         </h2>
                         <p className="body-md max-w-2xl mx-auto">
-                            See how our Amazon services are helping businesses grow their sales and dominate their niches.
+                            {description}
                         </p>
                     </div>
                 </ScrollReveal>
@@ -87,4 +94,3 @@ export default function Testimonials({ initialTestimonials }) {
         </section>
     );
 }
-

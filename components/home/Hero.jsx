@@ -16,8 +16,12 @@ const sellerImages = [
 
 export default function Hero({ initialContent }) {
     const { hero, sections } = initialContent || {};
-    // Fallback if hero content is structured differently or missing
+
+    // Read from DB hero data with sensible fallbacks
+    const badge = hero?.badge || "Amazon Gold Partner 1";
+    const title = hero?.title || "Your No.1 Growth Partner for Amazon Success";
     const description = hero?.subtitle || "We help Amazon sellers scale their business with expert account management and advertising strategies.";
+    const ctaText = hero?.ctaText || "Start Your Journey";
     const stats = hero?.stats || [
         { value: "500+", label: "Clients Served" },
         { value: "$50M+", label: "Revenue Generated" },
@@ -80,7 +84,11 @@ export default function Hero({ initialContent }) {
                             transition={{ duration: 0.6, delay: 0.1 }}
                             className="heading-xl mb-6"
                         >
-                            Your <span className="text-primary">No.1 Growth Partner</span> for Amazon Success
+                            {title.includes('No.1') ? (
+                                <>Your <span className="text-primary">No.1 Growth Partner</span> for Amazon Success</>
+                            ) : (
+                                title
+                            )}
                         </motion.h1>
 
                         {/* Description */}
@@ -103,7 +111,7 @@ export default function Hero({ initialContent }) {
                             <ContactDialog
                                 trigger={
                                     <button className="btn-primary group inline-flex items-center">
-                                        Start Your Journey
+                                        {ctaText}
                                         <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                     </button>
                                 }
@@ -147,7 +155,7 @@ export default function Hero({ initialContent }) {
                                 <div className="relative z-10">
                                     <Award className="w-16 h-16 mb-6" />
                                     <h3 className="text-2xl font-poppins font-bold mb-3">
-                                        Trusted by 500+ Sellers
+                                        {stats[0] ? `Trusted by ${stats[0].value} ${stats[0].label}` : "Trusted by 500+ Sellers"}
                                     </h3>
                                     <p className="text-primary-foreground/80 mb-6">
                                         We&apos;ve helped generate over $50M in revenue for our clients across multiple Amazon marketplaces.
