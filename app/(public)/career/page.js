@@ -1,10 +1,9 @@
 import CareerContent from '@/components/career/CareerContent';
-import { seoData } from '@/data/company';
 
 export const metadata = {
-    title: seoData.career.title,
-    description: seoData.career.description,
-    keywords: seoData.career.keywords,
+    title: "Careers | Fakhri IT Services - Join Our Growing Team",
+    description: "Join the Fakhri IT Services team. Explore career opportunities in Amazon seller services, e-commerce, and digital marketing.",
+    keywords: "Amazon jobs, e-commerce careers, seller services jobs",
 };
 
 export default function CareerPage() {

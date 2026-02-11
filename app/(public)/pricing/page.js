@@ -1,10 +1,9 @@
 import PricingContent from '@/components/pricing/PricingContent';
-import { seoData } from '@/data/company';
 
 export const metadata = {
-    title: seoData.pricing.title,
-    description: seoData.pricing.description,
-    keywords: seoData.pricing.keywords,
+    title: "Pricing Plans | Fakhri IT Services - Transparent Amazon Service Pricing",
+    description: "Flexible pricing plans for Amazon sellers. Choose from Elite, Premium, and Platinum packages designed to scale your Amazon business.",
+    keywords: "Amazon services pricing, seller services cost, Amazon management packages",
 };
 
 export default function PricingPage() {

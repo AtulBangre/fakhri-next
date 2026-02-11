@@ -10,11 +10,9 @@ export const companyData = {
         { title: "Amazon SPN Partner", subtitle: "Certified Service Provider" },
         { title: "Since 2016", subtitle: "8+ Years of Excellence" },
         { title: "500+", subtitle: "Happy Clients" },
-        // { title: "24/7", subtitle: "Support Available" },
     ],
     stats: [
         { value: "500+", label: "Clients Served", description: "Trusted by leading brands" },
-        // { value: "$50M+", label: "Revenue Generated", description: "For our clients" },
         { value: "8+", label: "Years Experience", description: "Industry expertise" },
         { value: "35+", label: "Team Members", description: "Dedicated professionals" },
     ],
@@ -39,45 +37,5 @@ export const companyData = {
     },
 };
 
-export const seoData = {
-    home: {
-        title: "Fakhri IT Services | No.1 Amazon Seller Services Partner",
-        description: "Your trusted Amazon seller services partner since 2016. Expert account management, FBA operations, PPC advertising, and growth strategies for Amazon sellers.",
-        keywords: "Amazon seller services, Amazon account management, FBA services, Amazon PPC, Amazon consulting",
-    },
-    services: {
-        title: "Our Services | Fakhri IT Services - Amazon Seller Solutions",
-        description: "Comprehensive Amazon seller services including account setup, product listing optimization, FBA operations, advertising management, and strategic growth consulting.",
-        keywords: "Amazon services, product listing, FBA operations, Amazon advertising, A+ content",
-    },
-    pricing: {
-        title: "Pricing Plans | Fakhri IT Services - Transparent Amazon Service Pricing",
-        description: "Flexible pricing plans for Amazon sellers. Choose from Elite, Premium, and Platinum packages designed to scale your Amazon business.",
-        keywords: "Amazon services pricing, seller services cost, Amazon management packages",
-    },
-    within2hours: {
-        title: "Within 2 Hours Support | Fakhri IT Services - Priority Assistance",
-        description: "Get urgent Amazon seller support within 2 hours. Priority handling for account issues, listing problems, and critical business needs.",
-        keywords: "urgent Amazon support, priority seller help, quick Amazon assistance",
-    },
-    blog: {
-        title: "Blog | Fakhri IT Services - Amazon Seller Insights & Tips",
-        description: "Expert insights, tips, and strategies for Amazon sellers. Stay updated with the latest marketplace trends and growth tactics.",
-        keywords: "Amazon seller blog, e-commerce tips, Amazon strategies",
-    },
-    career: {
-        title: "Careers | Fakhri IT Services - Join Our Growing Team",
-        description: "Join the Fakhri IT Services team. Explore career opportunities in Amazon seller services, e-commerce, and digital marketing.",
-        keywords: "Amazon jobs, e-commerce careers, seller services jobs",
-    },
-    contact: {
-        title: "Contact Us | Fakhri IT Services - Get in Touch",
-        description: "Contact Fakhri IT Services for Amazon seller solutions. Reach out via phone, email, or our contact form for a free consultation.",
-        keywords: "contact Amazon services, seller support contact, Amazon consulting inquiry",
-    },
-    about: {
-        title: "About Us | Fakhri IT Services - Your Amazon Growth Partner",
-        description: "Learn about Fakhri IT Services, a leading Amazon agency helping brands scale since 2016. Meet our expert team of account managers, creative designers, and strategists.",
-        keywords: "About Fakhri IT Services, Amazon agency team, Amazon seller consultants, e-commerce experts",
-    },
-};
+// Moved to individual page metadata
+

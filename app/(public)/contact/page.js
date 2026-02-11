@@ -1,10 +1,9 @@
 import ContactContent from '@/components/contact/ContactContent';
-import { seoData } from '@/data/company';
 
 export const metadata = {
-    title: seoData.contact.title,
-    description: seoData.contact.description,
-    keywords: seoData.contact.keywords,
+    title: "Contact Us | Fakhri IT Services - Get in Touch",
+    description: "Contact Fakhri IT Services for Amazon seller solutions. Reach out via phone, email, or our contact form for a free consultation.",
+    keywords: "contact Amazon services, seller support contact, Amazon consulting inquiry",
 };
 
 export default function ContactPage() {

@@ -5,12 +5,11 @@ import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import ServiceCard from '@/components/ui/ServiceCard';
 import { services, serviceCategories } from '@/data/services';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
-import { seoData } from '@/data/company';
 
 export const metadata = {
-    title: seoData.services.title,
-    description: seoData.services.description,
-    keywords: seoData.services.keywords,
+    title: "Our Services | Fakhri IT Services - Amazon Seller Solutions",
+    description: "Comprehensive Amazon seller services including account setup, product listing optimization, FBA operations, advertising management, and strategic growth consulting.",
+    keywords: "Amazon services, product listing, FBA operations, Amazon advertising, A+ content",
 };
 
 export default function ServicesPage() {
