@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, Users, IndianRupee } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatINR } from "@/lib/utils";
 import { clients } from "@/data/clients";
 import { plans } from "@/data/pricingPlans";
 
@@ -100,13 +101,13 @@ const SuperAdminSalesTab = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     title="Total Revenue (Jan)"
-                    value={`₹${totalRevenue.toLocaleString()}`}
+                    value={`₹${formatINR(totalRevenue)}`}
                     icon={<IndianRupee className="h-5 w-5" />}
                     trend={{ value: "+8.6% vs Dec", positive: true }}
                 />
                 <StatCard
                     title="MRR"
-                    value={`₹${totalRevenue.toLocaleString()}`}
+                    value={`₹${formatINR(totalRevenue)}`}
                     icon={<TrendingUp className="h-5 w-5" />}
                 />
                 <StatCard

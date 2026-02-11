@@ -49,6 +49,6 @@ export const getBillingSummaryByClientId = (clientId) => {
     return {
         invoiceCount: clientInvoices.length,
         totalPaid,
-        totalPaidFormatted: `₹${totalPaid.toLocaleString()}`,
+        totalPaidFormatted: `₹${totalPaid.toLocaleString('en-IN')}`,
     };
 };

@@ -4,6 +4,7 @@ import StatCard from "@/components/dashboard/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table";
 
+import { formatINR } from "@/lib/utils";
 import { recentClients } from "@/data/dashboard";
 import { admins } from "@/data/admins";
 import { clients } from "@/data/clients";
@@ -58,7 +59,7 @@ const DashboardTab = ({ setActiveTab }) => {
         },
         {
             title: "Total Revenue",
-            value: `₹${totalRevenue.toLocaleString()}`,
+            value: `₹${formatINR(totalRevenue)}`,
             icon: <IndianRupee className="h-5 w-5" />,
             trend: { value: "+18% vs last month", positive: true }
         },

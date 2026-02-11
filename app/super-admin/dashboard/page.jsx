@@ -19,6 +19,7 @@ import SuperAdminAdminsTab from "@/components/super-admin/tabs/AdminsTab";
 import SuperAdminTasksTab from "@/components/super-admin/tabs/TasksTab";
 import SuperAdminSalesTab from "@/components/super-admin/tabs/SalesTab";
 import SuperAdminWebsiteTab from "@/components/super-admin/tabs/WebsiteTab";
+import SuperAdminSettingsTab from "@/components/super-admin/tabs/SettingsTab";
 
 const navigation = [
   { name: "Dashboard", id: "Dashboard", icon: LayoutDashboard },

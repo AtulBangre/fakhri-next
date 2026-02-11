@@ -3,6 +3,7 @@ import { Download, Eye, CreditCard } from "lucide-react";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { formatINR } from "@/lib/utils";
 import { getInvoicesByClientId, getBillingSummaryByClientId } from "@/data/invoices";
 import { getClientById } from "@/data/clients";
 import { plans } from "@/data/pricingPlans";
@@ -61,7 +62,7 @@ const ClientBillingTab = () => {
                         <CreditCard className="h-5 w-5 text-primary" />
                         <span className="text-sm text-muted-foreground">Total Paid</span>
                     </div>
-                    <p className="text-2xl font-heading font-bold">₹{billingSummary.totalPaid.toLocaleString()}</p>
+                    <p className="text-2xl font-heading font-bold">₹{formatINR(billingSummary.totalPaid)}</p>
                     <p className="text-sm text-muted-foreground">{billingSummary.paidCount} invoices</p>
                 </div>
             </div>

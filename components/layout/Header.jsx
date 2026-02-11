@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, ShoppingCart, Trash2 } from 'lucide-react';
+import { formatINR } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
 
 const navigationItems = [
@@ -185,7 +186,7 @@ export default function Header() {
                                         </div>
                                         {totalAmount > 0 && (
                                             <span className="text-sm font-medium hidden xl:inline-block">
-                                                ₹{totalAmount.toLocaleString()}
+                                                ₹{formatINR(totalAmount)}
                                             </span>
                                         )}
                                     </Button>
@@ -235,8 +236,8 @@ export default function Header() {
                                                         </div>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="text-sm font-semibold">₹{item.price * item.quantity}</p>
-                                                        <p className="text-xs text-muted-foreground">₹{item.price} ea</p>
+                                                        <p className="text-sm font-semibold">₹{formatINR(item.price * item.quantity)}</p>
+                                                        <p className="text-xs text-muted-foreground">₹{formatINR(item.price)} ea</p>
                                                     </div>
                                                 </div>
                                             ))
@@ -247,7 +248,7 @@ export default function Header() {
                                         <div className="p-4 border-t border-border bg-muted/20">
                                             <div className="flex justify-between items-center mb-4">
                                                 <span className="font-medium">Total</span>
-                                                <span className="text-lg font-bold text-primary">₹{totalAmount}</span>
+                                                <span className="text-lg font-bold text-primary">₹{formatINR(totalAmount)}</span>
                                             </div>
                                             <Button
                                                 className="w-full"

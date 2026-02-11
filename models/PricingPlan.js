@@ -1,0 +1,22 @@
+import mongoose from 'mongoose';
+
+const PricingPlanSchema = new mongoose.Schema({
+    planId: { type: String, unique: true, required: true }, // e.g., 'elite'
+    name: { type: String, required: true },
+    subtitle: { type: String },
+    prices: {
+        monthly: { type: String },
+        monthlyUSD: { type: String },
+    },
+    period: { type: String, default: '/month' },
+    description: { type: String },
+    highlighted: { type: Boolean, default: false },
+    cta: { type: String },
+    features: [{
+        text: { type: String },
+        value: { type: mongoose.Schema.Types.Mixed },
+        included: { type: Boolean }
+    }]
+}, { timestamps: true });
+
+export default mongoose.models.PricingPlan || mongoose.model('PricingPlan', PricingPlanSchema);
