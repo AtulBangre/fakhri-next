@@ -124,66 +124,66 @@ export const pricingPlans = [
 
 export const pricingDisclaimer = "Sales and growth results may vary based on multiple factors including product category, competition, market conditions, and seller commitment. No guaranteed outcomes. Results mentioned are based on historical client performance and are not promises of future success.";
 
-// Within 2 Hours Service Pricing Data
-export const within2HoursServices = [
+// Add-on Services Data (shown on Pricing Page)
+export const pricingPageServices = [
     {
-        id: "apt-content-1",
-        name: "A+ Content Creation/product",
-        price: 500,
-        category: "Content"
+        id: "account-suspension",
+        name: "Account Suspension Recovery",
+        price: 1500,
+        category: "Critical"
     },
     {
-        id: "infographics",
-        name: "Infographics Creation/product",
-        price: 500,
-        category: "Design"
+        id: "listing-suppression",
+        name: "Listing Suppression Fix",
+        price: 800,
+        category: "Urgent"
     },
     {
-        id: "listing-catalog",
-        name: "Listing Cataloging",
-        price: 500,
-        category: "Catalog"
+        id: "policy-violation",
+        name: "Policy Violation Resolution",
+        price: 1200,
+        category: "Critical"
     },
     {
-        id: "apt-content-2",
-        name: "Product Photography",
-        price: 500,
-        category: "Content"
+        id: "inventory-stranded",
+        name: "Stranded Inventory Recovery",
+        price: 600,
+        category: "Urgent"
     },
     {
-        id: "apt-content-3",
-        name: "Brand Store Design",
-        price: 500,
-        category: "Design"
+        id: "hijacker-removal",
+        name: "Hijacker Removal Service",
+        price: 900,
+        category: "Critical"
     },
     {
-        id: "apt-content-4",
-        name: "Product Video Creation",
+        id: "negative-review",
+        name: "Negative Review Management",
         price: 500,
-        category: "Video"
+        category: "Support"
     },
     {
-        id: "apt-content-5",
-        name: "SEO Optimization",
-        price: 500,
-        category: "SEO"
+        id: "buy-box-loss",
+        name: "Buy Box Loss Investigation",
+        price: 700,
+        category: "Urgent"
     },
     {
-        id: "apt-content-6",
-        name: "Competitor Analysis",
-        price: 500,
-        category: "Analysis"
+        id: "appeal-writing",
+        name: "Professional Appeal Writing",
+        price: 1000,
+        category: "Critical"
     },
     {
-        id: "apt-content-7",
-        name: "Product Listing Audit",
-        price: 500,
-        category: "Audit"
+        id: "performance-metrics",
+        name: "Performance Metrics Recovery",
+        price: 800,
+        category: "Urgent"
     },
 ];
 
-export const within2HoursInfo = {
-    title: "Problems We Handle Within 2 Hours",
-    description: "When your Amazon business is at risk, our experts act immediately. Get urgent issues resolved with guaranteed 2-hour response time.",
-    badge: "Emergency Services"
+export const pricingPageInfo = {
+    title: "Add-on Services Pricing",
+    description: "Enhance your Amazon business with our premium add-on services. Choose from a variety of specialized services to boost your performance.",
+    badge: "Add-on Services"
 };

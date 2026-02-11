@@ -11,7 +11,15 @@ export const clients = [
         activeTasks: 3,
         status: "active",
         manager: "Sarah Mitchell",
-        joinedDate: "Jan 15, 2026"
+        joinedDate: "Jan 15, 2026",
+        // Extended fields for admin dashboard
+        salesManager: "David Sales",
+        spCentralRequestId: "REQ-1001",
+        marketplace: "Amazon US",
+        userPermission: "Full Access",
+        accountAccessUrl: "https://sellercentral.amazon.com",
+        leadSource: "LinkedIn",
+        listingManager: "Emily Listings"
     },
     {
         id: 2,
@@ -86,10 +94,12 @@ export const clients = [
         joinedDate: "Jan 20, 2026"
     },
 ];
+
 // All tasks across the platform
 export const allTasks = [
     {
         id: 1,
+        clientId: 1,
         title: "PPC Campaign Setup",
         client: "John Doe",
         manager: "Sarah Mitchell",
@@ -97,32 +107,17 @@ export const allTasks = [
         priority: "High",
         status: "in-progress",
         eta: "Jan 25, 2026",
+        dueDate: "Jan 25, 2026",
+        owner: "Sarah Mitchell",
+        description: "Set up and optimize PPC campaigns for product launch",
+        planForWeek: "6",
+        isHighPriority: true,
+        isCompleted: false,
         lastUpdated: "2 hours ago"
     },
     {
         id: 2,
-        title: "A+ Content Design - Product B",
-        client: "Emily Smith",
-        manager: "Sarah Mitchell",
-        service: "A+ Content",
-        priority: "Medium",
-        status: "in-progress",
-        eta: "Jan 28, 2026",
-        lastUpdated: "5 hours ago"
-    },
-    {
-        id: 3,
-        title: "Brand Registry Application",
-        client: "Michael Brown",
-        manager: "Sarah Mitchell",
-        service: "Brand Registry",
-        priority: "High",
-        status: "pending",
-        eta: "Feb 1, 2026",
-        lastUpdated: "1 day ago"
-    },
-    {
-        id: 4,
+        clientId: 1,
         title: "Listing Optimization - Product A",
         client: "John Doe",
         manager: "Sarah Mitchell",
@@ -130,11 +125,54 @@ export const allTasks = [
         priority: "Low",
         status: "completed",
         eta: "Jan 20, 2026",
+        dueDate: "Jan 20, 2026",
         completedDate: "Jan 19, 2026",
+        owner: "Sarah Mitchell",
+        description: "Optimize product listings for better visibility",
+        planForWeek: "5",
+        isHighPriority: false,
+        isCompleted: true,
         lastUpdated: "2 days ago"
     },
     {
+        id: 3,
+        clientId: 2,
+        title: "A+ Content Design - Product B",
+        client: "Emily Smith",
+        manager: "Sarah Mitchell",
+        service: "A+ Content",
+        priority: "Medium",
+        status: "in-progress",
+        eta: "Jan 28, 2026",
+        dueDate: "Jan 28, 2026",
+        owner: "Sarah Mitchell",
+        description: "Design A+ content for product B",
+        planForWeek: "7",
+        isHighPriority: false,
+        isCompleted: false,
+        lastUpdated: "5 hours ago"
+    },
+    {
+        id: 4,
+        clientId: 3,
+        title: "Brand Registry Application",
+        client: "Michael Brown",
+        manager: "Sarah Mitchell",
+        service: "Brand Registry",
+        priority: "High",
+        status: "pending",
+        eta: "Feb 1, 2026",
+        dueDate: "Feb 1, 2026",
+        owner: "John Anderson",
+        description: "Apply for Amazon Brand Registry",
+        planForWeek: "6",
+        isHighPriority: true,
+        isCompleted: false,
+        lastUpdated: "1 day ago"
+    },
+    {
         id: 5,
+        clientId: 1,
         title: "Competitor Analysis Report",
         client: "John Doe",
         manager: "Sarah Mitchell",
@@ -142,11 +180,18 @@ export const allTasks = [
         priority: "Low",
         status: "completed",
         eta: "Jan 15, 2026",
+        dueDate: "Jan 14, 2026",
         completedDate: "Jan 14, 2026",
+        owner: "Sarah Mitchell",
+        description: "Analyze top competitors and provide recommendations",
+        planForWeek: "3",
+        isHighPriority: false,
+        isCompleted: true,
         lastUpdated: "5 days ago"
     },
     {
         id: 6,
+        clientId: 2,
         title: "Backend Search Terms Update",
         client: "Emily Smith",
         manager: "Sarah Mitchell",
@@ -159,6 +204,7 @@ export const allTasks = [
     },
     {
         id: 7,
+        clientId: 5,
         title: "Listing Optimization",
         client: "Robert Kim",
         manager: "John Anderson",
@@ -170,6 +216,7 @@ export const allTasks = [
     },
     {
         id: 8,
+        clientId: 6,
         title: "Account Audit",
         client: "Amanda White",
         manager: "Emma Wilson",
@@ -180,6 +227,18 @@ export const allTasks = [
         lastUpdated: "4 days ago"
     },
 ];
+
+// Notes collection
+export const notesData = [
+    { id: 1, clientId: 1, author: "Sarah Mitchell", date: "Jan 18, 2026", content: "Client requested priority on PPC campaigns. Discussed budget allocation for Q1." },
+    { id: 2, clientId: 1, author: "John Anderson", date: "Jan 15, 2026", content: "Completed initial consultation. Client has 50 SKUs to optimize." },
+    { id: 3, clientId: 2, author: "Sarah Mitchell", date: "Jan 16, 2026", content: "Client wants focus on beauty category. Seasonal campaigns discussed." },
+    { id: 4, clientId: 3, author: "Emma Wilson", date: "Jan 10, 2026", content: "Brand registry documents received. Processing application." },
+];
+
+// Managers list
+export const managers = ["Sarah Mitchell", "John Anderson", "Emma Wilson"];
+
 // Files collection
 export const files = [
     {
@@ -233,6 +292,7 @@ export const files = [
         date: "Jan 10, 2026"
     },
 ];
+
 // Client invoices
 export const invoices = [
     {
@@ -257,25 +317,35 @@ export const invoices = [
         dueDate: "Nov 15, 2025"
     },
 ];
+
 // Client notifications
 export const clientNotifications = [
     { id: 1, message: "Your PPC campaign has been optimized", time: "2 hours ago" },
     { id: 2, message: "New file uploaded: Product Images v2", time: "5 hours ago" },
     { id: 3, message: "Account health check completed", time: "1 day ago" },
 ];
+
 // Helper functions to filter data
 export const getClientsByManager = (managerName) => {
     return clients.filter(c => c.manager === managerName);
 };
+
 export const getTasksByClient = (clientName) => {
     return allTasks.filter(t => t.client === clientName);
 };
+
+export const getTasksByClientId = (clientId) => {
+    return allTasks.filter(t => t.clientId === clientId);
+};
+
 export const getTasksByManager = (managerName) => {
     return allTasks.filter(t => t.manager === managerName);
 };
+
 export const getFilesByClient = (clientName) => {
     return files.filter(f => f.client === clientName);
 };
+
 export const getUnassignedClients = () => {
     return clients.filter(c => c.manager === "Unassigned");
 };

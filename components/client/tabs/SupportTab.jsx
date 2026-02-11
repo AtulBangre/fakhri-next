@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { HelpCircle, MessageSquarePlus, ChevronDown, ChevronUp, Send, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { faqData, feedbackCategories } from "@/data/faqData";
+import { clientDashboardFAQs as faqData, feedbackCategories } from "@/data/faq";
 
 const SupportTab = () => {
     const [expandedFaq, setExpandedFaq] = useState(null);
@@ -153,8 +153,8 @@ const SupportTab = () => {
                                                 type="button"
                                                 onClick={() => handleRatingClick(star)}
                                                 className={`w-10 h-10 rounded-lg border-2 transition-all ${formData.rating >= star
-                                                        ? 'border-yellow-400 bg-yellow-400/20 text-yellow-600'
-                                                        : 'border-border hover:border-yellow-400/50'
+                                                    ? 'border-yellow-400 bg-yellow-400/20 text-yellow-600'
+                                                    : 'border-border hover:border-yellow-400/50'
                                                     }`}
                                             >
                                                 {star}

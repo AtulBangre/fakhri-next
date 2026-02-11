@@ -7,7 +7,6 @@ import { Plus, Trash2, Save, RefreshCw } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { within2HoursPageServices, within2HoursPageInfo } from "@/data/within2hours";
-import { within2HoursPageServices, within2HoursPageInfo } from "@/data/within2hours";
 
 export default function Within2HoursManager() {
     const [services, setServices] = useState(within2HoursPageServices);

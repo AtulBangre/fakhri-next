@@ -2,9 +2,9 @@
 
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { PricingCard } from '@/components/ui/PricingCard';
-import { pricingPlans, pricingDisclaimer } from '@/data/pricing';
+import { pricingPlans, pricingDisclaimer, pricingPageServices, pricingPageInfo } from '@/data/pricing';
 import { pricingFAQs } from '@/data/faq';
-import { pricingPageServices, pricingPageInfo } from '@/data/within2hours';
+import { within2HoursData } from '@/data/within2hours';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,9 +17,7 @@ import {
 } from "@/components/ui/accordion";
 import FaQ from '../home/FaQ';
 import Within2HoursPricingList from '../within-2-hours/Within2HoursPricingList';
-
 import { useState } from 'react';
-import { within2HoursData } from '@/data/within2hours';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
 export default function PricingContent() {
