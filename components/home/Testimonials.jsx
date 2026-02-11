@@ -2,7 +2,7 @@
 
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import SocialTestimonialCard from '@/components/ui/SocialTestimonialCard';
-import { socialTestimonials } from '@/data/testimonials';
+import { testimonials, socialTestimonials } from '@/data/allTestimonials';
 import Marquee from 'react-fast-marquee';
 
 export default function Testimonials() {

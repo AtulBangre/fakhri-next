@@ -5,8 +5,28 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Mail, Phone, MapPin, Linkedin, Twitter, Facebook, Youtube, Send } from "lucide-react";
 import Logo from "@/components/ui/Logo";
-import { footerLinks } from "@/data/navigation";
 import { companyData } from "@/data/company";
+
+const footerLinks = {
+  services: [
+    { label: "Account Management", href: "/services#account-management" },
+    { label: "Product Listing", href: "/services#product-listing" },
+    { label: "FBA Operations", href: "/services#fba-operations" },
+    { label: "Ads Management", href: "/services#ads-management" },
+    { label: "A+ Content", href: "/services#a-plus-content" },
+  ],
+  company: [
+    { label: "About Us", href: "/about" },
+    { label: "Career", href: "/career" },
+    { label: "Blog", href: "/blog" },
+    { label: "Contact", href: "/contact" },
+  ],
+  support: [
+    { label: "Within 2 Hours", href: "/within-2-hours" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "FAQs", href: "/pricing#faq" },
+  ],
+};
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 

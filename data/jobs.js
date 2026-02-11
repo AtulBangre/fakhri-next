@@ -1,4 +1,4 @@
-// Career data
+// Job Openings Collection - Serves as a MongoDB collection mock
 export const jobPositions = [
     {
         id: "1",
@@ -14,6 +14,7 @@ export const jobPositions = [
             "Strong analytical and data interpretation skills",
             "Excellent communication skills",
         ],
+        order: 1
     },
     {
         id: "2",
@@ -29,6 +30,7 @@ export const jobPositions = [
             "Understanding of SEO best practices",
             "Creative storytelling ability",
         ],
+        order: 2
     },
     {
         id: "3",
@@ -44,6 +46,7 @@ export const jobPositions = [
             "Excellent relationship-building skills",
             "Problem-solving mindset",
         ],
+        order: 3
     },
     {
         id: "4",
@@ -59,6 +62,7 @@ export const jobPositions = [
             "Understanding of Amazon image requirements",
             "Strong visual communication skills",
         ],
+        order: 4
     },
     {
         id: "5",
@@ -74,38 +78,6 @@ export const jobPositions = [
             "Understanding of FBA processes",
             "Detail-oriented mindset",
         ],
-    },
-];
-
-export const careerBenefits = [
-    {
-        title: "Remote-First Culture",
-        description: "Work from anywhere in the world with flexible hours",
-        icon: "Globe",
-    },
-    {
-        title: "Learning & Growth",
-        description: "Continuous training and professional development opportunities",
-        icon: "BookOpen",
-    },
-    {
-        title: "Competitive Compensation",
-        description: "Industry-leading salaries with performance bonuses",
-        icon: "DollarSign",
-    },
-    {
-        title: "Health & Wellness",
-        description: "Comprehensive health insurance and wellness programs",
-        icon: "Heart",
-    },
-    {
-        title: "Team Events",
-        description: "Regular virtual and in-person team building activities",
-        icon: "Users",
-    },
-    {
-        title: "Paid Time Off",
-        description: "Generous vacation policy and paid holidays",
-        icon: "Calendar",
+        order: 5
     },
 ];

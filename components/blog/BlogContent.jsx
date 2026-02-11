@@ -6,14 +6,23 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, ArrowRight } from 'lucide-react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
-import { blogPosts, blogCategories } from '@/data/blog';
+import { allBlogPosts } from '@/data/allBlogPosts';
+
+const blogCategories = [
+    { name: "All", slug: "all" },
+    ...Array.from(new Set(allBlogPosts.map(post => post.category)))
+        .map(category => ({
+            name: category,
+            slug: category.toLowerCase().replace(/\s+/g, '-')
+        }))
+];
 
 export default function BlogContent() {
     const [selectedCategory, setSelectedCategory] = useState('All');
 
     const filteredPosts = selectedCategory === 'All'
-        ? blogPosts
-        : blogPosts.filter(post => post.category === selectedCategory);
+        ? allBlogPosts
+        : allBlogPosts.filter(post => post.category === selectedCategory);
 
     return (
         <>

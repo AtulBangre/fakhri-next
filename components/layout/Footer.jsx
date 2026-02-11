@@ -4,7 +4,27 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Linkedin, Twitter, Facebook, Instagram, Mail, Phone, MapPin } from 'lucide-react';
 import { companyData } from '@/data/company';
-import { footerLinks } from '@/data/navigation';
+
+const footerLinks = {
+    services: [
+        { label: "Account Management", href: "/services#account-management" },
+        { label: "Product Listing", href: "/services#product-listing" },
+        { label: "FBA Operations", href: "/services#fba-operations" },
+        { label: "Ads Management", href: "/services#ads-management" },
+        { label: "A+ Content", href: "/services#a-plus-content" },
+    ],
+    company: [
+        { label: "About Us", href: "/about" },
+        { label: "Career", href: "/career" },
+        { label: "Blog", href: "/blog" },
+        { label: "Contact", href: "/contact" },
+    ],
+    support: [
+        { label: "Within 2 Hours", href: "/within-2-hours" },
+        { label: "Pricing", href: "/pricing" },
+        { label: "FAQs", href: "/pricing#faq" },
+    ],
+};
 
 export default function Footer() {
     const currentYear = new Date().getFullYear();

@@ -12,8 +12,32 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { navigationItems } from "@/data/navigation";
 import { ContactDialog } from "@/components/dialogs/ContactDialog";
+
+const navigationItems = [
+  { label: "Home", href: "/" },
+  {
+    label: "Company",
+    href: "#",
+    children: [
+      { label: "About Us", href: "/about" },
+      { label: "Career", href: "/career" },
+      { label: "Testimonials", href: "/#testimonials" }
+    ]
+  },
+  { label: "Services", href: "/services" },
+  { label: "Within 2 Hours", href: "/within-2-hours" },
+  { label: "Pricing", href: "/pricing" },
+  {
+    label: "Resources",
+    href: "#",
+    children: [
+      { label: "Blog", href: "/blog" },
+      { label: "FAQs", href: "/pricing#faq" }
+    ]
+  },
+  { label: "Contact", href: "/contact" },
+];
 
 const PublicHeader = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

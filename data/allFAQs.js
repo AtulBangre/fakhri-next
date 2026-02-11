@@ -1,3 +1,4 @@
+// Frequently Asked Questions Collection
 export const homeFAQs = [
     {
         question: "What services does Fakhri IT Services provide?",
@@ -81,12 +82,4 @@ export const clientDashboardFAQs = [
         question: "How often are files updated?",
         answer: "Files are uploaded as they are completed. You'll receive a notification when new files are available in your account."
     }
-];
-
-export const feedbackCategories = [
-    { value: "general", label: "General Feedback" },
-    { value: "bug", label: "Report a Bug" },
-    { value: "feature", label: "Feature Request" },
-    { value: "support", label: "Support Issue" },
-    { value: "other", label: "Other" }
 ];

@@ -2,7 +2,7 @@
 
 import { use } from 'react';
 import { notFound } from 'next/navigation';
-import { blogPosts } from '@/data/blog';
+import { allBlogPosts } from '@/data/allBlogPosts';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Calendar, Clock, ArrowLeft, Tag, Share2 } from 'lucide-react';
@@ -13,7 +13,7 @@ export default function BlogPostPage({ params }) {
     // Unwrap the params Promise in Next.js 15+
     const { slug } = use(params);
 
-    const post = blogPosts.find(p => p.slug === slug);
+    const post = allBlogPosts.find(p => p.slug === slug);
 
     if (!post) {
         notFound();
@@ -160,7 +160,7 @@ export default function BlogPostPage({ params }) {
                     <ScrollReveal>
                         <h2 className="heading-lg mb-8 text-center">Related Articles</h2>
                         <div className="grid md:grid-cols-3 gap-8">
-                            {blogPosts
+                            {allBlogPosts
                                 .filter(p => p.id !== post.id && p.category === post.category)
                                 .slice(0, 3)
                                 .map((relatedPost) => (

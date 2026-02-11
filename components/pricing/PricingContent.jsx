@@ -3,7 +3,7 @@
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { PricingCard } from '@/components/ui/PricingCard';
 import { pricingPlans, pricingDisclaimer, pricingPageServices, pricingPageInfo } from '@/data/pricing';
-import { pricingFAQs } from '@/data/faq';
+import { pricingFAQs } from '@/data/allFAQs';
 import { within2HoursData } from '@/data/within2hours';
 import Link from 'next/link';
 import Image from 'next/image';

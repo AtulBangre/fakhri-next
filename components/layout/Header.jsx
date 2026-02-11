@@ -5,8 +5,32 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, ShoppingCart, Trash2 } from 'lucide-react';
-import { navigationItems } from '@/data/navigation';
 import { useCart } from '@/context/CartContext';
+
+const navigationItems = [
+    { label: "Home", href: "/" },
+    {
+        label: "Company",
+        href: "#",
+        children: [
+            { label: "About Us", href: "/about" },
+            { label: "Career", href: "/career" },
+            { label: "Testimonials", href: "/#testimonials" }
+        ]
+    },
+    { label: "Services", href: "/services" },
+    { label: "Within 2 Hours", href: "/within-2-hours" },
+    { label: "Pricing", href: "/pricing" },
+    {
+        label: "Resources",
+        href: "#",
+        children: [
+            { label: "Blog", href: "/blog" },
+            { label: "FAQs", href: "/pricing#faq" }
+        ]
+    },
+    { label: "Contact", href: "/contact" },
+];
 import {
     DropdownMenu,
     DropdownMenuContent,

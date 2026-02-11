@@ -5,7 +5,7 @@ import WhyChooseUs from '@/components/home/WhyChooseUs';
 import CTA from '@/components/home/CTA';
 import Testimonials from '@/components/home/Testimonials';
 
-import { homeFAQs } from '@/data/faq';
+import { homeFAQs } from '@/data/allFAQs';
 import FaQ from '@/components/home/FaQ';
 
 export const metadata = {

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { timelineData } from '@/data/about';
+import { companymilestones } from '@/data/milestones';
 
 export default function CompanyTimeline() {
     return (
@@ -45,7 +45,7 @@ export default function CompanyTimeline() {
 
                     {/* Timeline List */}
                     <div className="space-y-12 md:space-y-24">
-                        {timelineData.map((item, index) => (
+                        {companymilestones.map((item, index) => (
                             <TimelineItem
                                 key={index}
                                 item={item}

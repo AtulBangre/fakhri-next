@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import ServiceCard from '@/components/ui/ServiceCard';
-import { services, serviceCategories } from '@/data/services';
+import { allServices } from '@/data/allServices';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
 export const metadata = {
@@ -11,6 +11,18 @@ export const metadata = {
     description: "Comprehensive Amazon seller services including account setup, product listing optimization, FBA operations, advertising management, and strategic growth consulting.",
     keywords: "Amazon services, product listing, FBA operations, Amazon advertising, A+ content",
 };
+
+// Static Categories
+// Derive categories from service data
+const serviceCategories = allServices.reduce((acc, service) => {
+    const existingCategory = acc.find(c => c.name === service.category);
+    if (existingCategory) {
+        existingCategory.services.push(service.id);
+    } else {
+        acc.push({ name: service.category, services: [service.id] });
+    }
+    return acc;
+}, []);
 
 export default function ServicesPage() {
     return (
@@ -37,7 +49,7 @@ export default function ServicesPage() {
             <section className="sticky top-[72px] z-30 bg-background/95 backdrop-blur-lg border-b border-border py-4">
                 <div className="container-custom">
                     <div className="flex flex-wrap justify-center gap-2">
-                        {serviceCategories?.map((category) => (
+                        {serviceCategories.map((category) => (
                             <a
                                 key={category.name}
                                 href={`#${category.services[0]}`}
@@ -54,7 +66,7 @@ export default function ServicesPage() {
             <section className="section-padding">
                 <div className="container-custom">
                     <div className="space-y-8">
-                        {services?.map((service, index) => (
+                        {allServices.map((service, index) => (
                             <ServiceCard key={service.id} service={service} index={index} variant="default" />
                         ))}
                     </div>

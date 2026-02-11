@@ -2,7 +2,15 @@
 import { useState } from "react";
 import { HelpCircle, MessageSquarePlus, ChevronDown, ChevronUp, Send, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { clientDashboardFAQs as faqData, feedbackCategories } from "@/data/faq";
+import { clientDashboardFAQs as faqData } from "@/data/allFAQs";
+
+const feedbackCategories = [
+    { value: "general", label: "General Feedback" },
+    { value: "bug", label: "Report a Bug" },
+    { value: "feature", label: "Feature Request" },
+    { value: "support", label: "Support Issue" },
+    { value: "other", label: "Other" }
+];
 
 const SupportTab = () => {
     const [expandedFaq, setExpandedFaq] = useState(null);

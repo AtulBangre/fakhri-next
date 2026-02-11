@@ -1,5 +1,5 @@
-// Services data
-export const servicesData = [
+// Services Collection - Serves as a MongoDB collection mock
+export const allServices = [
     {
         id: "account-management",
         title: "Amazon Account Setup & Management",
@@ -20,6 +20,8 @@ export const servicesData = [
             "Focus on your business while we handle the details",
             "Expert guidance on Amazon policies",
         ],
+        category: "Account Services",
+        order: 1
     },
     {
         id: "product-listing",
@@ -41,6 +43,8 @@ export const servicesData = [
             "Better visibility in Amazon search",
             "Competitive edge in your category",
         ],
+        category: "Listing & Content",
+        order: 2
     },
     {
         id: "fba-operations",
@@ -62,6 +66,8 @@ export const servicesData = [
             "Faster resolution of FBA issues",
             "Improved supply chain efficiency",
         ],
+        category: "Operations",
+        order: 3
     },
     {
         id: "ads-management",
@@ -83,6 +89,8 @@ export const servicesData = [
             "Lower advertising costs",
             "Scalable growth strategies",
         ],
+        category: "Growth",
+        order: 4
     },
     {
         id: "a-plus-content",
@@ -104,6 +112,8 @@ export const servicesData = [
             "Reduced return rates",
             "Better customer understanding",
         ],
+        category: "Listing & Content",
+        order: 5
     },
     {
         id: "reconciliation",
@@ -125,6 +135,8 @@ export const servicesData = [
             "Reduced Amazon fees",
             "Improved profit margins",
         ],
+        category: "Account Services",
+        order: 6
     },
     {
         id: "growth-strategy",
@@ -146,15 +158,7 @@ export const servicesData = [
             "Market expansion opportunities",
             "Long-term business planning",
         ],
+        category: "Growth",
+        order: 7
     },
 ];
-
-export const serviceCategories = [
-    { name: "Account Services", services: ["account-management", "reconciliation"] },
-    { name: "Listing & Content", services: ["product-listing", "a-plus-content"] },
-    { name: "Operations", services: ["fba-operations"] },
-    { name: "Growth", services: ["ads-management", "growth-strategy"] },
-];
-
-// Alias for backward compatibility
-export const services = servicesData;
