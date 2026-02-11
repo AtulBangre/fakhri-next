@@ -1,103 +1,129 @@
 'use client';
 
-import { useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { timelineData } from '@/data/about';
 
 export default function CompanyTimeline() {
-    const containerRef = useRef(null);
-    const { scrollYProgress } = useScroll({
-        target: containerRef,
-        offset: ["start start", "end end"]
-    });
-
-    // Translate the timeline content vertically based on scroll
-    // From 0% (start) to -85% but with shorter container
-    const y = useTransform(scrollYProgress, [0, 1], ["0%", "-85%"]);
-    // Opacity removed to ensure header is always visible when active
-
     return (
-        <section ref={containerRef} className="relative h-[280vh] bg-background">
-            <div className="sticky top-10 h-screen overflow-hidden flex flex-col pt-10 px-4">
+        <section className="section-padding bg-background relative overflow-hidden">
+            {/* Background Decorations - Subtle & Lite */}
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-40">
+                <div className="absolute top-1/4 -left-20 w-64 h-64 bg-primary/5 blur-[100px] rounded-full" />
+                <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-primary/5 blur-[100px] rounded-full" />
+            </div>
+
+            <div className="container-custom relative z-10">
                 {/* Header Section */}
-                <div
-                    className="text-center z-20 bg-background/95 backdrop-blur-md py-6 border-b border-border/50 mb-8 max-w-full mx-auto w-full rounded-2xl shadow-sm"
-                >
-                    <h2 className="heading-lg mb-2">Our Company Milestone</h2>
-                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-[0.2em]">
-                        Wow...!!! What a journey so far...!!!
-                    </p>
+                <div className="text-center max-w-3xl mx-auto mb-16 md:mb-24 px-4">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                        viewport={{ once: true }}
+                    >
+                        <span className="badge-primary mb-4 uppercase tracking-[0.2em] text-[10px] md:text-xs">
+                            The History
+                        </span>
+                        <h2 className="heading-lg mb-4">
+                            Our Company <span className="text-gradient">Milestones</span>
+                        </h2>
+                        <p className="body-md text-sm md:text-base">
+                            A Decade of Excellence: Building the Future of Amazon Commerce One Growth Story at a Time.
+                        </p>
+                        <p className="text-sm font-medium text-muted-foreground uppercase tracking-[0.1em] mt-2 italic">
+                            Wow... What a journey so far!
+                        </p>
+                    </motion.div>
                 </div>
 
-                {/* Scrolling Timeline Container */}
-                <div className="flex-1 relative w-full max-w-5xl mx-auto">
-                    <motion.div
-                        style={{ y }}
-                        className="relative pb-24 pt-10" // Add padding to allow scrolling past last item
-                    >
-                        {/* Central Line */}
-                        <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/5 via-primary/20 to-primary/5 -translate-x-1/2 z-0" />
+                {/* Timeline UI */}
+                <div className="relative max-w-5xl mx-auto px-4 md:px-0">
 
+                    {/* The Rail (Central Vertical Line) */}
+                    <div className="absolute left-6 md:left-1/2 top-4 bottom-4 w-0.5 bg-border -translate-x-1/2" />
+
+                    {/* Timeline List */}
+                    <div className="space-y-12 md:space-y-24">
                         {timelineData.map((item, index) => (
                             <TimelineItem
                                 key={index}
-                                item={{ ...item, id: index }}
+                                item={item}
                                 index={index}
-                                isLast={index === timelineData.length - 1}
                             />
                         ))}
-                    </motion.div>
+                    </div>
                 </div>
             </div>
         </section>
     );
 }
 
-function TimelineItem({ item, index, isLast }) {
+function TimelineItem({ item, index }) {
     const isEven = index % 2 === 0;
 
     return (
-        <div className={`group relative flex flex-col md:flex-row items-center justify-between ${isLast ? 'mb-0' : 'mb-32 md:mb-48'} ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
+        <div className="relative grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
 
-            {/* Content Card */}
-            <div className={`w-full md:w-5/12 pl-12 md:pl-0 ${isEven ? 'md:pr-12 md:text-right' : 'md:pl-12 md:text-left'} relative z-10`}>
-                <div className="bg-card border border-border p-6 md:p-8 rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 group-hover:border-primary/50 relative overflow-hidden">
-                    {/* Hover Glow */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            {/* Center Node (Always visible) */}
+            <div className="absolute left-6 md:left-1/2 top-3 md:top-1/2 w-4 h-4 md:w-5 md:h-5 bg-background border-2 border-primary rounded-full -translate-x-1/2 md:-translate-y-1/2 z-20 shadow-[0_0_0_4px_white,0_0_0_6px_rgba(136,8,8,0.15)]">
+                <div className="absolute inset-0 rounded-full animate-pulse bg-primary/10 scale-150" />
+            </div>
 
-                    <div className="relative z-10">
-                        <span className="inline-block px-3 py-1 bg-secondary rounded-full text-xs font-bold text-primary mb-3">
-                            {item.year}
-                        </span>
-                        <h3 className="heading-sm mb-3">{item.title}</h3>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                            {item.description}
-                        </p>
+            {/* Content Side */}
+            <div className={`pl-12 md:pl-0 ${isEven ? 'md:order-1 md:text-right md:pr-12' : 'md:order-2 md:text-left md:pl-12'}`}>
+                <motion.div
+                    initial={{ opacity: 0, x: isEven ? -30 : 30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                    viewport={{ once: true }}
+                    className="group"
+                >
+                    <span className="text-xs font-bold text-primary mb-2 block uppercase tracking-widest font-poppins">
+                        {item.year}
+                    </span>
+                    <h3 className="heading-sm mb-3 group-hover:text-primary transition-colors duration-300">
+                        {item.title}
+                    </h3>
+                    <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                        {item.description}
+                    </p>
+
+                    {/* Mobile Image: Stacks on mobile, hidden on desktop image side */}
+                    <div className="md:hidden mt-6 relative aspect-video rounded-2xl overflow-hidden shadow-md border border-border/50">
+                        <Image
+                            src={item.image}
+                            alt={item.title}
+                            fill
+                            className="object-cover"
+                        />
                     </div>
-                </div>
+                </motion.div>
             </div>
 
-            {/* Center Node */}
-            <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-4 h-4 bg-background border-2 border-primary rounded-full z-10 group-hover:scale-150 group-hover:bg-primary transition-all duration-300 shadow-[0_0_0_4px_rgba(var(--primary),0.1)]">
-                <div className="w-full h-full rounded-full animate-ping opacity-20 bg-primary absolute inset-0" />
-            </div>
-
-            {/* Image Preview Slot (Opposite Side) */}
-            <div className={`hidden md:block w-5/12 ${isEven ? 'pl-12' : 'pr-12'}`}>
-                <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl opacity-0 translate-y-4 scale-95 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 transition-all duration-700 ease-out">
+            {/* Desktop Image Side */}
+            <div className={`hidden md:block ${isEven ? 'md:order-2' : 'md:order-1'}`}>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.6 }}
+                    viewport={{ once: true }}
+                    className="relative aspect-[16/10] rounded-2xl overflow-hidden shadow-lg group border border-border/30"
+                >
                     <Image
                         src={item.image}
                         alt={item.title}
                         fill
-                        className="object-cover"
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-black/20" />
-                </div>
-            </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
 
-            {/* Mobile Image (Visible on simple Hover/Tap or always? Let's hide on mobile or show below) */}
-            {/* For mobile layout, we might just show text to save space or stack image. */}
+                    {/* Floating Year Detail */}
+                    <div className={`absolute bottom-4 ${isEven ? 'left-6' : 'right-6'} opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0`}>
+                        <span className="text-white text-2xl font-black opacity-30 select-none">{item.year}</span>
+                    </div>
+                </motion.div>
+            </div>
         </div>
     );
 }
