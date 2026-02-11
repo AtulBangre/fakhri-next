@@ -5,19 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { servicesCatalog } from "@/data/servicesCatalog";
+import { getClientById } from "@/data/clients";
+import { plans, planFeatures as allPlanFeatures } from "@/data/pricingPlans";
 
-const planFeatures = [
-    { name: "Full Account Management", included: true },
-    { name: "Advanced PPC Management", included: true },
-    { name: "A+ Content Design (3 products)", included: true, used: 2, total: 3 },
-    { name: "Brand Registry Support", included: true },
-    { name: "Weekly Performance Reports", included: true },
-    { name: "Priority Email Support (24h)", included: true },
-    { name: "Up to 5 Product Categories", included: true, used: 3, total: 5 },
-    { name: "Competitor Analysis", included: true },
-    { name: "24/7 Phone Support", included: false },
-    { name: "Dedicated Account Manager", included: false },
-];
+const CURRENT_CLIENT_ID = 1;
 
 const purchasedAddOns = [
     { id: 1, name: "Extra A+ Content Design", quantity: 2, date: "Jan 10, 2026", status: "completed" },
@@ -27,17 +18,52 @@ const purchasedAddOns = [
 const ClientPlanTab = () => {
     const [activeSubTab, setActiveSubTab] = useState("plan");
 
+    const client = getClientById(CURRENT_CLIENT_ID);
+
+    if (!client) return <div>Loading...</div>;
+
+    // Find current plan details
+    const currentPlan = plans.find(p =>
+        p.heading?.toLowerCase() === client.plan.toLowerCase() ||
+        p.name?.toLowerCase() === client.plan.toLowerCase() ||
+        p.id?.toLowerCase() === client.plan.toLowerCase()
+    );
+
+    // Map features for the UI
+    const planFeatures = allPlanFeatures.map(feature => {
+        const planKey = client.plan.toLowerCase();
+        const value = feature.values[planKey];
+        const isIncluded = feature.included.includes(planKey);
+
+        // Determine display text
+        let displayText = feature.text;
+        if (value && typeof value === 'string' && value !== 'Basic' && value !== 'Advanced') {
+            displayText = `${feature.text} (${value})`;
+        }
+
+        return {
+            name: displayText,
+            included: isIncluded,
+            // Mock usage for specific features if needed, or leave undefined
+            value: value
+        };
+    });
+
     const availableAddOnServices = servicesCatalog
         .filter(s => s.pricing.standard !== null)
         .map(s => ({
             id: s.id,
             name: s.name,
-            description: "Professional service for your Amazon business.", // Description not in catalog yet
+            description: s.shortDescription || "Professional service for your Amazon business.",
             price: `$${s.pricing.standard.price}`,
             priceType: s.pricing.standard.label || "per service",
             icon: Package, // Default icon
             popular: false
         }));
+
+    // Mock dates
+    const startDate = client.joinedDate || "Dec 15, 2025";
+    const validUntil = "Mar 15, 2026";
 
     return (
         <div className="space-y-6">
@@ -78,14 +104,14 @@ const ClientPlanTab = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <Badge className="bg-white/20 text-white mb-2">Current Plan</Badge>
-                                    <h2 className="font-heading text-3xl font-bold">Premium</h2>
-                                    <p className="text-white/80 mt-1">$1,999 / month</p>
+                                    <h2 className="font-heading text-3xl font-bold">{currentPlan?.name || client.plan}</h2>
+                                    <p className="text-white/80 mt-1">{currentPlan?.prices.monthlyUSD || "$0"} / month</p>
                                 </div>
                                 <div className="text-right">
                                     <div className="flex items-center gap-1 text-yellow-300 mb-2">
                                         {[1, 2, 3, 4, 5].map((i) => (<Star key={i} className="h-4 w-4 fill-current" />))}
                                     </div>
-                                    <p className="text-sm text-white/80">Most Popular</p>
+                                    <p className="text-sm text-white/80">{currentPlan?.highlighted ? "Most Popular" : "Active Plan"}</p>
                                 </div>
                             </div>
                         </div>
@@ -94,11 +120,11 @@ const ClientPlanTab = () => {
                             <div className="grid md:grid-cols-3 gap-4 mb-6">
                                 <div className="p-4 rounded-lg bg-accent/50">
                                     <p className="text-sm text-muted-foreground">Start Date</p>
-                                    <p className="font-semibold">Dec 15, 2025</p>
+                                    <p className="font-semibold">{startDate}</p>
                                 </div>
                                 <div className="p-4 rounded-lg bg-accent/50">
                                     <p className="text-sm text-muted-foreground">Valid Until</p>
-                                    <p className="font-semibold">Mar 15, 2026</p>
+                                    <p className="font-semibold">{validUntil}</p>
                                 </div>
                                 <div className="p-4 rounded-lg bg-accent/50">
                                     <p className="text-sm text-muted-foreground">Days Remaining</p>
@@ -108,19 +134,13 @@ const ClientPlanTab = () => {
 
                             <h3 className="font-heading font-semibold mb-4">Included Services</h3>
                             <div className="space-y-3">
-                                {planFeatures.map((feature) => (
-                                    <div key={feature.name} className="flex items-center justify-between py-2 border-b last:border-0">
+                                {planFeatures.map((feature, i) => (
+                                    <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
                                         <div className="flex items-center gap-3">
                                             <CheckCircle2 className={`h-4 w-4 ${feature.included ? "text-primary" : "text-muted-foreground"}`} />
                                             <span className={feature.included ? "" : "text-muted-foreground"}>{feature.name}</span>
                                         </div>
-                                        {feature.used !== undefined && (
-                                            <div className="flex items-center gap-2">
-                                                <Progress value={(feature.used / feature.total) * 100} className="w-20 h-2" />
-                                                <span className="text-xs text-muted-foreground">{feature.used}/{feature.total}</span>
-                                            </div>
-                                        )}
-                                        {!feature.included && (<Badge variant="outline">Platinum Only</Badge>)}
+                                        {!feature.included && (<Badge variant="outline" className="text-xs">Not Included</Badge>)}
                                     </div>
                                 ))}
                             </div>
@@ -189,7 +209,7 @@ const ClientPlanTab = () => {
                                             </div>
                                             <div className="flex-1">
                                                 <h4 className="font-medium text-sm">{service.name}</h4>
-                                                <p className="text-xs text-muted-foreground mt-1">{service.description}</p>
+                                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{service.description}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between pt-3 border-t">

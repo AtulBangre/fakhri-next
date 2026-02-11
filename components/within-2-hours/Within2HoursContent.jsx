@@ -2,8 +2,7 @@
 
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
 import { companyData } from '@/data/company';
-import { within2HoursData } from '@/data/within2hours';
-import { servicesCatalog, priorityServicesPageInfo as within2HoursPageInfo } from '@/data/servicesCatalog';
+import { servicesCatalog, priorityServicesPageInfo as within2HoursPageInfo, within2HoursPageData as within2HoursData } from '@/data/servicesCatalog';
 
 const within2HoursPageServices = servicesCatalog
     .filter(s => s.pricing.priority !== null)

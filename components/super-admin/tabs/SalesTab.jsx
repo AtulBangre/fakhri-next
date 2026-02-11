@@ -3,23 +3,80 @@ import { DollarSign, TrendingUp, TrendingDown, Users } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { clients } from "@/data/clients";
+import { plans } from "@/data/pricingPlans";
 
+// Helper to get price value from string (e.g. "$199" -> 199)
+const getPriceValue = (priceStr) => {
+    if (!priceStr) return 0;
+    // Remove non-numeric characters except decimal point
+    return parseFloat(priceStr.replace(/[^0-9.]/g, ''));
+};
+
+// Calculate revenue based on active clients and their plans
+const calculateRevenue = () => {
+    let totalRevenue = 0;
+    const revenueByPlan = {
+        platinum: { count: 0, revenue: 0, price: 0 },
+        premium: { count: 0, revenue: 0, price: 0 },
+        elite: { count: 0, revenue: 0, price: 0 }
+    };
+
+    // Get plan prices
+    plans.forEach(plan => {
+        const key = plan.id.toLowerCase();
+        if (revenueByPlan[key]) {
+            // Using USD price for calculation standard, fallback to 0
+            revenueByPlan[key].price = getPriceValue(plan.prices.monthlyUSD);
+        }
+    });
+
+    clients.forEach(client => {
+        if (client.status === "active") {
+            const planKey = client.plan.toLowerCase();
+            if (revenueByPlan[planKey]) {
+                revenueByPlan[planKey].count++;
+                revenueByPlan[planKey].revenue += revenueByPlan[planKey].price;
+                totalRevenue += revenueByPlan[planKey].price;
+            }
+        }
+    });
+
+    return { totalRevenue, revenueByPlan };
+};
+
+const { totalRevenue, revenueByPlan } = calculateRevenue();
+
+// Mock monthly data - In a real app, this would come from historical records
 const monthlyData = [
-    { month: "Jan", revenue: 285000, clients: 156 },
-    { month: "Dec", revenue: 241000, clients: 144 },
-    { month: "Nov", revenue: 228000, clients: 138 },
-    { month: "Oct", revenue: 215000, clients: 132 },
+    { month: "Jan", revenue: totalRevenue, clients: clients.length },
+    { month: "Dec", revenue: totalRevenue * 0.92, clients: clients.length - 2 },
+    { month: "Nov", revenue: totalRevenue * 0.85, clients: clients.length - 5 },
+    { month: "Oct", revenue: totalRevenue * 0.78, clients: clients.length - 8 },
 ];
 
-const topClients = [
-    { name: "TechGadgets Co", plan: "Platinum", revenue: "$47,988", since: "2023" },
-    { name: "BeautyBrand Inc", plan: "Platinum", revenue: "$47,988", since: "2024" },
-    { name: "Fashion Forward", plan: "Platinum", revenue: "$39,990", since: "2024" },
-    { name: "HomeEssentials", plan: "Premium", revenue: "$23,988", since: "2023" },
-    { name: "Sports Gear Pro", plan: "Premium", revenue: "$23,988", since: "2024" },
-];
+// Get top clients based on plan value (simulated revenue)
+const topClients = clients
+    .filter(c => c.status === "active")
+    .map(client => {
+        const planKey = client.plan.toLowerCase();
+        const revenue = revenueByPlan[planKey]?.price || 0;
+        return {
+            name: client.name,
+            company: client.company,
+            plan: client.plan,
+            revenue: `$${revenue.toLocaleString()}`,
+            rawRevenue: revenue,
+            since: new Date(client.joinedDate).getFullYear().toString()
+        };
+    })
+    .sort((a, b) => b.rawRevenue - a.rawRevenue)
+    .slice(0, 5);
 
 const SuperAdminSalesTab = () => {
+    const totalClients = clients.filter(c => c.status === "active").length;
+    const avgRevenue = totalClients > 0 ? totalRevenue / totalClients : 0;
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -41,10 +98,28 @@ const SuperAdminSalesTab = () => {
 
             {/* Stats Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard title="Total Revenue (Jan)" value="$285,884" icon={<DollarSign className="h-5 w-5" />} trend={{ value: "+18.6% vs Dec", positive: true }} />
-                <StatCard title="MRR" value="$285,884" icon={<TrendingUp className="h-5 w-5" />} />
-                <StatCard title="Avg. Revenue per Client" value="$1,833" icon={<Users className="h-5 w-5" />} />
-                <StatCard title="Churn Rate" value="2.1%" icon={<TrendingDown className="h-5 w-5" />} trend={{ value: "-0.3% vs Dec", positive: true }} />
+                <StatCard
+                    title="Total Revenue (Jan)"
+                    value={`$${totalRevenue.toLocaleString()}`}
+                    icon={<DollarSign className="h-5 w-5" />}
+                    trend={{ value: "+8.6% vs Dec", positive: true }}
+                />
+                <StatCard
+                    title="MRR"
+                    value={`$${totalRevenue.toLocaleString()}`}
+                    icon={<TrendingUp className="h-5 w-5" />}
+                />
+                <StatCard
+                    title="Avg. Revenue per Client"
+                    value={`$${avgRevenue.toFixed(0)}`}
+                    icon={<Users className="h-5 w-5" />}
+                />
+                <StatCard
+                    title="Churn Rate"
+                    value="2.1%"
+                    icon={<TrendingDown className="h-5 w-5" />}
+                    trend={{ value: "-0.3% vs Dec", positive: true }}
+                />
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6">
@@ -52,42 +127,30 @@ const SuperAdminSalesTab = () => {
                 <div className="bg-card rounded-xl border p-6">
                     <h2 className="font-heading font-semibold mb-6">Revenue by Plan</h2>
                     <div className="space-y-6">
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <Badge>Platinum</Badge>
-                                    <span className="text-sm text-muted-foreground">40 clients</span>
+                        {Object.entries(revenueByPlan).map(([plan, data]) => {
+                            const percentage = totalRevenue > 0 ? (data.revenue / totalRevenue) * 100 : 0;
+                            const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
+
+                            return (
+                                <div key={plan}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant={plan === 'platinum' ? 'default' : plan === 'premium' ? 'secondary' : 'outline'}>
+                                                {planName}
+                                            </Badge>
+                                            <span className="text-sm text-muted-foreground">{data.count} clients</span>
+                                        </div>
+                                        <span className="font-semibold">${data.revenue.toLocaleString()}</span>
+                                    </div>
+                                    <div className="w-full h-3 bg-accent rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full ${plan === 'platinum' ? 'bg-primary' : plan === 'premium' ? 'bg-primary/70' : 'bg-primary/50'}`}
+                                            style={{ width: `${percentage}%` }}
+                                        />
+                                    </div>
                                 </div>
-                                <span className="font-semibold">$159,960</span>
-                            </div>
-                            <div className="w-full h-3 bg-accent rounded-full overflow-hidden">
-                                <div className="h-full bg-primary rounded-full" style={{ width: '56%' }} />
-                            </div>
-                        </div>
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <Badge variant="secondary">Premium</Badge>
-                                    <span className="text-sm text-muted-foreground">50 clients</span>
-                                </div>
-                                <span className="font-semibold">$99,950</span>
-                            </div>
-                            <div className="w-full h-3 bg-accent rounded-full overflow-hidden">
-                                <div className="h-full bg-primary/70 rounded-full" style={{ width: '35%' }} />
-                            </div>
-                        </div>
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <Badge variant="outline">Elite</Badge>
-                                    <span className="text-sm text-muted-foreground">66 clients</span>
-                                </div>
-                                <span className="font-semibold">$65,934</span>
-                            </div>
-                            <div className="w-full h-3 bg-accent rounded-full overflow-hidden">
-                                <div className="h-full bg-primary/50 rounded-full" style={{ width: '23%' }} />
-                            </div>
-                        </div>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -102,7 +165,7 @@ const SuperAdminSalesTab = () => {
                                     <p className="text-sm text-muted-foreground">{data.clients} clients</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-semibold">${(data.revenue / 1000).toFixed(0)}K</p>
+                                    <p className="font-semibold">${(data.revenue / 1000).toFixed(1)}K</p>
                                     {i > 0 && (
                                         <p className={`text-xs ${monthlyData[i - 1].revenue < data.revenue ? 'text-green-600' : 'text-red-600'}`}>
                                             {monthlyData[i - 1].revenue < data.revenue ? '↑' : '↓'}
@@ -132,7 +195,7 @@ const SuperAdminSalesTab = () => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
-                                <Badge variant={client.plan === "Platinum" ? "default" : "secondary"}>
+                                <Badge variant={client.plan === "Platinum" ? "default" : client.plan === "Premium" ? "secondary" : "outline"}>
                                     {client.plan}
                                 </Badge>
                                 <span className="font-semibold text-primary">{client.revenue}</span>

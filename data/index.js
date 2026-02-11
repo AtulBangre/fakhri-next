@@ -24,6 +24,6 @@ export * from './jobs';
 export * from './allTestimonials';
 export * from './milestones';
 export * from './allFAQs';
-export * from './within2hours';
+
 // Dashboard
 export * from './dashboard';

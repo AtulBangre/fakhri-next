@@ -1,5 +1,5 @@
 // Clients Collection
-// Master client list
+// Master client list with normalized schema
 export const clients = [
     {
         id: 1,
@@ -11,15 +11,16 @@ export const clients = [
         activeTasks: 3,
         status: "active",
         manager: "Sarah Mitchell",
+        managerId: 1,
         joinedDate: "Jan 15, 2026",
-        // Extended fields for admin dashboard
         salesManager: "David Sales",
         spCentralRequestId: "REQ-1001",
         marketplace: "Amazon US",
         userPermission: "Full Access",
         accountAccessUrl: "https://sellercentral.amazon.com",
         leadSource: "LinkedIn",
-        listingManager: "Emily Listings"
+        listingManager: "Emily Listings",
+        location: "New York, USA"
     },
     {
         id: 2,
@@ -31,7 +32,16 @@ export const clients = [
         activeTasks: 2,
         status: "active",
         manager: "Sarah Mitchell",
-        joinedDate: "Dec 20, 2025"
+        managerId: 1,
+        joinedDate: "Dec 20, 2025",
+        salesManager: "David Sales",
+        spCentralRequestId: "REQ-1002",
+        marketplace: "Amazon US",
+        userPermission: "Full Access",
+        accountAccessUrl: "https://sellercentral.amazon.com",
+        leadSource: "Referral",
+        listingManager: "Emily Listings",
+        location: "Los Angeles, USA"
     },
     {
         id: 3,
@@ -43,19 +53,37 @@ export const clients = [
         activeTasks: 1,
         status: "active",
         manager: "Sarah Mitchell",
-        joinedDate: "Jan 10, 2026"
+        managerId: 1,
+        joinedDate: "Jan 10, 2026",
+        salesManager: "David Sales",
+        spCentralRequestId: "REQ-1003",
+        marketplace: "Amazon US",
+        userPermission: "Full Access",
+        accountAccessUrl: "https://sellercentral.amazon.com",
+        leadSource: "Website",
+        listingManager: "Emily Listings",
+        location: "Chicago, USA"
     },
     {
         id: 4,
         name: "Lisa Chen",
         company: "Fashion Forward",
         email: "lisa@fashion.com",
-        plan: "Platinum",
         phone: "+1 (555) 456-7890",
+        plan: "Platinum",
         activeTasks: 0,
         status: "pending",
         manager: "Unassigned",
-        joinedDate: "Jan 19, 2026"
+        managerId: null,
+        joinedDate: "Jan 19, 2026",
+        salesManager: null,
+        spCentralRequestId: "REQ-1004",
+        marketplace: "Amazon US",
+        userPermission: "Pending",
+        accountAccessUrl: null,
+        leadSource: "Cold Outreach",
+        listingManager: null,
+        location: "San Francisco, USA"
     },
     {
         id: 5,
@@ -67,7 +95,16 @@ export const clients = [
         activeTasks: 2,
         status: "active",
         manager: "John Anderson",
-        joinedDate: "Jan 18, 2026"
+        managerId: 2,
+        joinedDate: "Jan 18, 2026",
+        salesManager: "David Sales",
+        spCentralRequestId: "REQ-1005",
+        marketplace: "Amazon US",
+        userPermission: "Full Access",
+        accountAccessUrl: "https://sellercentral.amazon.com",
+        leadSource: "LinkedIn",
+        listingManager: "Emily Listings",
+        location: "Seattle, USA"
     },
     {
         id: 6,
@@ -79,7 +116,16 @@ export const clients = [
         activeTasks: 1,
         status: "active",
         manager: "Emma Wilson",
-        joinedDate: "Jan 5, 2026"
+        managerId: 3,
+        joinedDate: "Jan 5, 2026",
+        salesManager: "David Sales",
+        spCentralRequestId: "REQ-1006",
+        marketplace: "Amazon US",
+        userPermission: "Full Access",
+        accountAccessUrl: "https://sellercentral.amazon.com",
+        leadSource: "Referral",
+        listingManager: "Emily Listings",
+        location: "Miami, USA"
     },
     {
         id: 7,
@@ -91,7 +137,16 @@ export const clients = [
         activeTasks: 2,
         status: "active",
         manager: "Sarah Mitchell",
-        joinedDate: "Jan 20, 2026"
+        managerId: 1,
+        joinedDate: "Jan 20, 2026",
+        salesManager: "David Sales",
+        spCentralRequestId: "REQ-1007",
+        marketplace: "Amazon US",
+        userPermission: "Full Access",
+        accountAccessUrl: "https://sellercentral.amazon.com",
+        leadSource: "Website",
+        listingManager: "Emily Listings",
+        location: "Austin, USA"
     },
 ];
 
@@ -99,6 +154,21 @@ export const getClientsByManager = (managerName) => {
     return clients.filter(c => c.manager === managerName);
 };
 
+export const getClientsByManagerId = (managerId) => {
+    return clients.filter(c => c.managerId === managerId);
+};
+
 export const getUnassignedClients = () => {
     return clients.filter(c => c.manager === "Unassigned");
+};
+
+export const getClientById = (id) => {
+    return clients.find(c => c.id === id);
+};
+
+// Derive recent clients (sorted by joinedDate, newest first)
+export const getRecentClients = (limit = 3) => {
+    return [...clients]
+        .sort((a, b) => new Date(b.joinedDate) - new Date(a.joinedDate))
+        .slice(0, limit);
 };

@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-const files = [
-    { id: 1, name: "Product A - A+ Content Final.pdf", client: "John Doe", type: "pdf", size: "2.4 MB", uploadedBy: "Sarah Mitchell", date: "Jan 19, 2026" },
-    { id: 2, name: "PPC Campaign Report - Week 3.xlsx", client: "John Doe", type: "excel", size: "856 KB", uploadedBy: "Sarah Mitchell", date: "Jan 18, 2026" },
-    { id: 3, name: "Product Images - Main.zip", client: "Emily Smith", type: "image", size: "15.2 MB", uploadedBy: "Design Team", date: "Jan 15, 2026" },
-    { id: 4, name: "Competitor Analysis Report.pdf", client: "John Doe", type: "pdf", size: "1.8 MB", uploadedBy: "Sarah Mitchell", date: "Jan 14, 2026" },
-    { id: 5, name: "Brand Guidelines.pdf", client: "Emily Smith", type: "pdf", size: "4.2 MB", uploadedBy: "Design Team", date: "Jan 10, 2026" },
-];
+import { files as allFiles } from "@/data/files";
+import { getClientsByManagerId } from "@/data/clients";
+
+const CURRENT_ADMIN_ID = 1; // Mock logged-in admin
+
+// Get files for clients managed by the current admin
+const myClients = getClientsByManagerId(CURRENT_ADMIN_ID);
+const clientIds = new Set(myClients.map(c => c.id));
+const files = allFiles.filter(f => clientIds.has(f.clientId));
 
 const getFileIcon = (type) => {
     switch (type) {

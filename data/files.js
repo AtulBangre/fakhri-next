@@ -1,8 +1,10 @@
 // Client Files Collection
+// Linked to clients via clientId
 export const files = [
     {
         id: 1,
         name: "Product A - A+ Content Final.pdf",
+        clientId: 1,
         client: "John Doe",
         type: "pdf",
         size: "2.4 MB",
@@ -13,6 +15,7 @@ export const files = [
     {
         id: 2,
         name: "PPC Campaign Report - Week 3.xlsx",
+        clientId: 1,
         client: "John Doe",
         type: "excel",
         size: "856 KB",
@@ -23,6 +26,7 @@ export const files = [
     {
         id: 3,
         name: "Product Images - Main.zip",
+        clientId: 2,
         client: "Emily Smith",
         type: "image",
         size: "15.2 MB",
@@ -33,6 +37,7 @@ export const files = [
     {
         id: 4,
         name: "Competitor Analysis Report.pdf",
+        clientId: 1,
         client: "John Doe",
         type: "pdf",
         size: "1.8 MB",
@@ -43,6 +48,7 @@ export const files = [
     {
         id: 5,
         name: "Brand Guidelines.pdf",
+        clientId: 2,
         client: "Emily Smith",
         type: "pdf",
         size: "4.2 MB",
@@ -54,4 +60,8 @@ export const files = [
 
 export const getFilesByClient = (clientName) => {
     return files.filter(f => f.client === clientName);
+};
+
+export const getFilesByClientId = (clientId) => {
+    return files.filter(f => f.clientId === clientId);
 };

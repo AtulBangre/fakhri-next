@@ -7,6 +7,7 @@ export const plans = [
         subtitle: "Starter Package",
         prices: {
             monthly: "₹15,000",
+            monthlyUSD: "$199",
         },
         period: "/month",
         description: "Best for new sellers getting started on Amazon.",
@@ -19,6 +20,7 @@ export const plans = [
         subtitle: "Most Popular",
         prices: {
             monthly: "₹20,000",
+            monthlyUSD: "$299",
         },
         period: "/month",
         description: "Ideal for growing brands needing comprehensive management.",
@@ -31,6 +33,7 @@ export const plans = [
         subtitle: "Enterprise Solution",
         prices: {
             monthly: "₹30,000",
+            monthlyUSD: "$499",
         },
         period: "/month",
         description: "Full-service solution for high-volume sellers and large catalogs.",
