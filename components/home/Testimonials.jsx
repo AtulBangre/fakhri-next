@@ -2,10 +2,20 @@
 
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import SocialTestimonialCard from '@/components/ui/SocialTestimonialCard';
-import { testimonials, socialTestimonials } from '@/data/allTestimonials';
+import { allTestimonials } from '@/data/allTestimonials';
 import Marquee from 'react-fast-marquee';
 
 export default function Testimonials() {
+    // Filter testimonials directly from the collection
+    const socialData = allTestimonials
+        .filter(t => t.type === 'social')
+        .map(t => ({
+            name: t.author.name,
+            handle: t.author.handle,
+            image: t.author.image,
+            quote: t.content
+        }));
+
     return (
         <section className="section-padding bg-background relative">
             {/* Semicircular Fade Overlays */}
@@ -43,7 +53,7 @@ export default function Testimonials() {
                         speed={40}
                     >
                         <div className="flex items-center py-5">
-                            {socialTestimonials.map((testimonial, index) => (
+                            {socialData.map((testimonial, index) => (
                                 <SocialTestimonialCard
                                     key={`row1-${index}`}
                                     index={index}
@@ -62,7 +72,7 @@ export default function Testimonials() {
                         direction="right"
                     >
                         <div className="flex items-center py-5">
-                            {socialTestimonials.map((testimonial, index) => (
+                            {socialData.map((testimonial, index) => (
                                 <SocialTestimonialCard
                                     key={`row2-${index}`}
                                     index={index}

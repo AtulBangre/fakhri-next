@@ -6,13 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-const admins = [
-    { id: 1, name: "Sarah Mitchell", email: "sarah@fakhriit.com", role: "Account Manager", team: "Marketing Team", clients: 3, enabled: true },
-    { id: 2, name: "John Anderson", email: "john@fakhriit.com", role: "Account Manager", team: "Marketing Team", clients: 4, enabled: true },
-    { id: 3, name: "Emma Wilson", email: "emma@fakhriit.com", role: "Senior Manager", team: "Enterprise Team", clients: 2, enabled: true },
-    { id: 4, name: "David Lee", email: "david@fakhriit.com", role: "Account Manager", team: "Enterprise Team", clients: 3, enabled: true },
-    { id: 5, name: "Michael Chen", email: "michael@fakhriit.com", role: "Team Lead", team: "Growth Team", clients: 3, enabled: false },
-];
+import { admins } from "@/data/admins";
 
 const SuperAdminAdminsTab = () => {
     return (
@@ -64,9 +58,9 @@ const SuperAdminAdminsTab = () => {
                                 <TableCell>{admin.clients}</TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        <Switch defaultChecked={admin.enabled} />
+                                        <Switch defaultChecked={admin.status === "active"} />
                                         <span className="text-sm text-muted-foreground">
-                                            {admin.enabled ? "Active" : "Disabled"}
+                                            {admin.status === "active" ? "Active" : "Disabled"}
                                         </span>
                                     </div>
                                 </TableCell>

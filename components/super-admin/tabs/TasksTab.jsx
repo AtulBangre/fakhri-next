@@ -8,23 +8,10 @@ import StatusBadge from "@/components/dashboard/StatusBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const clients = [
-    { id: 1, name: "John Doe", company: "TechGadgets Co" },
-    { id: 2, name: "Emily Smith", company: "BeautyBrand Inc" },
-    { id: 3, name: "Michael Brown", company: "HomeEssentials" },
-    { id: 4, name: "Robert Kim", company: "Tech Innovators" },
-    { id: 5, name: "Amanda White", company: "Sports Gear Pro" },
-];
-
-const tasksData = [
-    { id: 1, title: "PPC Campaign Setup", client: "John Doe", clientId: 1, manager: "Sarah Mitchell", service: "PPC Management", priority: "High", status: "in-progress", dueDate: "Jan 25, 2026", lastUpdated: "2 hours ago", description: "Set up and optimize PPC campaigns", planForWeek: "this-week", reminder: true, isHighPriority: true, isCompleted: false },
-    { id: 2, title: "A+ Content Design", client: "Emily Smith", clientId: 2, manager: "Sarah Mitchell", service: "A+ Content", priority: "Medium", status: "in-progress", dueDate: "Jan 28, 2026", lastUpdated: "5 hours ago", description: "Design A+ content", planForWeek: "next-week", reminder: true, isHighPriority: false, isCompleted: false },
-    { id: 3, title: "Brand Registry", client: "Michael Brown", clientId: 3, manager: "Sarah Mitchell", service: "Brand Registry", priority: "High", status: "pending", dueDate: "Feb 1, 2026", lastUpdated: "1 day ago", description: "Apply for brand registry", planForWeek: "this-week", reminder: true, isHighPriority: true, isCompleted: false },
-    { id: 4, title: "Listing Optimization", client: "Robert Kim", clientId: 4, manager: "John Anderson", service: "Catalog", priority: "Low", status: "completed", dueDate: "Jan 20, 2026", lastUpdated: "2 days ago", description: "Optimize product listings", planForWeek: "none", reminder: false, isHighPriority: false, isCompleted: true },
-    { id: 5, title: "Account Audit", client: "Amanda White", clientId: 5, manager: "Emma Wilson", service: "Account Management", priority: "Medium", status: "completed", dueDate: "Jan 18, 2026", lastUpdated: "4 days ago", description: "Perform account audit", planForWeek: "none", reminder: false, isHighPriority: false, isCompleted: true },
-];
-
-const managers = ["Sarah Mitchell", "John Anderson", "Emma Wilson"];
+import { clients } from "@/data/clients";
+import { allTasks as tasksData } from "@/data/tasks";
+import { managerNames as managers } from "@/data/admins";
+import { activityLogs } from "@/data/activityLogs";
 
 // Generate week numbers 1-52
 const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
@@ -344,11 +331,7 @@ const SuperAdminTasksTab = () => {
             <div className="bg-card rounded-xl border p-6">
                 <h3 className="font-heading font-semibold mb-4">Recent Activity</h3>
                 <div className="space-y-3">
-                    {[
-                        { action: "Task completed", user: "Sarah Mitchell", task: "Listing Optimization", time: "2 hours ago" },
-                        { action: "Status updated", user: "John Anderson", task: "PPC Campaign Setup", time: "5 hours ago" },
-                        { action: "File uploaded", user: "Emma Wilson", task: "Account Audit", time: "1 day ago" },
-                    ].map((log, i) => (
+                    {activityLogs.map((log, i) => (
                         <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-medium">

@@ -4,16 +4,31 @@ import StatCard from "@/components/dashboard/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table";
 
-const managerStats = [
-    { name: "Sarah Mitchell", clients: 3, activeTasks: 4, completed: 47 },
-    { name: "John Anderson", clients: 4, activeTasks: 6, completed: 52 },
-    { name: "Emma Wilson", clients: 2, activeTasks: 3, completed: 38 },
-];
-const recentClients = [
-    { id: 1, name: "Alex Turner", company: "Digital Goods LLC", plan: "Premium", assignedTo: "Sarah Mitchell", date: "Jan 20, 2026" },
-    { id: 2, name: "Lisa Chen", company: "Fashion Forward", plan: "Platinum", assignedTo: "Unassigned", date: "Jan 19, 2026" },
-    { id: 3, name: "Robert Kim", company: "Tech Innovators", plan: "Elite", assignedTo: "John Anderson", date: "Jan 18, 2026" },
-];
+import { admins } from "@/data/admins";
+import { clients } from "@/data/clients";
+
+// Derive manager stats from the admins collection
+const managerStats = admins
+    .filter(admin => admin.role === "Account Manager" || admin.role === "Senior Manager" || admin.role === "Team Lead")
+    .map(admin => ({
+        name: admin.name,
+        clients: admin.clients,
+        activeTasks: admin.performance?.activeTasks || 0,
+        completed: admin.performance?.completedTasks || 0
+    }))
+    .slice(0, 3); // Show top 3
+
+// Derive recent clients from the clients collection
+const recentClients = clients
+    .slice(0, 3)
+    .map(client => ({
+        id: client.id,
+        name: client.name,
+        company: client.company,
+        plan: client.plan,
+        assignedTo: client.manager,
+        date: client.joinedDate
+    }));
 
 const DashboardTab = ({ setActiveTab }) => {
     return (

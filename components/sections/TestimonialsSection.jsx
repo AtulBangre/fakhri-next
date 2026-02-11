@@ -1,9 +1,18 @@
 "use client";
 import { Star, Quote } from "lucide-react";
-import { testimonials } from "@/data/allTestimonials";
+import { allTestimonials } from "@/data/allTestimonials";
 
 /* Local mock removed, using data/allTestimonials */
 const TestimonialsSection = () => {
+  const detailedTestimonials = allTestimonials
+    .filter(t => t.type === 'detailed')
+    .map(t => ({
+      name: t.author.name,
+      role: t.author.role,
+      company: t.author.company,
+      content: t.content,
+      rating: t.rating
+    }));
   return (<section className="py-20 lg:py-32 bg-accent/30">
     <div className="container">
       <div className="text-center max-w-3xl mx-auto mb-16">
@@ -19,7 +28,7 @@ const TestimonialsSection = () => {
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {testimonials.slice(0, 3).map((testimonial, index) => (<div key={testimonial.name} className="relative p-6 rounded-xl bg-card border hover:shadow-lg transition-shadow">
+        {detailedTestimonials.slice(0, 3).map((testimonial, index) => (<div key={testimonial.name} className="relative p-6 rounded-xl bg-card border hover:shadow-lg transition-shadow">
           <Quote className="absolute top-6 right-6 h-8 w-8 text-primary/10" />
 
           <div className="flex gap-1 mb-4">

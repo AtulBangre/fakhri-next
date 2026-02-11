@@ -6,14 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const tasks = [
-    { id: 1, title: "Listing Optimization - Product A", service: "Catalog Management", status: "completed", eta: "Jan 20, 2026", completedDate: "Jan 19, 2026", manager: "Sarah Mitchell" },
-    { id: 2, title: "PPC Campaign Setup", service: "PPC Management", status: "in-progress", eta: "Jan 25, 2026", completedDate: null, manager: "Sarah Mitchell" },
-    { id: 3, title: "A+ Content Design - Product B", service: "A+ Content", status: "in-progress", eta: "Jan 28, 2026", completedDate: null, manager: "John Smith" },
-    { id: 4, title: "Brand Registry Application", service: "Brand Registry", status: "pending", eta: "Feb 1, 2026", completedDate: null, manager: "Sarah Mitchell" },
-    { id: 5, title: "Competitor Analysis Report", service: "Account Management", status: "completed", eta: "Jan 15, 2026", completedDate: "Jan 14, 2026", manager: "John Smith" },
-    { id: 6, title: "Backend Search Terms Update", service: "Catalog Management", status: "completed", eta: "Jan 12, 2026", completedDate: "Jan 12, 2026", manager: "Sarah Mitchell" },
-];
+import { allTasks as tasks } from "@/data/tasks";
 
 // Get unique managers from tasks
 const managers = [...new Set(tasks.map(task => task.manager))];

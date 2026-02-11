@@ -4,6 +4,7 @@ import { CheckCircle2, Star, Plus, ShoppingCart, Zap, Image, Target, TrendingUp,
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { servicesCatalog } from "@/data/servicesCatalog";
 
 const planFeatures = [
     { name: "Full Account Management", included: true },
@@ -18,81 +19,6 @@ const planFeatures = [
     { name: "Dedicated Account Manager", included: false },
 ];
 
-const addOnServices = [
-    {
-        id: 1,
-        name: "Extra A+ Content Design",
-        description: "Additional A+ Content design for more products beyond your plan limit.",
-        price: "$199",
-        priceType: "per product",
-        icon: Image,
-        popular: true
-    },
-    {
-        id: 2,
-        name: "Product Photography",
-        description: "Professional Amazon-ready product photography with white background.",
-        price: "$299",
-        priceType: "per product",
-        icon: Image,
-        popular: false
-    },
-    {
-        id: 3,
-        name: "PPC Campaign Boost",
-        description: "Intensive one-time PPC optimization and strategy review.",
-        price: "$499",
-        priceType: "one-time",
-        icon: Target,
-        popular: true
-    },
-    {
-        id: 4,
-        name: "Additional Product Category",
-        description: "Expand your catalog with management for an additional category.",
-        price: "$149",
-        priceType: "per month",
-        icon: Package,
-        popular: false
-    },
-    {
-        id: 5,
-        name: "Video Content Creation",
-        description: "Professional product video for your Amazon listing.",
-        price: "$599",
-        priceType: "per video",
-        icon: Zap,
-        popular: false
-    },
-    {
-        id: 6,
-        name: "Brand Storefront Design",
-        description: "Custom Amazon Brand Storefront design and setup.",
-        price: "$799",
-        priceType: "one-time",
-        icon: TrendingUp,
-        popular: true
-    },
-    {
-        id: 7,
-        name: "Competitor Analysis Report",
-        description: "Deep-dive competitor analysis with actionable insights.",
-        price: "$349",
-        priceType: "per report",
-        icon: FileText,
-        popular: false
-    },
-    {
-        id: 8,
-        name: "FBA Reimbursement Audit",
-        description: "Comprehensive audit to recover lost FBA reimbursements.",
-        price: "15%",
-        priceType: "of recovered amount",
-        icon: DollarSign,
-        popular: false
-    },
-];
-
 const purchasedAddOns = [
     { id: 1, name: "Extra A+ Content Design", quantity: 2, date: "Jan 10, 2026", status: "completed" },
     { id: 2, name: "PPC Campaign Boost", quantity: 1, date: "Dec 20, 2025", status: "in-progress" },
@@ -100,6 +26,18 @@ const purchasedAddOns = [
 
 const ClientPlanTab = () => {
     const [activeSubTab, setActiveSubTab] = useState("plan");
+
+    const availableAddOnServices = servicesCatalog
+        .filter(s => s.pricing.standard !== null)
+        .map(s => ({
+            id: s.id,
+            name: s.name,
+            description: "Professional service for your Amazon business.", // Description not in catalog yet
+            price: `$${s.pricing.standard.price}`,
+            priceType: s.pricing.standard.label || "per service",
+            icon: Package, // Default icon
+            popular: false
+        }));
 
     return (
         <div className="space-y-6">
@@ -113,8 +51,8 @@ const ClientPlanTab = () => {
                 <button
                     onClick={() => setActiveSubTab("plan")}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeSubTab === "plan"
-                            ? "bg-card text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
                         }`}
                 >
                     Current Plan
@@ -122,8 +60,8 @@ const ClientPlanTab = () => {
                 <button
                     onClick={() => setActiveSubTab("addons")}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${activeSubTab === "addons"
-                            ? "bg-card text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
                         }`}
                 >
                     <Plus className="h-4 w-4" />
@@ -234,7 +172,8 @@ const ClientPlanTab = () => {
                     <div>
                         <h3 className="font-heading font-semibold mb-4">Available Add-on Services</h3>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {addOnServices.map((service) => {
+
+                            {availableAddOnServices.map((service) => {
                                 const IconComponent = service.icon;
                                 return (
                                     <div

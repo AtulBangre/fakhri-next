@@ -2,7 +2,17 @@
 
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { PricingCard } from '@/components/ui/PricingCard';
-import { pricingPlans, pricingDisclaimer, pricingPageServices, pricingPageInfo } from '@/data/pricing';
+import { pricingPlans, pricingDisclaimer, pricingPageInfo } from '@/data/pricingPlans';
+import { servicesCatalog } from '@/data/servicesCatalog';
+
+const pricingPageServices = servicesCatalog
+    .filter(s => s.pricing.standard !== null)
+    .map(s => ({
+        id: s.id,
+        name: s.name,
+        category: s.category,
+        price: s.pricing.standard.price
+    }));
 import { pricingFAQs } from '@/data/allFAQs';
 import { within2HoursData } from '@/data/within2hours';
 import Link from 'next/link';

@@ -11,7 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-import { clients as clientsData, allTasks as tasksData, notesData, managers } from "@/data/clients";
+import { clients as clientsData } from "@/data/clients";
+import { allTasks as tasksData } from "@/data/tasks";
+import { notesData } from "@/data/notes";
+import { managerNames as managers } from "@/data/admins";
 
 // Generate week numbers 1-52
 const weekNumbers = Array.from({ length: 52 }, (_, i) => ({

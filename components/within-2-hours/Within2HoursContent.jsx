@@ -2,7 +2,17 @@
 
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
 import { companyData } from '@/data/company';
-import { within2HoursData, within2HoursPageServices, within2HoursPageInfo } from '@/data/within2hours';
+import { within2HoursData } from '@/data/within2hours';
+import { servicesCatalog, priorityServicesPageInfo as within2HoursPageInfo } from '@/data/servicesCatalog';
+
+const within2HoursPageServices = servicesCatalog
+    .filter(s => s.pricing.priority !== null)
+    .map(s => ({
+        id: s.id,
+        name: s.name,
+        category: s.category,
+        price: s.pricing.priority.price
+    }));
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {

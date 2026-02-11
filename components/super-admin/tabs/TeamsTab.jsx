@@ -4,49 +4,35 @@ import { Plus, Edit, Users, Trash2, Eye, X, Crown, Mail, Phone } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-// Admins data - teams are derived from this
-const admins = [
-    { id: 1, name: "Sarah Mitchell", email: "sarah@fakhriit.com", phone: "+1 (555) 111-2222", role: "Team Lead", team: "Marketing Team", clients: 3, enabled: true },
-    { id: 2, name: "John Anderson", email: "john@fakhriit.com", phone: "+1 (555) 222-3333", role: "Account Manager", team: "Marketing Team", clients: 4, enabled: true },
-    { id: 3, name: "Emma Wilson", email: "emma@fakhriit.com", phone: "+1 (555) 333-4444", role: "Team Lead", team: "Enterprise Team", clients: 2, enabled: true },
-    { id: 4, name: "David Lee", email: "david@fakhriit.com", phone: "+1 (555) 444-5555", role: "Account Manager", team: "Enterprise Team", clients: 3, enabled: true },
-    { id: 5, name: "Michael Chen", email: "michael@fakhriit.com", phone: "+1 (555) 555-6666", role: "Team Lead", team: "Growth Team", clients: 3, enabled: true },
-    { id: 6, name: "Lisa Wang", email: "lisa@fakhriit.com", phone: "+1 (555) 666-7777", role: "Account Manager", team: "Growth Team", clients: 2, enabled: true },
-    { id: 7, name: "Robert Kim", email: "robert@fakhriit.com", phone: "+1 (555) 777-8888", role: "Account Manager", team: "Enterprise Team", clients: 4, enabled: true },
-];
+import { teams as teamsData } from "@/data/teams";
+import { admins } from "@/data/admins";
 
-// Derive teams from admins data
-const deriveTeamsFromAdmins = () => {
-    const teamMap = {};
+// Enrich teams data with full member details
+const teams = teamsData.map(team => {
+    // Get full member objects
+    const members = (team.memberIds || [])
+        .map(id => admins.find(a => a.id === id))
+        .filter(Boolean)
+        .map(member => ({
+            ...member,
+            phone: member.phone || "+1 (555) 000-0000" // Fallback phone
+        }));
 
-    admins.forEach(admin => {
-        if (!teamMap[admin.team]) {
-            teamMap[admin.team] = {
-                name: admin.team,
-                members: [],
-                lead: null,
-                clientCount: 0
-            };
-        }
+    // Get lead object
+    const lead = admins.find(a => a.id === team.leadId) || members[0] || {
+        name: "Unknown",
+        role: "N/A",
+        phone: ""
+    };
 
-        teamMap[admin.team].members.push(admin);
-        teamMap[admin.team].clientCount += admin.clients;
-
-        // Team Lead is the admin with "Team Lead" or "Senior Manager" role
-        if (admin.role === "Team Lead" || admin.role === "Senior Manager") {
-            teamMap[admin.team].lead = admin;
-        }
-    });
-
-    return Object.values(teamMap).map((team, index) => ({
-        id: index + 1,
+    return {
         ...team,
-        // If no lead found, assign the first member
-        lead: team.lead || team.members[0]
-    }));
-};
-
-const teams = deriveTeamsFromAdmins();
+        members,
+        lead,
+        // Ensure clientCount is accurate based on members
+        clientCount: members.reduce((sum, m) => sum + (m.clients || 0), 0)
+    };
+});
 
 const SuperAdminTeamsTab = () => {
     const [viewingTeam, setViewingTeam] = useState(null);

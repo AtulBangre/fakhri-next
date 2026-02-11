@@ -3,24 +3,27 @@
 export * from './company';
 // Services
 export * from './allServices';
+export * from './servicesCatalog';
 // Pricing
-export * from './pricing';
-// Clients & Tasks
+export * from './pricingPlans';
+// Clients & Operations
 export * from './clients';
+export * from './tasks';
+export * from './notes';
+export * from './invoices';
+export * from './files';
+export * from './notifications';
+export * from './activityLogs';
 // Team & Admins
-export * from './team';
-// Blog
-export * from './allBlogPosts';
-// Careers (Jobs)
-export * from './jobs';
-// Testimonials
-export * from './allTestimonials';
-// Dashboard aggregated data
-export * from './dashboard';
-// About Page
-export * from './milestones';
+export * from './admins';
+export * from './teams';
 export * from './teammembers';
-// FAQ
+// Content
+export * from './allBlogPosts';
+export * from './jobs';
+export * from './allTestimonials';
+export * from './milestones';
 export * from './allFAQs';
-// Within 2 Hours
 export * from './within2hours';
+// Dashboard
+export * from './dashboard';
