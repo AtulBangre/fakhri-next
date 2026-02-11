@@ -36,13 +36,13 @@ const PublicFooter = () => {
                 <div className="p-2 rounded-lg bg-white/5 group-hover:bg-primary/20 transition-colors">
                   <Mail className="h-4 w-4 group-hover:text-primary transition-colors" />
                 </div>
-                <span>{companyData.contact?.email || "hello@fakhriitservices.com"}</span>
+                <span>{companyData.contact?.email?.general || "info@fakhriitservices.com"}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-400 group">
                 <div className="p-2 rounded-lg bg-white/5 group-hover:bg-primary/20 transition-colors">
                   <Phone className="h-4 w-4 group-hover:text-primary transition-colors" />
                 </div>
-                <span>{companyData.contact?.phone || "+1 (555) 123-4567"}</span>
+                <span>{companyData.contact?.phone?.primary || "+91 8982675004"}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-400 group">
                 <div className="p-2 rounded-lg bg-white/5 group-hover:bg-primary/20 transition-colors">
@@ -109,17 +109,17 @@ const PublicFooter = () => {
             <div className="mt-8">
               <h5 className="text-sm font-semibold mb-4 text-gray-300">Follow Us</h5>
               <div className="flex gap-3">
-                <a href="#" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
+                <a href={companyData.contact.social.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
                   <Linkedin className="h-5 w-5" />
                 </a>
-                <a href="#" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
+                <a href={companyData.contact.social.twitter} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
                   <Twitter className="h-5 w-5" />
                 </a>
-                <a href="#" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
+                <a href={companyData.contact.social.facebook} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
                   <Facebook className="h-5 w-5" />
                 </a>
-                <a href="#" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
-                  <Youtube className="h-5 w-5" />
+                <a href={companyData.contact.social.instagram} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
+                  <Instagram className="h-5 w-5" />
                 </a>
               </div>
             </div>

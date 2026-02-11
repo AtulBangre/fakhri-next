@@ -12,8 +12,16 @@ export * from './team';
 // Blog
 export * from './blog';
 // Careers
-export * from './careers';
+export * from './career';
 // Testimonials
 export * from './testimonials';
 // Dashboard aggregated data
 export * from './dashboard';
+// About Page
+export * from './about';
+// Navigation
+export * from './navigation';
+// FAQ
+export * from './faq';
+// Within 2 Hours
+export * from './within2hours';

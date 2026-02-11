@@ -7,12 +7,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Save, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { companyData, seoData } from "@/data/company";
+import { companyData } from "@/data/company";
 
 export default function HomePageManager() {
     // aligning with data/company.js structure
     const [generalData, setGeneralData] = useState(companyData);
-    const [seo, setSeo] = useState(seoData.home || { title: "", description: "", keywords: "" });
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -20,7 +19,7 @@ export default function HomePageManager() {
         setIsSaving(true);
         // Simulate API call
         setTimeout(() => {
-            console.log("Saving Home Page Data (effectively Company Data):", { ...generalData, seo });
+            console.log("Saving Home Page Data (effectively Company Data):", generalData);
             setIsSaving(false);
             setIsEditing(false);
             toast.success("Home page updated successfully!");
@@ -130,39 +129,6 @@ export default function HomePageManager() {
                                 </div>
                             </div>
                         ))}
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* SEO Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>SEO Settings (Home)</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>Meta Title</Label>
-                        <Input
-                            disabled={!isEditing}
-                            value={seo.title}
-                            onChange={(e) => setSeo({ ...seo, title: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Meta Description</Label>
-                        <Textarea
-                            disabled={!isEditing}
-                            value={seo.description}
-                            onChange={(e) => setSeo({ ...seo, description: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Keywords</Label>
-                        <Input
-                            disabled={!isEditing}
-                            value={seo.keywords}
-                            onChange={(e) => setSeo({ ...seo, keywords: e.target.value })}
-                        />
                     </div>
                 </CardContent>
             </Card>

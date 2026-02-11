@@ -4,17 +4,16 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Linkedin, Twitter, Facebook, Instagram, Mail, Phone, MapPin } from 'lucide-react';
 import { companyData } from '@/data/company';
-import { contactData } from '@/data/contact';
 import { footerLinks } from '@/data/navigation';
 
 export default function Footer() {
     const currentYear = new Date().getFullYear();
 
     const socialIcons = [
-        { icon: Linkedin, href: contactData.social.linkedin, label: 'LinkedIn' },
-        { icon: Twitter, href: contactData.social.twitter, label: 'Twitter' },
-        { icon: Facebook, href: contactData.social.facebook, label: 'Facebook' },
-        { icon: Instagram, href: contactData.social.instagram, label: 'Instagram' },
+        { icon: Linkedin, href: companyData.contact.social.linkedin, label: 'LinkedIn' },
+        { icon: Twitter, href: companyData.contact.social.twitter, label: 'Twitter' },
+        { icon: Facebook, href: companyData.contact.social.facebook, label: 'Facebook' },
+        { icon: Instagram, href: companyData.contact.social.instagram, label: 'Instagram' },
     ];
 
     return (
@@ -103,25 +102,25 @@ export default function Footer() {
                             <li className="flex items-start gap-3">
                                 <MapPin size={18} className="text-primary mt-0.5 flex-shrink-0" />
                                 <span className="text-background/70 text-sm">
-                                    {contactData.address.full}
+                                    {companyData.contact.address.full}
                                 </span>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Phone size={18} className="text-primary flex-shrink-0" />
                                 <a
-                                    href={`tel:${contactData.phone.primary}`}
+                                    href={`tel:${companyData.contact.phone.primary}`}
                                     className="text-background/70 hover:text-background transition-colors text-sm"
                                 >
-                                    {contactData.phone.primary}
+                                    {companyData.contact.phone.primary}
                                 </a>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Mail size={18} className="text-primary flex-shrink-0" />
                                 <a
-                                    href={`mailto:${contactData.email.general}`}
+                                    href={`mailto:${companyData.contact.email.info}`}
                                     className="text-background/70 hover:text-background transition-colors text-sm"
                                 >
-                                    {contactData.email.general}
+                                    {companyData.contact.email.info}
                                 </a>
                             </li>
                         </ul>

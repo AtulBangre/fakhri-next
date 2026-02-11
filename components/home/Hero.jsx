@@ -139,10 +139,10 @@ export default function Hero() {
                                 <div className="relative z-10">
                                     <Award className="w-16 h-16 mb-6" />
                                     <h3 className="text-2xl font-poppins font-bold mb-3">
-                                        Trusted by 500+ Sellers
+                                        Trusted by {companyData.stats[0].value} Sellers
                                     </h3>
                                     <p className="text-primary-foreground/80 mb-6">
-                                        We&apos;ve helped generate over $50M in revenue for our clients across multiple Amazon marketplaces.
+                                        We&apos;ve helped generate over {companyData.stats[3].value} in revenue for our clients across multiple Amazon marketplaces.
                                     </p>
                                     <div className="flex -space-x-2">
                                         {sellerImages.map((src, i) => (

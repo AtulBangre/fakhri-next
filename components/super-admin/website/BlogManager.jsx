@@ -27,17 +27,13 @@ import {
     Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, FileText, Image as ImageIcon
 } from "lucide-react";
 import { blogPosts, blogCategories } from "@/data/blog";
-import { seoData } from "@/data/company";
 
 export default function BlogManager() {
     // Using real data structure from @/data/blog
     const [blogs, setBlogs] = useState(blogPosts);
-    const [seo, setSeo] = useState(seoData.blog || { title: "", description: "", keywords: "" });
     const [searchQuery, setSearchQuery] = useState("");
     const [isCreating, setIsCreating] = useState(false);
 
-    // Toggle for SEO editing in main view
-    const [isEditingSeo, setIsEditingSeo] = useState(false);
 
     // New Blog State matching data properties
     const [newBlog, setNewBlog] = useState({
@@ -294,54 +290,6 @@ export default function BlogManager() {
                     </TableBody>
                 </Table>
             </div>
-            {/* SEO Section */}
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <CardTitle>SEO Settings (Blog Page)</CardTitle>
-                        {isEditingSeo ? (
-                            <div className="space-x-2">
-                                <Button variant="outline" size="sm" onClick={() => setIsEditingSeo(false)}>Cancel</Button>
-                                <Button size="sm" onClick={() => { console.log("Saving Blog SEO:", seo); setIsEditingSeo(false); }}>
-                                    <Save className="w-4 h-4 mr-2" />
-                                    Save SEO
-                                </Button>
-                            </div>
-                        ) : (
-                            <Button size="sm" variant="outline" onClick={() => setIsEditingSeo(true)}>
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit SEO
-                            </Button>
-                        )}
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>Meta Title</Label>
-                        <Input
-                            disabled={!isEditingSeo}
-                            value={seo.title}
-                            onChange={(e) => setSeo({ ...seo, title: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Meta Description</Label>
-                        <Textarea
-                            disabled={!isEditingSeo}
-                            value={seo.description}
-                            onChange={(e) => setSeo({ ...seo, description: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Keywords</Label>
-                        <Input
-                            disabled={!isEditingSeo}
-                            value={seo.keywords}
-                            onChange={(e) => setSeo({ ...seo, keywords: e.target.value })}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 }

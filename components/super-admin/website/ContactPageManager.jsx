@@ -6,20 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Plus, Edit, Trash2, Save, RefreshCw } from "lucide-react";
-import { contactData } from "@/data/contact";
-import { seoData } from "@/data/company";
+import { companyData } from "@/data/company";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default function ContactPageManager() {
-    const [contact, setContact] = useState(contactData);
-    const [seo, setSeo] = useState(seoData.contact || { title: "", description: "", keywords: "" });
+    const [contact, setContact] = useState(companyData.contact);
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     const handleSave = () => {
         setIsSaving(true);
         setTimeout(() => {
-            console.log("Saving Contact Page Data:", { contact, seo });
+            console.log("Saving Contact Page Data:", { contact });
             setIsSaving(false);
             setIsEditing(false);
             toast.success("Contact page updated successfully!");
@@ -159,38 +157,7 @@ export default function ContactPageManager() {
                 </div>
             </div>
 
-            {/* SEO Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>SEO Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>Meta Title</Label>
-                        <Input
-                            disabled={!isEditing}
-                            value={seo.title}
-                            onChange={(e) => setSeo({ ...seo, title: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Meta Description</Label>
-                        <Textarea
-                            disabled={!isEditing}
-                            value={seo.description}
-                            onChange={(e) => setSeo({ ...seo, description: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Keywords</Label>
-                        <Input
-                            disabled={!isEditing}
-                            value={seo.keywords}
-                            onChange={(e) => setSeo({ ...seo, keywords: e.target.value })}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
+            {/* Removed SEO Section */}
         </div>
     );
 }

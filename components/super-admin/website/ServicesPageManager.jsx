@@ -8,12 +8,10 @@ import { Label } from "@/components/ui/label";
 
 import { toast } from "sonner";
 import { servicesData } from "@/data/services";
-import { seoData } from "@/data/company";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default function ServicesPageManager() {
     const [services, setServices] = useState(servicesData);
-    const [seo, setSeo] = useState(seoData.services || { title: "", description: "", keywords: "" });
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false); // Added state
 
@@ -51,7 +49,7 @@ export default function ServicesPageManager() {
     const handleSave = () => {
         setIsSaving(true);
         setTimeout(() => {
-            console.log("Saving Services Page Data:", { services, seo });
+            console.log("Saving Services Page Data:", { services });
             setIsSaving(false);
             setIsEditing(false);
             toast.success("Services page updated successfully!");
@@ -155,38 +153,6 @@ export default function ServicesPageManager() {
                 )}
             </div>
 
-            {/* SEO Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>SEO Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>Meta Title</Label>
-                        <Input
-                            disabled={!isEditing}
-                            value={seo.title}
-                            onChange={(e) => setSeo({ ...seo, title: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Meta Description</Label>
-                        <Textarea
-                            disabled={!isEditing}
-                            value={seo.description}
-                            onChange={(e) => setSeo({ ...seo, description: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Keywords</Label>
-                        <Input
-                            disabled={!isEditing}
-                            value={seo.keywords}
-                            onChange={(e) => setSeo({ ...seo, keywords: e.target.value })}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 }

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
+import { companyData } from '@/data/company';
 
 export default function WhyChooseUs() {
     return (
@@ -18,7 +19,7 @@ export default function WhyChooseUs() {
                                 We&apos;re Not Just Service Providers, We&apos;re Your <span className="text-primary">Growth Partners</span>
                             </h2>
                             <p className="body-md mb-8">
-                                With over 8 years of experience and a team of 50+ Amazon experts,
+                                With over {companyData.stats[1].value} of experience and a team of {companyData.stats[2].value} Amazon experts,
                                 we understand what it takes to succeed on Amazon. We treat your business
                                 as our own and work relentlessly to achieve your goals.
                             </p>
@@ -57,7 +58,7 @@ export default function WhyChooseUs() {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                             <div className="absolute bottom-6 left-6 right-6 text-white bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20">
-                                <p className="font-poppins font-semibold text-lg mb-1">Trusted by 500+ Sellers</p>
+                                <p className="font-poppins font-semibold text-lg mb-1">Trusted by {companyData.stats[0].value} Sellers</p>
                                 <p className="text-white/80 text-sm">Join the network of successful Amazon brands.</p>
                             </div>
                         </div>

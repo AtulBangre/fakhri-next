@@ -7,7 +7,7 @@ export const companyData = {
     mission: "To empower Amazon sellers with expert services, cutting-edge strategies, and dedicated support that drives sustainable growth and marketplace success.",
     vision: "To become the most trusted and results-driven Amazon seller services partner globally, helping 10,000+ brands achieve their e-commerce dreams.",
     badges: [
-        { title: "Amazon SPN Partner", subtitle: "Certified Service Provider" },
+        { title: "Amazon Gold Partner", subtitle: "Strategic Provider Network" },
         { title: "Since 2016", subtitle: "8+ Years of Excellence" },
         { title: "500+", subtitle: "Happy Clients" },
     ],
@@ -15,13 +15,45 @@ export const companyData = {
         { value: "500+", label: "Clients Served", description: "Trusted by leading brands" },
         { value: "8+", label: "Years Experience", description: "Industry expertise" },
         { value: "35+", label: "Team Members", description: "Dedicated professionals" },
+        { value: "$50M+", label: "Client Revenue", description: "Generated for sellers" },
     ],
+    contact: {
+        address: {
+            street: "Plot no. 3 2nd Floor, Sector B",
+            area: "Koh-E-Fiza, Main Road",
+            city: "Bhopal",
+            state: "Madhya Pradesh",
+            zip: "462001",
+            country: "India",
+            full: "Plot no. 3 2nd Floor, Sector B, Koh-E-Fiza, Main Road, Bhopal 462001",
+        },
+        phone: {
+            primary: "+91 8982675004",
+            secondary: "+91 755 1234567",
+            whatsapp: "8982675004",
+        },
+        email: {
+            info: "info@fakhriitservices.com",
+            support: "info@fakhriitservices.com",
+            general: "info@fakhriitservices.com",
+        },
+        social: {
+            linkedin: "https://linkedin.com/company/fakhri-it-services-india-pvt-ltd",
+            facebook: "https://facebook.com/fakhriitservices",
+            instagram: "https://instagram.com/fakhri_it_services",
+            twitter: "https://twitter.com/fakhri_it",
+        },
+        hours: {
+            weekdays: "Monday - Friday: 10:00 AM - 6:00 PM (IST)",
+            weekend: "Saturday - Sunday: Close",
+        },
+    },
     story: {
         title: "Our Story",
-        content: "Founded in 2016, Fakhri IT Services began with a simple mission: to help Amazon sellers navigate the complex world of e-commerce. What started as a small consulting firm has grown into a full-service Amazon partner, serving over 500 clients worldwide. Our team of 50+ dedicated professionals brings together expertise in account management, advertising, content creation, and strategic growth planning.",
+        content: "Founded in 2016, Fakhri IT Services began with a simple mission: to help Amazon sellers navigate the complex world of e-commerce. What started as a small consulting firm has grown into a full-service Amazon partner, serving over 500 clients worldwide. Our team of 35+ dedicated professionals brings together expertise in account management, advertising, content creation, and strategic growth planning.",
         highlights: [
             "Started in 2016 with a vision to democratize Amazon success",
-            "Grew from 2 founders to 50+ expert team members",
+            "Grew from 2 founders to 35+ expert team members",
             "Served 500+ clients across multiple Amazon marketplaces",
             "Generated over $50M in revenue for our clients",
         ],
@@ -36,6 +68,3 @@ export const companyData = {
         ],
     },
 };
-
-// Moved to individual page metadata
-

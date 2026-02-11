@@ -1,20 +1,16 @@
-
 import { Users, Target, Zap, BarChart, Shield, Trophy } from 'lucide-react';
+import { companyData } from './company';
 
 export const aboutHero = {
     title: "We Are Your Growth Partners in the Amazon Marketplace",
     subtitle: "From account credentials to bestseller badges, we handle every aspect of your Amazon journey with precision and passion.",
     badge: "About Fakhri IT Services",
-    stats: [
-        { value: "8+", label: "Years Experience" },
-        { value: "500+", label: "Happy Clients" },
-        { value: "35+", label: "Team Members" }
-    ]
+    stats: companyData.stats.slice(0, 3)
 };
 
 export const companyOverview = {
     title: "Amazon-First Approach to Digital Commerce",
-    description: "Fakhri IT Services isn't just another digital agency. We are a specialized team of Amazon experts dedicated to navigating the complex ecosystem of the world's largest marketplace. By combining data-driven strategies with creative excellence, we turn products into brands and brands into market leaders.",
+    description: companyData.description,
     points: [
         "Specialized Amazon Account Management",
         "Data-Backed Advertising Strategies",

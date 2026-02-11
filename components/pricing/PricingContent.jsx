@@ -19,7 +19,7 @@ import FaQ from '../home/FaQ';
 import Within2HoursPricingList from '../within-2-hours/Within2HoursPricingList';
 
 import { useState } from 'react';
-import { within2HoursData } from '@/data/contact';
+import { within2HoursData } from '@/data/within2hours';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
 export default function PricingContent() {

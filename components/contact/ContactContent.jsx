@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
-import { contactData } from '@/data/contact';
+import { companyData } from '@/data/company';
 import {
     MapPin,
     Phone,
@@ -61,10 +61,10 @@ export default function ContactContent() {
     };
 
     const socialIcons = [
-        { icon: Linkedin, href: contactData.social.linkedin, label: 'LinkedIn' },
-        { icon: Twitter, href: contactData.social.twitter, label: 'Twitter' },
-        { icon: Facebook, href: contactData.social.facebook, label: 'Facebook' },
-        { icon: Instagram, href: contactData.social.instagram, label: 'Instagram' },
+        { icon: Linkedin, href: companyData.contact.social.linkedin, label: 'LinkedIn' },
+        { icon: Twitter, href: companyData.contact.social.twitter, label: 'Twitter' },
+        { icon: Facebook, href: companyData.contact.social.facebook, label: 'Facebook' },
+        { icon: Instagram, href: companyData.contact.social.instagram, label: 'Instagram' },
     ];
 
     return (
@@ -98,7 +98,7 @@ export default function ContactContent() {
                                 </div>
                                 <h3 className="font-poppins font-semibold mb-2">Address</h3>
                                 <p className="text-muted-foreground text-sm">
-                                    {contactData.address.full}
+                                    {companyData.contact.address.full}
                                 </p>
                             </motion.div>
                         </StaggerItem>
@@ -110,10 +110,10 @@ export default function ContactContent() {
                                 </div>
                                 <h3 className="font-poppins font-semibold mb-2">Phone</h3>
                                 <a
-                                    href={`tel:${contactData.phone.primary}`}
+                                    href={`tel:${companyData.contact.phone.primary}`}
                                     className="text-muted-foreground text-sm hover:text-primary transition-colors"
                                 >
-                                    {contactData.phone.primary}
+                                    {companyData.contact.phone.primary}
                                 </a>
                             </motion.div>
                         </StaggerItem>
@@ -125,10 +125,10 @@ export default function ContactContent() {
                                 </div>
                                 <h3 className="font-poppins font-semibold mb-2">Email</h3>
                                 <a
-                                    href={`mailto:${contactData.email.general}`}
+                                    href={`mailto:${companyData.contact.email.info}`}
                                     className="text-muted-foreground text-sm hover:text-primary transition-colors"
                                 >
-                                    {contactData.email.general}
+                                    {companyData.contact.email.info}
                                 </a>
                             </motion.div>
                         </StaggerItem>
@@ -140,7 +140,7 @@ export default function ContactContent() {
                                 </div>
                                 <h3 className="font-poppins font-semibold mb-2">Hours</h3>
                                 <p className="text-muted-foreground text-sm">
-                                    {contactData.hours.weekdays}
+                                    {companyData.contact.hours.weekdays}
                                 </p>
                             </motion.div>
                         </StaggerItem>
@@ -267,7 +267,7 @@ export default function ContactContent() {
                             <div className="space-y-8">
                                 {/* WhatsApp CTA */}
                                 <motion.a
-                                    href={`https://wa.me/${contactData.whatsapp}`}
+                                    href={`https://wa.me/${companyData.contact.phone.whatsapp}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="block bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-8 text-white"

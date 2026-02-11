@@ -1,8 +1,8 @@
 'use client';
 
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
-import { within2HoursData, contactData } from '@/data/contact';
-import { within2HoursPageServices, within2HoursPageInfo } from '@/data/within2hours';
+import { companyData } from '@/data/company';
+import { within2HoursData, within2HoursPageServices, within2HoursPageInfo } from '@/data/within2hours';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -63,7 +63,7 @@ export default function Within2HoursContent() {
 
                                 <div className="flex flex-wrap gap-4">
                                     <a
-                                        href={`https://wa.me/${contactData.whatsapp}`}
+                                        href={`https://wa.me/${companyData.contact.phone.whatsapp}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="btn-primary group"
@@ -72,7 +72,7 @@ export default function Within2HoursContent() {
                                         {within2HoursData.cta.whatsappText}
                                     </a>
                                     <a
-                                        href={`tel:${contactData.phone.primary}`}
+                                        href={`tel:${companyData.contact.phone.primary}`}
                                         className="btn-outline"
                                     >
                                         <Phone className="mr-2 w-5 h-5" />
@@ -250,7 +250,7 @@ export default function Within2HoursContent() {
                                 </p>
                                 <div className="flex flex-wrap justify-center gap-4">
                                     <a
-                                        href={`https://wa.me/${contactData.whatsapp}`}
+                                        href={`https://wa.me/${companyData.contact.phone.whatsapp}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center justify-center px-8 py-4 bg-background text-primary font-poppins font-semibold rounded-lg transition-all duration-300 hover:shadow-xl"

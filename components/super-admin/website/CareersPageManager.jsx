@@ -7,12 +7,10 @@ import { Plus, Edit, Trash2, Save, RefreshCw } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { jobPositions, careerBenefits } from "@/data/career";
-import { seoData } from "@/data/company";
 
 export default function CareersPageManager() {
     const [jobs, setJobs] = useState(jobPositions);
     const [benefits, setBenefits] = useState(careerBenefits);
-    const [seo, setSeo] = useState(seoData.career || { title: "", description: "", keywords: "" });
     const [isEditing, setIsEditing] = useState(false);
 
     // Simplistic handling of new job
@@ -54,7 +52,7 @@ export default function CareersPageManager() {
     };
 
     const handleSave = () => {
-        console.log("Saving Careers Page Data:", { jobs, benefits, seo });
+        console.log("Saving Careers Page Data:", { jobs, benefits });
         setIsEditing(false);
     };
 
@@ -221,38 +219,6 @@ export default function CareersPageManager() {
                 </div>
             </div>
 
-            {/* SEO Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>SEO Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>Meta Title</Label>
-                        <Input
-                            disabled={!isEditing}
-                            value={seo.title}
-                            onChange={(e) => setSeo({ ...seo, title: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Meta Description</Label>
-                        <Textarea
-                            disabled={!isEditing}
-                            value={seo.description}
-                            onChange={(e) => setSeo({ ...seo, description: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Keywords</Label>
-                        <Input
-                            disabled={!isEditing}
-                            value={seo.keywords}
-                            onChange={(e) => setSeo({ ...seo, keywords: e.target.value })}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 }
