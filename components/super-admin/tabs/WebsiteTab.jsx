@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import dynamic from 'next/dynamic';
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 import 'react-quill-new/dist/quill.snow.css';
+import { ImagePicker } from "@/components/ui/image-picker";
 
 // Import Initial Data
 import { allBlogPosts } from "@/data/allBlogPosts";
@@ -132,6 +133,14 @@ function CompanyManager({ data }) {
                 <Card>
                     <CardHeader><CardTitle>General Info</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
+                        <div className="grid gap-2">
+                            <ImagePicker
+                                name="logo"
+                                label="Company Logo"
+                                value={formData.logo}
+                                onChange={(val) => handleChange(null, 'logo', val)}
+                            />
+                        </div>
                         <div className="grid gap-2"><Label>Company Name</Label><Input value={formData.name} onChange={(e) => handleChange(null, 'name', e.target.value)} /></div>
                         <div className="grid gap-2"><Label>Tagline</Label><Input value={formData.tagline} onChange={(e) => handleChange(null, 'tagline', e.target.value)} /></div>
                         <div className="grid gap-2"><Label>Established Year</Label><Input value={formData.established} onChange={(e) => handleChange(null, 'established', e.target.value)} /></div>
@@ -216,7 +225,7 @@ function TeamManager({ data }) {
                 </Table>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[85vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>{isViewMode ? "View Member" : currentMember ? "Edit Member" : "Add Member"}</DialogTitle></DialogHeader>
                     {isViewMode ? (
                         <div className="space-y-4">
@@ -235,7 +244,9 @@ function TeamManager({ data }) {
                             </div>
                             <div className="grid gap-2"><Label>Category</Label><Select name="category" defaultValue={currentMember?.category || "Core Leadership"}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Core Leadership">Core Leadership</SelectItem><SelectItem value="Senior Management">Senior Management</SelectItem><SelectItem value="Rising Stars">Rising Stars</SelectItem></SelectContent></Select></div>
                             <div className="grid gap-2"><Label>Email</Label><Input name="email" defaultValue={currentMember?.email} /></div>
-                            <div className="grid gap-2"><Label>Image URL</Label><Input name="image" defaultValue={currentMember?.image} /></div>
+                            <div className="grid gap-2">
+                                <ImagePicker name="image" label="Profile Image" value={currentMember?.image} />
+                            </div>
                             <div className="grid gap-2"><Label>Description</Label><Textarea name="description" defaultValue={currentMember?.description} /></div>
                             <div className="grid gap-2"><Label>Order</Label><Input type="number" name="order" defaultValue={currentMember?.order} /></div>
                             <DialogFooter><Button type="submit">Save</Button></DialogFooter>
@@ -288,7 +299,7 @@ function PricingManager({ data }) {
                 ))}
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[85vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>{isViewMode ? "View Plan" : "Edit Plan"}</DialogTitle></DialogHeader>
                     {isViewMode ? (
                         <div className="space-y-4">
@@ -354,7 +365,7 @@ function CatalogManager({ data }) {
                 </Table>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[85vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>{isViewMode ? "View Item" : "Edit/Add Item"}</DialogTitle></DialogHeader>
                     {isViewMode ? (
                         <div className="space-y-4">
@@ -408,7 +419,6 @@ function BlogManager({ data }) {
     const [customCategory, setCustomCategory] = useState("");
 
     // Thumbnail Management
-    const [thumbnailMode, setThumbnailMode] = useState("link"); // "link" or "upload"
     const [thumbnailUrl, setThumbnailUrl] = useState("");
 
     useEffect(() => {
@@ -427,19 +437,7 @@ function BlogManager({ data }) {
         setSelectedCategory(post?.category && availableCategories.includes(post.category) ? post.category : (post?.category ? "Other" : ""));
         setCustomCategory(post?.category && !availableCategories.includes(post.category) ? post.category : "");
         setThumbnailUrl(post?.thumbnail || "");
-        setThumbnailMode("link");
         setIsDialogOpen(true);
-    };
-
-    const handleThumbnailUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setThumbnailUrl(reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
     };
 
     const handleSave = (e) => {
@@ -454,7 +452,6 @@ function BlogManager({ data }) {
             id: currentPost ? currentPost.id : Date.now(),
             title: title,
             excerpt: formData.get("excerpt"),
-            category: finalCategory,
             category: finalCategory,
             date: currentPost?.date || new Date().toLocaleDateString(),
             publishDate: currentPost?.publishDate || new Date().toISOString().split('T')[0],
@@ -488,7 +485,7 @@ function BlogManager({ data }) {
                 </Table>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>{isViewMode ? "View Post" : "Edit Post"}</DialogTitle></DialogHeader>
                     {isViewMode ? (
                         <div className="space-y-4">
@@ -500,74 +497,91 @@ function BlogManager({ data }) {
                             <div className="space-y-2"><h4 className="font-semibold">Content</h4><div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: currentPost?.content }} /></div>
                         </div>
                     ) : (
-                        <form onSubmit={handleSave} className="space-y-4">
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="space-y-2"><Label>Title</Label><Input name="title" value={title} onChange={(e) => setTitle(e.target.value)} required /></div>
-                                <div className="space-y-2"><Label>Slug (Auto-generated)</Label><Input name="slug" value={slug} onChange={(e) => setSlug(e.target.value)} /></div>
-                            </div>
-                            <div className="space-y-2"><Label>Excerpt</Label><Textarea name="excerpt" defaultValue={currentPost?.excerpt} /></div>
-                            <div className="grid md:grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Category</Label>
-                                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                                        <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
-                                        <SelectContent>
-                                            {availableCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                                            <SelectItem value="Other">Other (Add New)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    {selectedCategory === "Other" && (
-                                        <Input
-                                            placeholder="Enter new category"
-                                            value={customCategory}
-                                            onChange={(e) => setCustomCategory(e.target.value)}
-                                            className="mt-2 animate-in fade-in slide-in-from-top-1"
-                                        />
-                                    )}
-                                </div>
-                                <div className="space-y-2"><Label>Read Time</Label><Input name="readTime" defaultValue={currentPost?.readTime} /></div>
-                            </div>
-                            <div className="grid md:grid-cols-3 gap-4 border p-4 rounded">
-                                <div className="space-y-2"><Label>Author Name</Label><Input name="authorName" defaultValue={currentPost?.author?.name} /></div>
-                                <div className="space-y-2"><Label>Author Role</Label><Input name="authorRole" defaultValue={currentPost?.author?.role} /></div>
-                                <div className="space-y-2"><Label>Author Image</Label><Input name="authorImage" defaultValue={currentPost?.author?.image} /></div>
-                            </div>
-                            <div className="space-y-4 border p-4 rounded">
-                                <div className="flex items-center justify-between">
-                                    <Label>Thumbnail Image</Label>
-                                    <Tabs value={thumbnailMode} onValueChange={setThumbnailMode} className="w-[200px]">
-                                        <TabsList className="grid w-full grid-cols-2 h-8">
-                                            <TabsTrigger value="link" className="text-xs">Link</TabsTrigger>
-                                            <TabsTrigger value="upload" className="text-xs">Upload</TabsTrigger>
-                                        </TabsList>
-                                    </Tabs>
-                                </div>
-                                {thumbnailMode === "link" ? (
-                                    <Input placeholder="https://example.com/image.jpg" value={thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} />
-                                ) : (
-                                    <Input type="file" accept="image/*" onChange={handleThumbnailUpload} />
-                                )}
-                                {thumbnailUrl && (
-                                    <div className="relative w-full h-40 bg-muted rounded-md overflow-hidden">
-                                        <img src={thumbnailUrl} alt="Thumbnail Preview" className="w-full h-full object-cover" />
+                        <form onSubmit={handleSave} className="space-y-6">
+                            <div className="grid lg:grid-cols-3 gap-6">
+                                {/* Main Content Application */}
+                                <div className="lg:col-span-2 space-y-6">
+                                    <div className="space-y-4">
+                                        <div className="space-y-2"><Label>Title</Label><Input name="title" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Enter post title" className="text-lg font-medium" /></div>
+                                        <div className="space-y-2"><Label>Slug</Label><Input name="slug" value={slug} onChange={(e) => setSlug(e.target.value)} className="bg-muted" readOnly /></div>
                                     </div>
-                                )}
-                            </div>
 
-                            <div className="space-y-2">
-                                <Label>Content</Label>
-                                <div className="h-64 mb-12">
-                                    <ReactQuill
-                                        theme="snow"
-                                        value={content}
-                                        onChange={setContent}
-                                        className="h-full"
-                                        modules={quillModules}
-                                    />
+                                    <div className="space-y-2">
+                                        <Label>Content</Label>
+                                        <div className="h-[500px] mb-12">
+                                            <ReactQuill
+                                                theme="snow"
+                                                value={content}
+                                                onChange={setContent}
+                                                className="h-full flex flex-col"
+                                                modules={quillModules}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2 pt-6">
+                                        <Label>Excerpt</Label>
+                                        <Textarea name="excerpt" defaultValue={currentPost?.excerpt} placeholder="Brief summary of the post..." rows={3} />
+                                    </div>
+                                </div>
+
+                                {/* Sidebar Settings */}
+                                <div className="space-y-6">
+                                    {/* Publishing Settings */}
+                                    <Card>
+                                        <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-base">Publishing</CardTitle></CardHeader>
+                                        <CardContent className="p-4 space-y-4">
+                                            <div className="space-y-2">
+                                                <Label>Category</Label>
+                                                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                                    <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {availableCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                                        <SelectItem value="Other">Other (Add New)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                {selectedCategory === "Other" && (
+                                                    <Input
+                                                        placeholder="Enter new category"
+                                                        value={customCategory}
+                                                        onChange={(e) => setCustomCategory(e.target.value)}
+                                                        className="mt-2 animate-in fade-in"
+                                                    />
+                                                )}
+                                            </div>
+                                            <div className="space-y-2"><Label>Read Time</Label><Input name="readTime" defaultValue={currentPost?.readTime} placeholder="e.g. 5 min read" /></div>
+                                            <ArrayInput values={tags} onChange={setTags} label="Tags" placeholder="Add tag..." />
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Author Settings */}
+                                    <Card>
+                                        <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-base">Author Details</CardTitle></CardHeader>
+                                        <CardContent className="p-4 space-y-4">
+                                            <div className="space-y-2"><Label>Name</Label><Input name="authorName" defaultValue={currentPost?.author?.name} /></div>
+                                            <div className="space-y-2"><Label>Role</Label><Input name="authorRole" defaultValue={currentPost?.author?.role} /></div>
+                                            <div className="space-y-2"><Label>Profile Image</Label><ImagePicker name="authorImage" label="Author Image" value={currentPost?.author?.image} /></div>
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Thumbnail Settings */}
+                                    <Card>
+                                        <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-base">Featured Image</CardTitle></CardHeader>
+                                        <CardContent className="p-4">
+                                            <ImagePicker
+                                                name="thumbnail"
+                                                label="Thumbnail"
+                                                value={thumbnailUrl}
+                                                onChange={setThumbnailUrl}
+                                            />
+                                        </CardContent>
+                                    </Card>
                                 </div>
                             </div>
-                            <ArrayInput values={tags} onChange={setTags} label="Tags" placeholder="Add tag..." />
-                            <DialogFooter><Button type="submit">Save</Button></DialogFooter>
+                            <DialogFooter className="sticky bottom-0 bg-background py-2 border-t mt-4">
+                                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                                <Button type="submit">Save Changes</Button>
+                            </DialogFooter>
                         </form>
                     )}
                 </DialogContent>
@@ -584,9 +598,10 @@ function ServiceManager({ data }) {
     const [isViewMode, setIsViewMode] = useState(false);
     const [features, setFeatures] = useState([]);
     const [benefits, setBenefits] = useState([]);
+    const [image, setImage] = useState("");
 
     const handleOpen = (s, view) => {
-        setCurrentService(s); setIsViewMode(view); setFeatures(s?.features || []); setBenefits(s?.benefits || []); setIsDialogOpen(true);
+        setCurrentService(s); setIsViewMode(view); setFeatures(s?.features || []); setBenefits(s?.benefits || []); setImage(s?.image || ""); setIsDialogOpen(true);
     };
 
     const handleSave = (e) => {
@@ -595,7 +610,7 @@ function ServiceManager({ data }) {
             id: currentService ? currentService.id : `s-${Date.now()}`,
             title: formData.get("title"), category: formData.get("category"), icon: formData.get("icon"),
             shortDescription: formData.get("shortDescription"), fullDescription: formData.get("fullDescription"),
-            features, benefits, order: Number(formData.get("order"))
+            features, benefits, order: Number(formData.get("order")), image: image
         };
         if (currentService) { setServices(services.map(s => s.id === currentService.id ? newService : s)); toast.success("Updated"); } else { setServices([...services, newService]); toast.success("Created"); }
         setIsDialogOpen(false);
@@ -621,10 +636,11 @@ function ServiceManager({ data }) {
                 </Table>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>{isViewMode ? "View Service" : "Edit Service"}</DialogTitle></DialogHeader>
                     {isViewMode ? (
                         <div className="space-y-4">
+                            <img src={currentService?.image} alt="service" className="w-full h-40 object-cover rounded-md" />
                             <div className="flex items-center gap-4"><div className="p-2 bg-muted rounded"><Shield className="w-6 h-6" /></div><div><h3 className="text-xl font-bold">{currentService?.title}</h3><Badge>{currentService?.category}</Badge></div></div>
                             <div><Label>Short Description</Label><p>{currentService?.shortDescription}</p></div>
                             <div><Label>Full Description</Label><p className="text-sm text-muted-foreground">{currentService?.fullDescription}</p></div>
@@ -637,6 +653,14 @@ function ServiceManager({ data }) {
                         <form onSubmit={handleSave} className="space-y-4">
                             <div className="grid md:grid-cols-2 gap-4"><div className="space-y-2"><Label>Title</Label><Input name="title" defaultValue={currentService?.title} required /></div><div className="space-y-2"><Label>Category</Label><Input name="category" defaultValue={currentService?.category} /></div></div>
                             <div className="grid md:grid-cols-2 gap-4"><div className="space-y-2"><Label>Icon</Label><Input name="icon" defaultValue={currentService?.icon} placeholder="Icon Name" /></div><div className="space-y-2"><Label>Order</Label><Input type="number" name="order" defaultValue={currentService?.order} /></div></div>
+                            <div className="space-y-2">
+                                <ImagePicker
+                                    name="image"
+                                    label="Service Image"
+                                    value={image}
+                                    onChange={setImage}
+                                />
+                            </div>
                             <div className="space-y-2"><Label>Short Description</Label><Textarea name="shortDescription" defaultValue={currentService?.shortDescription} /></div>
                             <div className="space-y-2"><Label>Full Description</Label><Textarea name="fullDescription" defaultValue={currentService?.fullDescription} rows={4} /></div>
                             <div className="grid md:grid-cols-2 gap-6">
@@ -667,7 +691,13 @@ function TestimonialManager({ data }) {
             content: formData.get("content"), category: formData.get("category"), rating: Number(formData.get("rating")),
             type: formData.get("type"), featured: formData.get("featured") === "on",
             metric: { label: formData.get("metricLabel"), value: formData.get("metricValue") },
-            author: { name: formData.get("authorName"), company: formData.get("company"), role: formData.get("role"), handle: formData.get("handle") }
+            author: {
+                name: formData.get("authorName"),
+                company: formData.get("company"),
+                role: formData.get("role"),
+                handle: formData.get("handle"),
+                image: formData.get("authorImage") // Added image handling
+            }
         };
         if (currentTestimonial) { setTestimonials(testimonials.map(t => t.id === currentTestimonial.id ? { ...t, ...newT } : t)); } else { setTestimonials([newT, ...testimonials]); }
         setIsDialogOpen(false); toast.success("Saved");
@@ -691,7 +721,7 @@ function TestimonialManager({ data }) {
                 ))}
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[85vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>{isViewMode ? "View" : "Edit"}</DialogTitle></DialogHeader>
                     {isViewMode ? (
                         <div className="space-y-4">
@@ -709,6 +739,9 @@ function TestimonialManager({ data }) {
                                 <div className="space-y-2"><Label>Role</Label><Input name="role" defaultValue={currentTestimonial?.author?.role} /></div>
                                 <div className="space-y-2"><Label>Company</Label><Input name="company" defaultValue={currentTestimonial?.author?.company} /></div>
                                 <div className="space-y-2"><Label>Social Handle</Label><Input name="handle" defaultValue={currentTestimonial?.author?.handle} placeholder="@handle" /></div>
+                            </div>
+                            <div className="space-y-2">
+                                <ImagePicker name="authorImage" label="Author Profile" value={currentTestimonial?.author?.image} />
                             </div>
                             <div className="grid md:grid-cols-3 gap-4">
                                 <div className="space-y-2"><Label>Type</Label><Select name="type" defaultValue={currentTestimonial?.type || "detailed"}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="detailed">Detailed</SelectItem><SelectItem value="social">Social</SelectItem></SelectContent></Select></div>
@@ -777,7 +810,7 @@ function FAQManager({ data }) {
                 ))}
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[85vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>{isViewMode ? "View FAQ" : "Edit FAQ"}</DialogTitle></DialogHeader>
                     {isViewMode ? (
                         <div className="space-y-4">
@@ -850,7 +883,7 @@ function JobManager({ data }) {
                 </Table>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>{isViewMode ? "View Job" : "Edit Job"}</DialogTitle></DialogHeader>
                     {isViewMode ? (
                         <div className="space-y-4">
