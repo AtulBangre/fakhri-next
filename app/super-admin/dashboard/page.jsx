@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard, Users, UsersRound, UserCog, CheckSquare,
-  DollarSign, Settings, Menu, X, LogOut, Bell, Shield, Globe
+  DollarSign, Settings, Menu, X, LogOut, Bell, Shield
 } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,6 @@ import SuperAdminAdminsTab from "@/components/super-admin/tabs/AdminsTab";
 import SuperAdminTasksTab from "@/components/super-admin/tabs/TasksTab";
 import SuperAdminSalesTab from "@/components/super-admin/tabs/SalesTab";
 import SuperAdminSettingsTab from "@/components/super-admin/tabs/SettingsTab";
-import SuperAdminWebsiteTab from "@/components/super-admin/tabs/WebsiteManagementTab";
 
 
 const navigation = [
@@ -29,7 +28,6 @@ const navigation = [
   { name: "Admin Users", id: "Admins", icon: UserCog },
   { name: "Tasks", id: "Tasks", icon: CheckSquare },
   { name: "Sales & Revenue", id: "Sales", icon: DollarSign },
-  { name: "Website Management", id: "Website", icon: Globe },
   { name: "Settings", id: "Settings", icon: Settings },
 ];
 
@@ -164,7 +162,6 @@ export default function SuperAdminDashboardPage() {
           {activeTab === "Admins" && <SuperAdminAdminsTab />}
           {activeTab === "Tasks" && <SuperAdminTasksTab />}
           {activeTab === "Sales" && <SuperAdminSalesTab />}
-          {activeTab === "Website" && <SuperAdminWebsiteTab />}
           {activeTab === "Settings" && <SuperAdminSettingsTab />}
         </main>
       </div>
