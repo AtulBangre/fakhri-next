@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Clock, Briefcase, ArrowRight, Search, Globe, BookOpen, IndianRupee, Heart, Users, Calendar, Filter } from 'lucide-react';
+import { MapPin, Clock, Briefcase, ArrowRight, Search, Globe, BookOpen, IndianRupee, Heart, Users, Calendar, Filter, Loader2 } from 'lucide-react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
-import { jobPositions } from '@/data/jobs';
+import { getJobs } from '@/lib/actions/content';
 import { JobApplicationDialog } from '@/components/dialogs/JobApplicationDialog';
 import { Button } from '@/components/ui/button';
 
@@ -43,14 +43,29 @@ const careerBenefits = [
     },
 ];
 
-const departments = ["All", "Advertising", "Content", "Client Services", "Creative", "Operations"];
-
 export default function CareerContent() {
+    const [jobs, setJobs] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [activeDept, setActiveDept] = useState("All");
     const [searchQuery, setSearchQuery] = useState("");
 
+    useEffect(() => {
+        async function loadJobs() {
+            setLoading(true);
+            const data = await getJobs();
+            setJobs(data);
+            setLoading(false);
+        }
+        loadJobs();
+    }, []);
+
+    const departments = useMemo(() => {
+        const depts = ["All", ...new Set(jobs.map(j => j.department))];
+        return depts.filter(Boolean);
+    }, [jobs]);
+
     const filteredJobs = useMemo(() => {
-        let filtered = jobPositions;
+        let filtered = jobs;
 
         if (activeDept !== "All") {
             filtered = filtered.filter(job => job.department === activeDept);
@@ -64,7 +79,7 @@ export default function CareerContent() {
         }
 
         return filtered.sort((a, b) => (a.order || 99) - (b.order || 99));
-    }, [activeDept, searchQuery]);
+    }, [activeDept, searchQuery, jobs]);
 
     return (
         <>
@@ -129,118 +144,127 @@ export default function CareerContent() {
                         </ScrollReveal>
                     </div>
 
-                    {/* Job Filter Controls */}
-                    <div className="mb-12 space-y-6">
-                        <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3">
-                            {departments.map((dept) => (
-                                <button
-                                    key={dept}
-                                    onClick={() => setActiveDept(dept)}
-                                    className={`px-5 py-2 rounded-full text-xs md:text-sm font-bold transition-all duration-300 border ${activeDept === dept
-                                        ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105"
-                                        : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-primary"
-                                        }`}
-                                >
-                                    {dept}
-                                </button>
-                            ))}
+                    {loading ? (
+                        <div className="py-20 flex flex-col items-center justify-center">
+                            <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+                            <p className="text-muted-foreground">Fetching latest opportunities...</p>
                         </div>
-
-                        <div className="max-w-md mx-auto relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Search roles by title..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-11 pr-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm shadow-sm"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Jobs List with Animation */}
-                    <div className="max-w-5xl mx-auto min-h-[400px]">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={activeDept + searchQuery}
-                                initial={{ opacity: 0, scale: 0.98 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 1.02 }}
-                                transition={{ duration: 0.3 }}
-                                className="space-y-6"
-                            >
-                                {filteredJobs.length > 0 ? (
-                                    filteredJobs.map((job) => (
-                                        <div
-                                            key={job.id}
-                                            className="bg-card rounded-2xl p-6 md:p-8 border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 group"
+                    ) : (
+                        <>
+                            {/* Job Filter Controls */}
+                            <div className="mb-12 space-y-6">
+                                <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3">
+                                    {departments.map((dept) => (
+                                        <button
+                                            key={dept}
+                                            onClick={() => setActiveDept(dept)}
+                                            className={`px-5 py-2 rounded-full text-xs md:text-sm font-bold transition-all duration-300 border ${activeDept === dept
+                                                ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105"
+                                                : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-primary"
+                                                }`}
                                         >
-                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                                <div className="flex-1">
-                                                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                                                        <h3 className="text-xl md:text-2xl font-bold font-poppins group-hover:text-primary transition-colors">{job.title}</h3>
-                                                        <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] md:text-xs font-bold rounded-full uppercase tracking-wider">
-                                                            {job.department}
-                                                        </span>
-                                                    </div>
+                                            {dept}
+                                        </button>
+                                    ))}
+                                </div>
 
-                                                    <p className="text-muted-foreground mb-6 line-clamp-2">{job.description}</p>
+                                <div className="max-w-md mx-auto relative group">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search roles..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full pl-11 pr-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm shadow-sm"
+                                    />
+                                </div>
+                            </div>
 
-                                                    <div className="flex flex-wrap gap-6 text-sm">
-                                                        <div className="flex items-center gap-2 text-foreground/70">
-                                                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                                                                <MapPin className="w-4 h-4 text-primary" />
+                            {/* Jobs List with Animation */}
+                            <div className="max-w-5xl mx-auto min-h-[200px]">
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={activeDept + searchQuery}
+                                        initial={{ opacity: 0, scale: 0.98 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 1.02 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="space-y-6"
+                                    >
+                                        {filteredJobs.length > 0 ? (
+                                            filteredJobs.map((job) => (
+                                                <div
+                                                    key={job._id}
+                                                    className="bg-card rounded-2xl p-6 md:p-8 border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 group"
+                                                >
+                                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                                        <div className="flex-1">
+                                                            <div className="flex flex-wrap items-center gap-3 mb-4">
+                                                                <h3 className="text-xl md:text-2xl font-bold font-poppins group-hover:text-primary transition-colors">{job.title}</h3>
+                                                                <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] md:text-xs font-bold rounded-full uppercase tracking-wider">
+                                                                    {job.department}
+                                                                </span>
                                                             </div>
-                                                            <span className="font-medium">{job.location}</span>
+
+                                                            <p className="text-muted-foreground mb-6 line-clamp-2">{job.description}</p>
+
+                                                            <div className="flex flex-wrap gap-6 text-sm">
+                                                                <div className="flex items-center gap-2 text-foreground/70">
+                                                                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                                                                        <MapPin className="w-4 h-4 text-primary" />
+                                                                    </div>
+                                                                    <span className="font-medium">{job.location}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-foreground/70">
+                                                                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                                                                        <Clock className="w-4 h-4 text-primary" />
+                                                                    </div>
+                                                                    <span className="font-medium">{job.type}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-foreground/70">
+                                                                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                                                                        <Briefcase className="w-4 h-4 text-primary" />
+                                                                    </div>
+                                                                    <span className="font-medium">{job.experience}</span>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex items-center gap-2 text-foreground/70">
-                                                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                                                                <Clock className="w-4 h-4 text-primary" />
-                                                            </div>
-                                                            <span className="font-medium">{job.type}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 text-foreground/70">
-                                                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                                                                <Briefcase className="w-4 h-4 text-primary" />
-                                                            </div>
-                                                            <span className="font-medium">{job.experience}</span>
+
+                                                        <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-stretch gap-4">
+                                                            <JobApplicationDialog
+                                                                job={job}
+                                                                trigger={
+                                                                    <Button className="btn bg-primary text-white hover:bg-primary/90 px-8 py-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-105 shadow-lg shadow-primary/20 group/btn">
+                                                                        Apply Now
+                                                                        <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                                                                    </Button>
+                                                                }
+                                                            />
                                                         </div>
                                                     </div>
                                                 </div>
-
-                                                <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-stretch gap-4">
-                                                    <JobApplicationDialog
-                                                        job={job}
-                                                        trigger={
-                                                            <Button className="btn bg-primary text-white hover:bg-primary/90 px-8 py-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-105 shadow-lg shadow-primary/20 group/btn">
-                                                                Apply Now
-                                                                <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
-                                                            </Button>
-                                                        }
-                                                    />
+                                            ))
+                                        ) : (
+                                            <div className="py-20 text-center">
+                                                <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                                                    <Filter className="w-10 h-10 text-muted-foreground" />
                                                 </div>
+                                                <h3 className="text-2xl font-bold mb-3">No matching positions</h3>
+                                                <p className="text-muted-foreground mb-8">We couldn't find any job openings matching your search criteria.</p>
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => { setActiveDept("All"); setSearchQuery(""); }}
+                                                    className="rounded-full px-8"
+                                                >
+                                                    Reset Filters
+                                                </Button>
                                             </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="py-20 text-center">
-                                        <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-                                            <Filter className="w-10 h-10 text-muted-foreground" />
-                                        </div>
-                                        <h3 className="text-2xl font-bold mb-3">No matching positions</h3>
-                                        <p className="text-muted-foreground mb-8">We couldn't find any job openings matching your search criteria.</p>
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => { setActiveDept("All"); setSearchQuery(""); }}
-                                            className="rounded-full px-8"
-                                        >
-                                            Reset Filters
-                                        </Button>
-                                    </div>
-                                )}
-                            </motion.div>
-                        </AnimatePresence>
-                    </div>
+                                        )}
+                                    </motion.div>
+                                </AnimatePresence>
+                            </div>
+                        </>
+                    )}
                 </div>
             </section>
         </>

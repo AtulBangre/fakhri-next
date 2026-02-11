@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
 import CompanyTimeline from './CompanyTimeline';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Target, Zap, BarChart, Shield, Trophy, ArrowRight, Quote, Search, Filter } from 'lucide-react';
-import { teammembers } from '@/data/teammembers';
+import { Users, Target, Zap, BarChart, Shield, Trophy, ArrowRight, Quote, Search, Filter, Loader2 } from 'lucide-react';
+import { getTeamMembers, getCompanyData } from '@/lib/actions/content';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
+import { Button } from '@/components/ui/button';
 
 const iconMap = {
     Users,
@@ -17,30 +18,6 @@ const iconMap = {
     BarChart,
     Shield,
     Trophy
-};
-
-// Static Content defined locally
-const aboutHero = {
-    title: "We Are Your Growth Partners in the Amazon Marketplace",
-    subtitle: "From account credentials to bestseller badges, we handle every aspect of your Amazon journey with precision and passion.",
-    badge: "About Fakhri IT Services",
-    stats: [
-        { value: "500+", label: "Clients Served" },
-        { value: "8+", label: "Years Experience" },
-        { value: "35+", label: "Team Members" }
-    ]
-};
-
-const companyOverview = {
-    title: "Amazon-First Approach to Digital Commerce",
-    description: "Your trusted partner for Amazon success. We provide end-to-end Amazon seller services that help brands scale from startup to marketplace dominance. Our methodology combines data-driven insights with creative excellence to deliver measurable results.",
-    points: [
-        "Specialized Amazon Account Management",
-        "Data-Backed Advertising Strategies",
-        "Creative Design & Brand Storytelling",
-        "Technical SEO & Listing Optimization"
-    ],
-    image: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop"
 };
 
 const whyChooseUs = [
@@ -76,21 +53,34 @@ const whyChooseUs = [
     }
 ];
 
-const aboutCTA = {
-    title: "Ready to Transform Your Amazon Business?",
-    description: "Join hundreds of successful brands that have scaled with Fakhri IT Services. Let's write your success story together.",
-    primaryBtn: "Get in Touch",
-    secondaryBtn: "View Careers"
-};
-
-const teamCategories = ["All", "Core Leadership", "Senior Management", "Rising Stars"];
-
 export default function AboutContent() {
+    const [team, setTeam] = useState([]);
+    const [company, setCompany] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [activeCategory, setActiveCategory] = useState("All");
     const [searchQuery, setSearchQuery] = useState("");
 
+    useEffect(() => {
+        async function loadData() {
+            setLoading(true);
+            const [teamData, companyData] = await Promise.all([
+                getTeamMembers(),
+                getCompanyData()
+            ]);
+            setTeam(teamData);
+            setCompany(companyData);
+            setLoading(false);
+        }
+        loadData();
+    }, []);
+
+    const teamCategories = useMemo(() => {
+        const categories = ["All", ...new Set(team.map(m => m.category))];
+        return categories.filter(Boolean);
+    }, [team]);
+
     const filteredTeam = useMemo(() => {
-        let filtered = teammembers;
+        let filtered = team;
 
         if (activeCategory !== "All") {
             filtered = filtered.filter(member => member.category === activeCategory);
@@ -103,8 +93,17 @@ export default function AboutContent() {
             );
         }
 
-        return filtered.sort((a, b) => a.order - b.order);
-    }, [activeCategory, searchQuery]);
+        return filtered.sort((a, b) => (a.order || 99) - (b.order || 99));
+    }, [activeCategory, searchQuery, team]);
+
+    if (loading) {
+        return (
+            <div className="min-h-[80vh] flex flex-col items-center justify-center">
+                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+                <p className="text-muted-foreground font-medium">Getting everything ready...</p>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -116,19 +115,23 @@ export default function AboutContent() {
                 <div className="container-custom relative z-10">
                     <ScrollReveal>
                         <div className="text-center max-w-4xl mx-auto">
-                            <span className="badge-primary mb-4">{aboutHero.badge}</span>
+                            <span className="badge-primary mb-4">About Fakhri IT Services</span>
                             <h1 className="heading-xl mb-6">
-                                {aboutHero.title}
+                                {company?.tagline || "We Are Your Growth Partners in the Amazon Marketplace"}
                             </h1>
                             <p className="body-lg mb-12">
-                                {aboutHero.subtitle}
+                                {company?.description || "From account credentials to bestseller badges, we handle every aspect of your Amazon journey with precision and passion."}
                             </p>
                         </div>
                     </ScrollReveal>
 
                     <ScrollReveal delay={0.2}>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-                            {aboutHero.stats.map((stat, index) => (
+                            {[
+                                { value: "500+", label: "Clients Served" },
+                                { value: "8+", label: "Years Experience" },
+                                { value: "35+", label: "Team Members" }
+                            ].map((stat, index) => (
                                 <div key={index} className="card-premium text-center p-8 border border-border">
                                     <p className="text-4xl md:text-5xl font-bold text-primary mb-2 font-poppins">
                                         {stat.value}
@@ -150,7 +153,7 @@ export default function AboutContent() {
                         <ScrollReveal direction="left">
                             <div className="relative rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl">
                                 <Image
-                                    src={companyOverview.image}
+                                    src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop"
                                     alt="Office Culture"
                                     fill
                                     className="object-cover"
@@ -168,12 +171,17 @@ export default function AboutContent() {
 
                         <ScrollReveal direction="right">
                             <div>
-                                <h2 className="heading-lg mb-6">{companyOverview.title}</h2>
+                                <h2 className="heading-lg mb-6">Amazon-First Approach to Digital Commerce</h2>
                                 <p className="body-md mb-8">
-                                    {companyOverview.description}
+                                    {company?.story || "Your trusted partner for Amazon success. We provide end-to-end Amazon seller services that help brands scale from startup to marketplace dominance. Our methodology combines data-driven insights with creative excellence to deliver measurable results."}
                                 </p>
                                 <ul className="space-y-4">
-                                    {companyOverview.points.map((point, index) => (
+                                    {[
+                                        "Specialized Amazon Account Management",
+                                        "Data-Backed Advertising Strategies",
+                                        "Creative Design & Brand Storytelling",
+                                        "Technical SEO & Listing Optimization"
+                                    ].map((point, index) => (
                                         <li key={index} className="flex items-center gap-3">
                                             <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                                                 <div className="w-2 h-2 rounded-full bg-primary" />
@@ -211,8 +219,8 @@ export default function AboutContent() {
                                     key={category}
                                     onClick={() => setActiveCategory(category)}
                                     className={`px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 border ${activeCategory === category
-                                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105"
-                                            : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-primary"
+                                        ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105"
+                                        : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-primary"
                                         }`}
                                 >
                                     {category}
@@ -246,14 +254,15 @@ export default function AboutContent() {
                                 {filteredTeam.length > 0 ? (
                                     filteredTeam.map((member) => (
                                         <div
-                                            key={member.id}
+                                            key={member._id}
                                             className="group bg-card rounded-2xl overflow-hidden border border-border hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 hover:-translate-y-1 flex flex-col h-full"
                                         >
                                             <div className="aspect-[4/5] relative overflow-hidden bg-muted">
                                                 <Image
-                                                    src={member.image}
+                                                    src={member.image || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400"}
                                                     alt={member.name}
                                                     fill
+                                                    unoptimized={member.image?.startsWith('http')}
                                                     className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
                                                 />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
@@ -262,13 +271,6 @@ export default function AboutContent() {
                                                             {member.description}
                                                         </p>
                                                     )}
-                                                    <div className="flex gap-3 translate-y-4 group-hover:translate-y-0 transition-transform duration-500 delay-75">
-                                                        {member.email && (
-                                                            <a href={`mailto:${member.email}`} className="p-2 rounded-full bg-white/10 hover:bg-primary transition-colors text-white">
-                                                                <Search className="w-4 h-4" /> {/* Replacing with a general icon as LinkedIn is not imported */}
-                                                            </a>
-                                                        )}
-                                                    </div>
                                                 </div>
                                                 <div className="absolute top-4 right-4 translate-x-12 group-hover:translate-x-0 transition-transform duration-500">
                                                     <span className="px-3 py-1 bg-primary text-white text-[10px] font-bold rounded-full uppercase tracking-wider">
@@ -342,32 +344,23 @@ export default function AboutContent() {
                 <div className="container-custom">
                     <ScrollReveal>
                         <div className="relative bg-gradient-to-br from-primary to-brand-red-light rounded-3xl p-12 md:p-20 text-center overflow-hidden">
-                            {/* Background Pattern */}
-                            <div className="absolute inset-0 opacity-10">
-                                <motion.div
-                                    animate={{ rotate: 360 }}
-                                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                                    className="absolute -top-[50%] -left-[20%] w-[100%] h-[200%] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"
-                                />
-                            </div>
-
                             <div className="relative z-10 max-w-3xl mx-auto">
                                 <h2 className="heading-lg text-white mb-6">
-                                    {aboutCTA.title}
+                                    Ready to Transform Your Amazon Business?
                                 </h2>
                                 <p className="text-white/90 text-lg md:text-xl mb-10 leading-relaxed">
-                                    {aboutCTA.description}
+                                    Join hundreds of successful brands that have scaled with Fakhri IT Services. Let's write your success story together.
                                 </p>
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                     <ContactDialog
                                         trigger={
                                             <button className="btn bg-white text-primary hover:bg-gray-100 min-w-[200px] py-4 rounded-lg font-bold transition-all hover:scale-105">
-                                                {aboutCTA.primaryBtn}
+                                                Get in Touch
                                             </button>
                                         }
                                     />
                                     <Link href="/career" className="btn border-2 border-white/30 text-white hover:bg-white/10 min-w-[200px] py-4 rounded-lg font-bold transition-all hover:scale-105">
-                                        {aboutCTA.secondaryBtn}
+                                        View Careers
                                     </Link>
                                 </div>
                             </div>

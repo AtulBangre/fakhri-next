@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
-import { companyData } from '@/data/company';
+import { getCompanyData } from '@/lib/actions/content';
 import {
     MapPin,
     Phone,
@@ -18,9 +18,9 @@ import {
     Linkedin,
     Twitter,
     Facebook,
-    Instagram
+    Instagram,
+    Loader2
 } from 'lucide-react';
-import { Button } from '@/components/ui/button'; // Using shadcn button for consistency if needed, but motion.button is fine too
 
 const contactSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -32,6 +32,19 @@ const contactSchema = z.object({
 });
 
 export default function ContactContent() {
+    const [company, setCompany] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadData() {
+            setLoading(true);
+            const data = await getCompanyData();
+            setCompany(data);
+            setLoading(false);
+        }
+        loadData();
+    }, []);
+
     const {
         register,
         handleSubmit,
@@ -61,11 +74,20 @@ export default function ContactContent() {
     };
 
     const socialIcons = [
-        { icon: Linkedin, href: companyData.contact.social.linkedin, label: 'LinkedIn' },
-        { icon: Twitter, href: companyData.contact.social.twitter, label: 'Twitter' },
-        { icon: Facebook, href: companyData.contact.social.facebook, label: 'Facebook' },
-        { icon: Instagram, href: companyData.contact.social.instagram, label: 'Instagram' },
+        { icon: Linkedin, href: company?.contact?.social?.linkedin || '#', label: 'LinkedIn' },
+        { icon: Twitter, href: company?.contact?.social?.twitter || '#', label: 'Twitter' },
+        { icon: Facebook, href: company?.contact?.social?.facebook || '#', label: 'Facebook' },
+        { icon: Instagram, href: company?.contact?.social?.instagram || '#', label: 'Instagram' },
     ];
+
+    if (loading) {
+        return (
+            <div className="min-h-[80vh] flex flex-col items-center justify-center">
+                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+                <p className="text-muted-foreground font-medium">Loading contact information...</p>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -98,7 +120,7 @@ export default function ContactContent() {
                                 </div>
                                 <h3 className="font-poppins font-semibold mb-2">Address</h3>
                                 <p className="text-muted-foreground text-sm">
-                                    {companyData.contact.address.full}
+                                    {company?.contact?.address?.full || 'Mumbai, Maharashtra, India'}
                                 </p>
                             </motion.div>
                         </StaggerItem>
@@ -110,10 +132,10 @@ export default function ContactContent() {
                                 </div>
                                 <h3 className="font-poppins font-semibold mb-2">Phone</h3>
                                 <a
-                                    href={`tel:${companyData.contact.phone.primary}`}
+                                    href={`tel:${company?.contact?.phone?.primary || ''}`}
                                     className="text-muted-foreground text-sm hover:text-primary transition-colors"
                                 >
-                                    {companyData.contact.phone.primary}
+                                    {company?.contact?.phone?.primary || '+91 95844 26543'}
                                 </a>
                             </motion.div>
                         </StaggerItem>
@@ -125,10 +147,10 @@ export default function ContactContent() {
                                 </div>
                                 <h3 className="font-poppins font-semibold mb-2">Email</h3>
                                 <a
-                                    href={`mailto:${companyData.contact.email.info}`}
+                                    href={`mailto:${company?.contact?.email?.info || ''}`}
                                     className="text-muted-foreground text-sm hover:text-primary transition-colors"
                                 >
-                                    {companyData.contact.email.info}
+                                    {company?.contact?.email?.info || 'info@fakhriit.com'}
                                 </a>
                             </motion.div>
                         </StaggerItem>
@@ -140,7 +162,7 @@ export default function ContactContent() {
                                 </div>
                                 <h3 className="font-poppins font-semibold mb-2">Hours</h3>
                                 <p className="text-muted-foreground text-sm">
-                                    {companyData.contact.hours.weekdays}
+                                    {company?.contact?.hours?.weekdays || 'Mon - Fri: 10AM - 6PM'}
                                 </p>
                             </motion.div>
                         </StaggerItem>
@@ -196,7 +218,7 @@ export default function ContactContent() {
                                                 id="phone"
                                                 {...register('phone')}
                                                 className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                                                placeholder="+1 (555) 000-0000"
+                                                placeholder="+91 95844 26543"
                                             />
                                         </div>
                                         <div>
@@ -267,7 +289,7 @@ export default function ContactContent() {
                             <div className="space-y-8">
                                 {/* WhatsApp CTA */}
                                 <motion.a
-                                    href={`https://wa.me/${companyData.contact.phone.whatsapp}`}
+                                    href={`https://wa.me/${company?.contact?.phone?.whatsapp || '919584426543'}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="block bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-8 text-white"
@@ -297,7 +319,7 @@ export default function ContactContent() {
                                     <div className="space-y-3">
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">Monday - Friday</span>
-                                            <span className="font-medium">10:00 AM - 6:00 PM</span>
+                                            <span className="font-medium">{company?.contact?.hours?.weekdays || '10:00 AM - 6:00 PM'}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">Saturday</span>

@@ -11,6 +11,12 @@ import Invoice from '../models/Invoice.js';
 import TeamMember from '../models/TeamMember.js';
 import ActivityLog from '../models/ActivityLog.js';
 import Notification from '../models/Notification.js';
+import Company from '../models/Company.js';
+import File from '../models/File.js';
+import Job from '../models/Job.js';
+import Milestone from '../models/Milestone.js';
+import Note from '../models/Note.js';
+import Team from '../models/Team.js';
 
 import { admins } from '../data/admins.js';
 import { clients } from '../data/clients.js';
@@ -24,6 +30,12 @@ import { invoices } from '../data/invoices.js';
 import { teammembers } from '../data/teammembers.js';
 import { activityLogs } from '../data/activityLogs.js';
 import { mockNotifications } from '../data/notifications.js';
+import { companyData } from '../data/company.js';
+import { files } from '../data/files.js';
+import { jobPositions } from '../data/jobs.js';
+import { companymilestones } from '../data/milestones.js';
+import { notesData } from '../data/notes.js';
+import { teams } from '../data/teams.js';
 
 async function seed() {
     try {
@@ -42,8 +54,18 @@ async function seed() {
         await TeamMember.deleteMany({});
         await ActivityLog.deleteMany({});
         await Notification.deleteMany({});
+        await Company.deleteMany({});
+        await File.deleteMany({});
+        await Job.deleteMany({});
+        await Milestone.deleteMany({});
+        await Note.deleteMany({});
+        await Team.deleteMany({});
 
         console.log('Cleared existing data');
+
+        // Seed Company Data
+        await Company.create(companyData);
+        console.log('Seeded company data');
 
         // Add a Super Admin
         const superAdmin = await User.create({
@@ -75,6 +97,17 @@ async function seed() {
         }
         console.log(`Seeded ${admins.length + 1} users (1 Super Admin, ${admins.length} Admins)`);
 
+        // Seed Teams
+        for (const team of teams) {
+            await Team.create({
+                ...team,
+                id: undefined,
+                leadId: managerMap[team.leadId],
+                memberIds: team.memberIds.map(id => managerMap[id])
+            });
+        }
+        console.log(`Seeded ${teams.length} teams`);
+
         // Seed Clients
         const clientMap = {};
         for (const client of clients) {
@@ -103,10 +136,41 @@ async function seed() {
         }
         console.log(`Seeded ${clients.length} clients`);
 
+        // Seed Files
+        await File.insertMany(files.map(f => ({
+            ...f,
+            id: undefined,
+            clientId: clientMap[f.clientId]
+        })));
+        console.log(`Seeded ${files.length} client files`);
+
+        // Seed Notes
+        await Note.insertMany(notesData.map(n => ({
+            ...n,
+            id: undefined,
+            clientId: clientMap[n.clientId],
+            authorId: managerMap[n.authorId]
+        })));
+        console.log(`Seeded ${notesData.length} client notes`);
+
+        // Seed Jobs
+        await Job.insertMany(jobPositions.map(j => ({
+            ...j,
+            id: undefined
+        })));
+        console.log(`Seeded ${jobPositions.length} job positions`);
+
+        // Seed Milestones
+        await Milestone.insertMany(companymilestones.map(m => ({
+            ...m,
+            id: undefined
+        })));
+        console.log(`Seeded ${companymilestones.length} milestones`);
+
         // Seed BlogPosts
         await BlogPost.insertMany(allBlogPosts.map(post => ({
             ...post,
-            id: undefined, // remove legacy id
+            id: undefined,
             status: 'published'
         })));
         console.log(`Seeded ${allBlogPosts.length} blog posts`);
@@ -184,7 +248,6 @@ async function seed() {
             status: inv.status === 'paid' ? 'Paid' : 'Pending',
             date: inv.date,
             dueDate: inv.dueDate,
-            // legacy items not in data/invoices.js, adding placeholder
             items: [{ description: `${inv.plan} Subscription`, qty: 1, price: inv.amount, total: inv.amount }]
         })));
         console.log(`Seeded ${invoices.length} invoices`);

@@ -1,17 +1,8 @@
 'use client';
 
+import { useState, useEffect, useMemo } from 'react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
-import { companyData } from '@/data/company';
-import { servicesCatalog, priorityServicesPageInfo as within2HoursPageInfo, within2HoursPageData as within2HoursData } from '@/data/servicesCatalog';
-
-const within2HoursPageServices = servicesCatalog
-    .filter(s => s.pricing.priority !== null)
-    .map(s => ({
-        id: s.id,
-        name: s.name,
-        category: s.category,
-        price: s.pricing.priority.price
-    }));
+import { getServices, getCompanyData } from '@/lib/actions/content';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -23,6 +14,7 @@ import {
     ArrowRight,
     Phone,
     Check,
+    Loader2
 } from 'lucide-react';
 import Within2HoursPricingList from './Within2HoursPricingList';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
@@ -34,7 +26,101 @@ const iconMap = {
     MessageCircle,
 };
 
+// Layout content - keeping these local as they define the page structure/identity
+const within2HoursPageInfo = {
+    badge: "Priority Services",
+    title: "Urgent Amazon Support",
+    description: "Critical issues need immediate attention. Our priority team is standing by to resolve your most pressing Amazon seller challenges within hours, not days."
+};
+
+const within2HoursPageData = {
+    title: "Priority Service",
+    subtitle: "Resolution Within 2 Hours",
+    description: "Don't let account issues or technical glitches stall your business. Get immediate access to our senior specialists for rapid problem resolution.",
+    scenarios: [
+        "Account Deactivation / Suspension",
+        "Listing Suppression / Removal",
+        "Critical Inventory Issues",
+        "Buy Box Disappearance",
+        "Urgent PPC Adjustments",
+        "Amazon Policy Violations"
+    ],
+    features: [
+        {
+            title: "Rapid Resource Allocation",
+            description: "Instant assignment of our most senior account specialists to your case.",
+            icon: "Clock"
+        },
+        {
+            title: "Direct Amazon Liaison",
+            description: "Priority handling through our established partner channels.",
+            icon: "Shield"
+        },
+        {
+            title: "Expert Resolution",
+            description: "Deep technical insight applied to complex policy and technical hurdles.",
+            icon: "Lock"
+        }
+    ],
+    serviceInfo: {
+        title: "How It Works",
+        description: "Once requested, our priority team triggers an immediate response protocol. We analyze the issue, identify the root cause, and begin the resolution process or direct communication with Amazon support within the 2-hour window.",
+        buttonText: "Join Our WhatsApp",
+        buttonLink: "#",
+        benefits: [
+            "Guaranteed response within 120 minutes",
+            "Direct access to senior account managers",
+            "Focused resolution on one critical priority",
+            "Pre-analysis of account health & status"
+        ],
+        disclaimer: "Total resolution time may vary based on Amazon's support response speed, but our work begins immediately."
+    },
+    cta: {
+        title: "Ready to Fix it Now?",
+        description: "Your business shouldn't wait. Contact our emergency response team right now via WhatsApp or use our priority form.",
+        whatsappText: "WhatsApp Emergency"
+    }
+};
+
 export default function Within2HoursContent() {
+    const [services, setServices] = useState([]);
+    const [company, setCompany] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadData() {
+            setLoading(true);
+            const [servicesData, companyData] = await Promise.all([
+                getServices(),
+                getCompanyData()
+            ]);
+            setServices(servicesData);
+            setCompany(companyData);
+            setLoading(false);
+        }
+        loadData();
+    }, []);
+
+    const priorityServices = useMemo(() => {
+        return services
+            .filter(s => s.pricing && s.pricing.priority && s.pricing.priority.price > 0)
+            .map(s => ({
+                id: s._id,
+                name: s.name,
+                category: s.category,
+                price: s.pricing.priority.price
+            }));
+    }, [services]);
+
+    if (loading) {
+        return (
+            <div className="min-h-[80vh] flex flex-col items-center justify-center">
+                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+                <p className="text-muted-foreground font-medium">Connecting to emergency team...</p>
+            </div>
+        );
+    }
+
     return (
         <>
             {/* Hero Section */}
@@ -61,27 +147,27 @@ export default function Within2HoursContent() {
                                 </motion.div>
 
                                 <h1 className="heading-xl mb-6">
-                                    <span className="text-primary">{within2HoursData.title}</span>
+                                    <span className="text-primary">{within2HoursPageData.title}</span>
                                     <br />
-                                    {within2HoursData.subtitle}
+                                    {within2HoursPageData.subtitle}
                                 </h1>
 
                                 <p className="body-lg mb-8">
-                                    {within2HoursData.description}
+                                    {within2HoursPageData.description}
                                 </p>
 
                                 <div className="flex flex-wrap gap-4">
                                     <a
-                                        href={`https://wa.me/${companyData.contact.phone.whatsapp}`}
+                                        href={`https://wa.me/${company?.contact?.phone?.whatsapp || '919584426543'}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="btn-primary group"
                                     >
                                         <MessageCircle className="mr-2 w-5 h-5" />
-                                        {within2HoursData.cta.whatsappText}
+                                        {within2HoursPageData.cta.whatsappText}
                                     </a>
                                     <a
-                                        href={`tel:${companyData.contact.phone.primary}`}
+                                        href={`tel:${company?.contact?.phone?.primary || ''}`}
                                         className="btn-outline"
                                     >
                                         <Phone className="mr-2 w-5 h-5" />
@@ -113,7 +199,7 @@ export default function Within2HoursContent() {
                                     </p>
 
                                     <ul className="space-y-3">
-                                        {within2HoursData.scenarios.slice(0, 4).map((scenario, idx) => (
+                                        {within2HoursPageData.scenarios.slice(0, 4).map((scenario, idx) => (
                                             <li key={idx} className="flex items-start gap-3">
                                                 <AlertTriangle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                                                 <span className="text-muted-foreground">{scenario}</span>
@@ -142,7 +228,7 @@ export default function Within2HoursContent() {
                     </ScrollReveal>
 
                     <StaggerContainer className="grid md:grid-cols-3 lg:grid-cols-3 gap-6">
-                        {within2HoursData.features.map((feature, index) => {
+                        {within2HoursPageData.features.map((feature, index) => {
                             const Icon = iconMap[feature.icon] || Clock;
                             return (
                                 <StaggerItem key={index}>
@@ -176,16 +262,16 @@ export default function Within2HoursContent() {
                             <ScrollReveal direction="left">
                                 <div>
                                     <h2 className="heading-lg mb-6">
-                                        {within2HoursData.serviceInfo.title}
+                                        {within2HoursPageData.serviceInfo.title}
                                     </h2>
                                     <p className="text-muted-foreground leading-relaxed mb-8">
-                                        {within2HoursData.serviceInfo.description}
+                                        {within2HoursPageData.serviceInfo.description}
                                     </p>
                                     <Link
-                                        href={within2HoursData.serviceInfo.buttonLink}
+                                        href={within2HoursPageData.serviceInfo.buttonLink}
                                         className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground font-poppins font-semibold rounded-lg transition-all duration-300 hover:shadow-lg group"
                                     >
-                                        {within2HoursData.serviceInfo.buttonText}
+                                        {within2HoursPageData.serviceInfo.buttonText}
                                         <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                     </Link>
                                 </div>
@@ -201,7 +287,7 @@ export default function Within2HoursContent() {
                                         This service ensures :
                                     </h3>
                                     <ul className="space-y-4 mb-8">
-                                        {within2HoursData.serviceInfo.benefits.map((benefit, index) => (
+                                        {within2HoursPageData.serviceInfo.benefits.map((benefit, index) => (
                                             <li key={index} className="flex items-start gap-3">
                                                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                                                 <span className="text-foreground">{benefit}</span>
@@ -213,7 +299,7 @@ export default function Within2HoursContent() {
                                         <div className="flex items-start gap-2">
                                             <AlertTriangle className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                                             <p className="text-sm text-muted-foreground">
-                                                {within2HoursData.serviceInfo.disclaimer}
+                                                {within2HoursPageData.serviceInfo.disclaimer}
                                             </p>
                                         </div>
                                     </div>
@@ -226,7 +312,7 @@ export default function Within2HoursContent() {
 
             {/* Service Pricing List */}
             <Within2HoursPricingList
-                services={within2HoursPageServices}
+                services={priorityServices}
                 pageInfo={within2HoursPageInfo}
                 noticeContent={
                     <>
@@ -252,20 +338,20 @@ export default function Within2HoursContent() {
                             <div className="relative z-10 max-w-2xl mx-auto text-center">
                                 <Clock className="w-16 h-16 mx-auto mb-6" />
                                 <h2 className="heading-lg mb-6">
-                                    {within2HoursData.cta.title}
+                                    {within2HoursPageData.cta.title}
                                 </h2>
                                 <p className="text-primary-foreground/90 text-lg mb-8">
-                                    {within2HoursData.cta.description}
+                                    {within2HoursPageData.cta.description}
                                 </p>
                                 <div className="flex flex-wrap justify-center gap-4">
                                     <a
-                                        href={`https://wa.me/${companyData.contact.phone.whatsapp}`}
+                                        href={`https://wa.me/${company?.contact?.phone?.whatsapp || '919584426543'}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center justify-center px-8 py-4 bg-background text-primary font-poppins font-semibold rounded-lg transition-all duration-300 hover:shadow-xl"
                                     >
                                         <MessageCircle className="mr-2 w-5 h-5" />
-                                        {within2HoursData.cta.whatsappText}
+                                        {within2HoursPageData.cta.whatsappText}
                                     </a>
                                     <ContactDialog
                                         defaultService="Within 2 Hours Response"

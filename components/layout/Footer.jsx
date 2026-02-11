@@ -1,9 +1,10 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Linkedin, Twitter, Facebook, Instagram, Mail, Phone, MapPin } from 'lucide-react';
-import { companyData } from '@/data/company';
+import { getCompanyData } from '@/lib/actions/content';
 
 const footerLinks = {
     services: [
@@ -27,13 +28,22 @@ const footerLinks = {
 };
 
 export default function Footer() {
+    const [company, setCompany] = useState(null);
     const currentYear = new Date().getFullYear();
 
+    useEffect(() => {
+        async function loadData() {
+            const data = await getCompanyData();
+            setCompany(data);
+        }
+        loadData();
+    }, []);
+
     const socialIcons = [
-        { icon: Linkedin, href: companyData.contact.social.linkedin, label: 'LinkedIn' },
-        { icon: Twitter, href: companyData.contact.social.twitter, label: 'Twitter' },
-        { icon: Facebook, href: companyData.contact.social.facebook, label: 'Facebook' },
-        { icon: Instagram, href: companyData.contact.social.instagram, label: 'Instagram' },
+        { icon: Linkedin, href: company?.contact?.social?.linkedin || '#', label: 'LinkedIn' },
+        { icon: Twitter, href: company?.contact?.social?.twitter || '#', label: 'Twitter' },
+        { icon: Facebook, href: company?.contact?.social?.facebook || '#', label: 'Facebook' },
+        { icon: Instagram, href: company?.contact?.social?.instagram || '#', label: 'Instagram' },
     ];
 
     return (
@@ -51,7 +61,7 @@ export default function Footer() {
                             />
                         </Link>
                         <p className="text-background/70 mb-6 text-sm leading-relaxed">
-                            {companyData.tagline}. Your trusted partner for Amazon success since {companyData.established}.
+                            {company?.tagline || 'Leading Amazon Seller Services Provider'}. Your trusted partner for Amazon success since {company?.established || '2016'}.
                         </p>
                         <div className="flex gap-3">
                             {socialIcons.map(({ icon: Icon, href, label }) => (
@@ -122,25 +132,25 @@ export default function Footer() {
                             <li className="flex items-start gap-3">
                                 <MapPin size={18} className="text-primary mt-0.5 flex-shrink-0" />
                                 <span className="text-background/70 text-sm">
-                                    {companyData.contact.address.full}
+                                    {company?.contact?.address?.full || 'Mumbai, Maharashtra, India'}
                                 </span>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Phone size={18} className="text-primary flex-shrink-0" />
                                 <a
-                                    href={`tel:${companyData.contact.phone.primary}`}
+                                    href={`tel:${company?.contact?.phone?.primary || ''}`}
                                     className="text-background/70 hover:text-background transition-colors text-sm"
                                 >
-                                    {companyData.contact.phone.primary}
+                                    {company?.contact?.phone?.primary || '+91 95844 26543'}
                                 </a>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Mail size={18} className="text-primary flex-shrink-0" />
                                 <a
-                                    href={`mailto:${companyData.contact.email.info}`}
+                                    href={`mailto:${company?.contact?.email?.info || ''}`}
                                     className="text-background/70 hover:text-background transition-colors text-sm"
                                 >
-                                    {companyData.contact.email.info}
+                                    {company?.contact?.email?.info || 'info@fakhriit.com'}
                                 </a>
                             </li>
                         </ul>
@@ -153,7 +163,7 @@ export default function Footer() {
                 <div className="container-custom py-6">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <p className="text-background/60 text-sm">
-                            © {currentYear} {companyData.name}. All rights reserved.
+                            © {currentYear} {company?.name || 'Fakhri IT Services'}. All rights reserved.
                         </p>
                         <div className="flex gap-6">
                             <Link href="#" className="text-background/60 hover:text-background text-sm transition-colors">

@@ -1,4 +1,4 @@
-import { admins } from './admins';
+import { admins } from './admins.js';
 
 // Calculate client count dynamically or keep it static if mocking DB
 const getAdminsByTeam = (teamId) => admins.filter(admin => admin.teamId === teamId);

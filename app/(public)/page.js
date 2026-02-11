@@ -4,9 +4,8 @@ import ServicesPreview from '@/components/home/ServicesPreview';
 import WhyChooseUs from '@/components/home/WhyChooseUs';
 import CTA from '@/components/home/CTA';
 import Testimonials from '@/components/home/Testimonials';
-
-import { allFAQs } from '@/data/allFAQs';
 import FaQ from '@/components/home/FaQ';
+import { getServices, getTestimonials, getFAQs, getCompanyData } from '@/lib/actions/content';
 
 export const metadata = {
   title: "Fakhri IT Services | No.1 Amazon Seller Services Partner",
@@ -14,16 +13,25 @@ export const metadata = {
   keywords: "Amazon seller services, Amazon account management, FBA services, Amazon PPC, Amazon consulting",
 };
 
-export default function Home() {
+export default async function Home() {
+  const [services, testimonials, faqs, company] = await Promise.all([
+    getServices(),
+    getTestimonials(),
+    getFAQs(),
+    getCompanyData()
+  ]);
+
+  const homeFAQs = faqs.filter(f => f.categories && f.categories.home);
+
   return (
     <>
-      <Hero />
-      <TrustBadges />
-      <ServicesPreview />
-      <WhyChooseUs />
+      <Hero company={company} />
+      <TrustBadges company={company} />
+      <ServicesPreview services={services} />
+      <WhyChooseUs company={company} />
       <CTA />
-      <Testimonials />
-      <FaQ data={allFAQs.filter(f => f.categories.home)} />
+      <Testimonials testimonials={testimonials} />
+      <FaQ data={homeFAQs} />
     </>
   );
 }

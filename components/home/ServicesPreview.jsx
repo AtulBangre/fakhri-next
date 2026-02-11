@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import ServiceCard from '@/components/ui/ServiceCard';
-import { allServices } from '@/data/allServices';
 
-export default function ServicesPreview() {
+export default function ServicesPreview({ services }) {
+    const displayServices = services?.slice(0, 6) || [];
+
     return (
         <section className="section-padding">
             <div className="container-custom">
@@ -23,11 +24,17 @@ export default function ServicesPreview() {
                     </div>
                 </ScrollReveal>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {allServices.slice(0, 6).map((service, index) => (
-                        <ServiceCard key={service.id} service={service} index={index} variant="compact" />
-                    ))}
-                </div>
+                {displayServices.length > 0 ? (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {displayServices.map((service, index) => (
+                            <ServiceCard key={service._id} service={service} index={index} variant="compact" />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-12">
+                        <p className="text-muted-foreground">Our full service catalog is coming soon.</p>
+                    </div>
+                )}
 
                 <ScrollReveal>
                     <div className="text-center mt-12">

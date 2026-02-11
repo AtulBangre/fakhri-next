@@ -1,9 +1,8 @@
-
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import ServiceCard from '@/components/ui/ServiceCard';
-import { allServices } from '@/data/allServices';
+import { getServices } from '@/lib/actions/content';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
 export const metadata = {
@@ -12,19 +11,20 @@ export const metadata = {
     keywords: "Amazon services, product listing, FBA operations, Amazon advertising, A+ content",
 };
 
-// Static Categories
-// Derive categories from service data
-const serviceCategories = allServices.reduce((acc, service) => {
-    const existingCategory = acc.find(c => c.name === service.category);
-    if (existingCategory) {
-        existingCategory.services.push(service.id);
-    } else {
-        acc.push({ name: service.category, services: [service.id] });
-    }
-    return acc;
-}, []);
+export default async function ServicesPage() {
+    const services = await getServices();
 
-export default function ServicesPage() {
+    // Derive categories from service data
+    const serviceCategories = services.reduce((acc, service) => {
+        const existingCategory = acc.find(c => c.name === service.category);
+        if (existingCategory) {
+            existingCategory.services.push(service._id);
+        } else {
+            acc.push({ name: service.category, services: [service._id] });
+        }
+        return acc;
+    }, []);
+
     return (
         <>
             {/* Hero Section */}
@@ -46,28 +46,30 @@ export default function ServicesPage() {
             </section>
 
             {/* Service Categories Navigation */}
-            <section className="sticky top-[72px] z-30 bg-background/95 backdrop-blur-lg border-b border-border py-4">
-                <div className="container-custom">
-                    <div className="flex flex-wrap justify-center gap-2">
-                        {serviceCategories.map((category) => (
-                            <a
-                                key={category.name}
-                                href={`#${category.services[0]}`}
-                                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
-                            >
-                                {category.name}
-                            </a>
-                        ))}
+            {serviceCategories.length > 0 && (
+                <section className="sticky top-[72px] z-30 bg-background/95 backdrop-blur-lg border-b border-border py-4">
+                    <div className="container-custom">
+                        <div className="flex flex-wrap justify-center gap-2">
+                            {serviceCategories.map((category) => (
+                                <a
+                                    key={category.name}
+                                    href={`#${category.services[0]}`}
+                                    className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                                >
+                                    {category.name}
+                                </a>
+                            ))}
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            )}
 
             {/* All Services */}
             <section className="section-padding">
                 <div className="container-custom">
                     <div className="space-y-8">
-                        {allServices.map((service, index) => (
-                            <ServiceCard key={service.id} service={service} index={index} variant="default" />
+                        {services.map((service, index) => (
+                            <ServiceCard key={service._id} service={service} index={index} variant="default" />
                         ))}
                     </div>
                 </div>

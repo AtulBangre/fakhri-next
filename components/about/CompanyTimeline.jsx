@@ -2,9 +2,35 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { companymilestones } from '@/data/milestones';
+import { useEffect, useState } from 'react';
+import { getMilestones } from '@/lib/actions/content';
+import { Loader2 } from 'lucide-react';
 
 export default function CompanyTimeline() {
+    const [milestones, setMilestones] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadMilestones() {
+            setLoading(true);
+            const data = await getMilestones();
+            setMilestones(data);
+            setLoading(false);
+        }
+        loadMilestones();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="py-20 flex flex-col items-center justify-center">
+                <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+                <p className="text-muted-foreground">Loading our history...</p>
+            </div>
+        );
+    }
+
+    if (milestones.length === 0) return null;
+
     return (
         <section className="section-padding bg-background relative overflow-hidden">
             {/* Background Decorations - Subtle & Lite */}
@@ -31,9 +57,6 @@ export default function CompanyTimeline() {
                         <p className="body-md text-sm md:text-base">
                             A Decade of Excellence: Building the Future of Amazon Commerce One Growth Story at a Time.
                         </p>
-                        <p className="text-sm font-medium text-muted-foreground uppercase tracking-[0.1em] mt-2 italic">
-                            Wow... What a journey so far!
-                        </p>
                     </motion.div>
                 </div>
 
@@ -45,9 +68,9 @@ export default function CompanyTimeline() {
 
                     {/* Timeline List */}
                     <div className="space-y-12 md:space-y-24">
-                        {companymilestones.map((item, index) => (
+                        {milestones.map((item, index) => (
                             <TimelineItem
-                                key={index}
+                                key={item._id}
                                 item={item}
                                 index={index}
                             />

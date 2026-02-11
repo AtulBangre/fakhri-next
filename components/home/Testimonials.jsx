@@ -2,12 +2,11 @@
 
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import SocialTestimonialCard from '@/components/ui/SocialTestimonialCard';
-import { allTestimonials } from '@/data/allTestimonials';
 import Marquee from 'react-fast-marquee';
 
-export default function Testimonials() {
+export default function Testimonials({ testimonials }) {
     // Filter testimonials directly from the collection
-    const socialData = allTestimonials
+    const socialData = (testimonials || [])
         .filter(t => t.type === 'social')
         .map(t => ({
             name: t.author.name,
@@ -16,8 +15,10 @@ export default function Testimonials() {
             quote: t.content
         }));
 
+    if (socialData.length === 0) return null;
+
     return (
-        <section className="section-padding bg-background relative">
+        <section className="section-padding bg-background relative" id="testimonials">
             {/* Semicircular Fade Overlays */}
             <div
                 className="absolute left-0 top-0 bottom-0 w-48 md:w-64 lg:w-96 pointer-events-none z-10"

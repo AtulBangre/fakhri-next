@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowRight, Shield, Award, Check, Clock } from 'lucide-react';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
-import { companyData } from '@/data/company';
 
 const sellerImages = [
     "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60",
@@ -15,7 +14,14 @@ const sellerImages = [
     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60",
 ];
 
-export default function Hero() {
+export default function Hero({ company }) {
+    const stats = company?.stats || [
+        { value: "500+", label: "Sellers Trusted" },
+        { value: "8+", label: "Years Experience" },
+        { value: "25+", label: "Expert Team" },
+        { value: "$50M+", label: "Client Revenue" }
+    ];
+
     return (
         <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-background">
             {/* Background Elements */}
@@ -62,7 +68,7 @@ export default function Hero() {
                                 </span>
                             </Link>
 
-                            <span className="badge-outline">Since 2016</span>
+                            <span className="badge-outline">Since {company?.established || '2016'}</span>
                         </motion.div>
 
                         {/* Headline */}
@@ -82,7 +88,7 @@ export default function Hero() {
                             transition={{ duration: 0.6, delay: 0.2 }}
                             className="body-lg mb-8 max-w-xl"
                         >
-                            {companyData.description}
+                            {company?.description || 'Your trusted Amazon seller services partner since 2016. Expert account management, FBA operations, PPC advertising, and growth strategies for Amazon sellers.'}
                         </motion.p>
 
                         {/* CTAs */}
@@ -112,7 +118,7 @@ export default function Hero() {
                             transition={{ duration: 0.6, delay: 0.4 }}
                             className="flex flex-wrap gap-8 mt-12 pt-8 border-t border-border"
                         >
-                            {companyData.stats.slice(0, 3).map((stat, index) => (
+                            {stats.slice(0, 3).map((stat, index) => (
                                 <div key={index}>
                                     <p className="text-3xl font-poppins font-bold text-primary">{stat.value}</p>
                                     <p className="text-sm text-muted-foreground">{stat.label}</p>
@@ -139,10 +145,10 @@ export default function Hero() {
                                 <div className="relative z-10">
                                     <Award className="w-16 h-16 mb-6" />
                                     <h3 className="text-2xl font-poppins font-bold mb-3">
-                                        Trusted by {companyData.stats[0].value} Sellers
+                                        Trusted by {stats[0].value} Sellers
                                     </h3>
                                     <p className="text-primary-foreground/80 mb-6">
-                                        We&apos;ve helped generate over {companyData.stats[3].value} in revenue for our clients across multiple Amazon marketplaces.
+                                        We&apos;ve helped generate over {stats[3]?.value || '$50M+'} in revenue for our clients across multiple Amazon marketplaces.
                                     </p>
                                     <div className="flex -space-x-2">
                                         {sellerImages.map((src, i) => (

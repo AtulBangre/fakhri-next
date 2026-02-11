@@ -5,7 +5,9 @@ import { ArrowRight } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
-export default function CTA() {
+export default function CTA({ company }) {
+    const sellersCount = company?.stats?.[0]?.value || "500+";
+
     return (
         <section className="section-padding">
             <div className="container-custom">
@@ -22,7 +24,7 @@ export default function CTA() {
                                 Ready to Accelerate Your Amazon Growth?
                             </h2>
                             <p className="text-primary-foreground/90 text-lg mb-8 max-w-2xl mx-auto">
-                                Join 500+ successful sellers who trust Fakhri IT Services
+                                Join {sellersCount} successful sellers who trust Fakhri IT Services
                                 for their Amazon success. Get started with a free consultation today.
                             </p>
                             <div className="flex flex-wrap justify-center gap-4">

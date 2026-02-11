@@ -2,36 +2,56 @@
 
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { PricingCard } from '@/components/ui/PricingCard';
-import { pricingPlans, pricingDisclaimer, pricingPageInfo } from '@/data/pricingPlans';
-import { servicesCatalog, within2HoursPageData as within2HoursData } from '@/data/servicesCatalog';
-import { allFAQs } from '@/data/allFAQs';
-
-const pricingPageServices = servicesCatalog
-    .filter(s => s.pricing.standard !== null)
-    .map(s => ({
-        id: s.id,
-        name: s.name,
-        category: s.category,
-        price: s.pricing.standard.price
-    }));
+import { getPricingPlans, getFAQs, getServices } from '@/lib/actions/content';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, ArrowRight, Check, HelpCircle } from 'lucide-react';
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from "@/components/ui/accordion";
+import { motion } from "framer-motion";
+import { ArrowRight, Check, HelpCircle, Loader2 } from 'lucide-react';
 import FaQ from '../home/FaQ';
 import Within2HoursPricingList from '../within-2-hours/Within2HoursPricingList';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
 export default function PricingContent() {
-    // Billing cycle state removed as pricing is flat monthly
+    const [plans, setPlans] = useState([]);
+    const [faqs, setFaqs] = useState([]);
+    const [services, setServices] = useState([]);
+    const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        async function loadData() {
+            setLoading(true);
+            const [p, f, s] = await Promise.all([
+                getPricingPlans(),
+                getFAQs('pricing'),
+                getServices()
+            ]);
+            setPlans(p);
+            setFaqs(f);
+
+            // Filter services for the add-ons list
+            const pricingServices = s
+                .filter(srv => srv.pricing && srv.pricing.standard && srv.pricing.standard.price)
+                .map(srv => ({
+                    id: srv._id,
+                    name: srv.title,
+                    category: srv.category,
+                    price: srv.pricing.standard.price
+                }));
+            setServices(pricingServices);
+            setLoading(false);
+        }
+        loadData();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="min-h-[80vh] flex flex-col items-center justify-center">
+                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+                <p className="text-muted-foreground font-medium">Loading our best plans for you...</p>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -48,9 +68,6 @@ export default function PricingContent() {
                                 Choose the plan that fits your business needs. Scale up as you grow
                                 with our flexible pricing options.
                             </p>
-
-                            {/* Billing Toggle Removed */}
-
                         </div>
                     </ScrollReveal>
                 </div>
@@ -60,14 +77,10 @@ export default function PricingContent() {
             <section className="section-padding pt-8">
                 <div className="container-custom">
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                        {pricingPlans.map((plan, index) => (
+                        {plans.map((plan, index) => (
                             <PricingCard
-                                key={plan.id}
-
-                                plan={{
-                                    ...plan,
-                                    price: plan.price
-                                }}
+                                key={plan._id}
+                                plan={plan}
                                 index={index}
                             />
                         ))}
@@ -79,7 +92,7 @@ export default function PricingContent() {
                             <div className="flex items-start gap-3">
                                 <HelpCircle className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <p className="text-sm text-muted-foreground">
-                                    <strong>Important:</strong> {pricingDisclaimer}
+                                    <strong>Important:</strong> Pricing is based on project complexity and scope. Custom quotes available for unique requirements.
                                 </p>
                             </div>
                         </div>
@@ -88,128 +101,130 @@ export default function PricingContent() {
             </section>
 
             {/* Feature Comparison */}
-            <section id="compare-plans" className="section-padding scroll-mt-20">
-                <div className="container-custom">
-                    <ScrollReveal>
-                        <div className="text-center mb-12">
-                            <h2 className="heading-lg mb-4">Compare Plans</h2>
-                            <p className="body-md max-w-2xl mx-auto">
-                                See a detailed breakdown of what's included in each plan
-                            </p>
-                        </div>
-                    </ScrollReveal>
+            {plans.length > 0 && (
+                <section id="compare-plans" className="section-padding scroll-mt-20">
+                    <div className="container-custom">
+                        <ScrollReveal>
+                            <div className="text-center mb-12">
+                                <h2 className="heading-lg mb-4">Compare Plans</h2>
+                                <p className="body-md max-w-2xl mx-auto">
+                                    See a detailed breakdown of what's included in each plan
+                                </p>
+                            </div>
+                        </ScrollReveal>
 
-                    <ScrollReveal>
-                        <div className="overflow-x-auto">
-                            <table className="w-full max-w-5xl mx-auto">
-                                <thead>
-                                    <tr className="border-b border-border">
-                                        <th className="text-left py-4 px-4 font-poppins font-semibold">Feature</th>
-                                        {pricingPlans.map((plan) => (
-                                            <th
-                                                key={plan.id}
-                                                className={`text-center py-4 px-4 font-poppins font-semibold ${plan.highlighted ? 'text-primary' : ''
-                                                    }`}
-                                            >
-                                                {plan.name}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {pricingPlans[0].features.map((feature, idx) => (
-                                        <motion.tr
-                                            key={idx}
-                                            className="border-b border-border/50"
-                                            initial={{ opacity: 0, x: -20 }}
-                                            whileInView={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: idx * 0.05 }}
-                                            viewport={{ once: true }}
-                                        >
-                                            <td className="py-4 px-4 text-sm">{feature.text}</td>
-                                            {pricingPlans.map((plan) => (
-                                                <td key={plan.id} className="text-center py-4 px-4">
-                                                    {typeof plan.features[idx].value === 'string' ? (
-                                                        <span className="text-sm font-medium text-foreground">{plan.features[idx].value}</span>
-                                                    ) : plan.features[idx].included ? (
-                                                        <Check className="w-5 h-5 text-primary mx-auto" />
-                                                    ) : (
-                                                        <span className="text-muted-foreground/30">—</span>
-                                                    )}
-                                                </td>
+                        <ScrollReveal>
+                            <div className="overflow-x-auto">
+                                <table className="w-full max-w-5xl mx-auto">
+                                    <thead>
+                                        <tr className="border-b border-border">
+                                            <th className="text-left py-4 px-4 font-poppins font-semibold">Feature</th>
+                                            {plans.map((plan) => (
+                                                <th
+                                                    key={plan._id}
+                                                    className={`text-center py-4 px-4 font-poppins font-semibold ${plan.highlighted ? 'text-primary' : ''
+                                                        }`}
+                                                >
+                                                    {plan.name}
+                                                </th>
                                             ))}
-                                        </motion.tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </ScrollReveal>
-                </div>
-            </section>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {plans[0].features.map((feature, idx) => (
+                                            <motion.tr
+                                                key={idx}
+                                                className="border-b border-border/50"
+                                                initial={{ opacity: 0, x: -20 }}
+                                                whileInView={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: idx * 0.05 }}
+                                                viewport={{ once: true }}
+                                            >
+                                                <td className="py-4 px-4 text-sm">{feature.text}</td>
+                                                {plans.map((plan) => (
+                                                    <td key={plan._id} className="text-center py-4 px-4">
+                                                        {typeof plan.features[idx].value === 'string' && plan.features[idx].value !== 'true' && plan.features[idx].value !== 'false' ? (
+                                                            <span className="text-sm font-medium text-foreground">{plan.features[idx].value}</span>
+                                                        ) : plan.features[idx].included || plan.features[idx].value === 'true' ? (
+                                                            <Check className="w-5 h-5 text-primary mx-auto" />
+                                                        ) : (
+                                                            <span className="text-muted-foreground/30">—</span>
+                                                        )}
+                                                    </td>
+                                                ))}
+                                            </motion.tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </ScrollReveal>
+                    </div>
+                </section>
+            )}
 
             {/* Scenarios Section */}
             <section className="section-padding bg-secondary/30">
                 <div className="container-custom">
                     <div className="max-w-6xl mx-auto bg-card rounded-3xl p-8 md:p-12 shadow-lg border border-border">
                         <div className="grid lg:grid-cols-2 gap-12 items-start relative">
-
-                            {/* IMAGE FIRST ON MOBILE */}
                             <div className="order-1 lg:order-2">
                                 <ScrollReveal direction="right">
                                     <div className="relative lg:pl-8">
                                         <div style={{ position: "relative", width: "100%", height: "300px" }}>
                                             <Image
-                                                src="https://e7.pngegg.com/pngimages/630/420/png-clipart-price-tag-label-icon-best-price-label-best-price-logo-love-text-thumbnail.png"
+                                                src="https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&q=80&w=800"
                                                 alt="Service Image"
                                                 fill
-                                                style={{ objectFit: "contain" }}
+                                                className="object-contain"
                                             />
                                         </div>
                                     </div>
                                 </ScrollReveal>
                             </div>
 
-                            {/* CONTENT SECOND ON MOBILE */}
                             <div className="order-2 lg:order-1">
                                 <ScrollReveal direction="left">
                                     <div>
                                         <h2 className="heading-lg mb-6">
-                                            {within2HoursData.serviceInfo.title}
+                                            Need something more specific?
                                         </h2>
                                         <p className="text-muted-foreground leading-relaxed mb-8">
-                                            {within2HoursData.serviceInfo.description}
+                                            We offer specialized services within 2 hours for urgent requirements. From quick listing fixes to PPC troubleshooting, our experts are ready to assist.
                                         </p>
                                         <Link
-                                            href={within2HoursData.serviceInfo.buttonLink}
+                                            href="/within-2-hours"
                                             className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground font-poppins font-semibold rounded-lg transition-all duration-300 hover:shadow-lg group"
                                         >
-                                            {within2HoursData.serviceInfo.buttonText}
+                                            View Quick Services
                                             <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                         </Link>
                                     </div>
                                 </ScrollReveal>
                             </div>
-
                         </div>
-
                     </div>
                 </div>
             </section>
 
             {/* Service Pricing List */}
-            <Within2HoursPricingList
-                services={pricingPageServices}
-                pageInfo={pricingPageInfo}
-                noticeContent={
-                    <>
-                        <span className="font-semibold text-primary">💡 Pro Tip:</span> Combine add-on services with your subscription plan for maximum impact and better ROI.
-                        <span className="text-foreground ml-1">Custom packages available on request</span>
-                    </>
-                }
-            />
+            {services.length > 0 && (
+                <Within2HoursPricingList
+                    services={services}
+                    pageInfo={{
+                        title: "Add-on Services",
+                        subtitle: "Enhance your plan with specialized services"
+                    }}
+                    noticeContent={
+                        <>
+                            <span className="font-semibold text-primary">💡 Pro Tip:</span> Combine add-on services with your subscription plan for maximum impact and better ROI.
+                            <span className="text-foreground ml-1">Custom packages available on request</span>
+                        </>
+                    }
+                />
+            )}
 
             {/* FAQ Section */}
-            <FaQ data={allFAQs.filter(f => f.categories.pricing)} />
+            {faqs.length > 0 && <FaQ data={faqs} />}
 
             {/* CTA Section */}
             <section className="section-padding">
