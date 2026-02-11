@@ -1,14 +1,39 @@
 "use client";
-import { Plus, MoreVertical } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, MoreVertical, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-import { admins } from "@/data/admins";
+import { getUsers } from "@/lib/actions/user";
 
 const SuperAdminAdminsTab = () => {
+    const [admins, setAdmins] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadAdmins() {
+            setLoading(true);
+            const result = await getUsers({ role: 'admin' });
+            if (result.users) {
+                setAdmins(result.users);
+            }
+            setLoading(false);
+        }
+        loadAdmins();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="h-64 flex flex-col items-center justify-center">
+                <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
+                <p className="text-muted-foreground">Loading admin users...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -36,8 +61,8 @@ const SuperAdminAdminsTab = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {admins.map((admin) => (
-                            <TableRow key={admin.id}>
+                        {admins.length > 0 ? admins.map((admin) => (
+                            <TableRow key={admin._id}>
                                 <TableCell>
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
@@ -50,12 +75,12 @@ const SuperAdminAdminsTab = () => {
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge variant={admin.role === "Senior Manager" || admin.role === "Team Lead" ? "default" : "secondary"}>
-                                        {admin.role}
+                                    <Badge variant={(admin.adminRole || admin.role) === "Senior Manager" || (admin.adminRole || admin.role) === "Team Lead" ? "default" : "secondary"}>
+                                        {admin.adminRole || admin.role}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="text-muted-foreground">{admin.team}</TableCell>
-                                <TableCell>{admin.clients}</TableCell>
+                                <TableCell className="text-muted-foreground">{admin.teamName || admin.team || "N/A"}</TableCell>
+                                <TableCell>{admin.clientsCount || 0}</TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
                                         <Switch defaultChecked={admin.status === "active"} />
@@ -80,7 +105,13 @@ const SuperAdminAdminsTab = () => {
                                     </DropdownMenu>
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        )) : (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                                    No admin users found.
+                                </TableCell>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </div>

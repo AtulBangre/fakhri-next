@@ -11,63 +11,47 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Sample Data
-const clientsData = [
-    {
-        id: 1,
-        name: "John Doe",
-        company: "TechGadgets Co",
-        email: "john@techgadgets.com",
-        phone: "+1 (555) 123-4567",
-        plan: "Premium",
-        activeTasks: 3,
-        status: "active",
-        joinDate: "Oct 15, 2025",
-        manager: "Sarah Mitchell",
-        salesManager: "David Sales",
-        spCentralRequestId: "REQ-1001",
-        marketplace: "Amazon US",
-        userPermission: "Full Access",
-        accountAccessUrl: "https://sellercentral.amazon.com",
-        leadSource: "LinkedIn",
-        listingManager: "Emily Listings"
-    },
-    { id: 2, name: "Emily Smith", company: "BeautyBrand Inc", email: "emily@beautybrand.com", phone: "+1 (555) 234-5678", plan: "Platinum", activeTasks: 2, status: "active", joinDate: "Nov 20, 2025", manager: "Sarah Mitchell" },
-    { id: 3, name: "Michael Brown", company: "HomeEssentials", email: "michael@homeessentials.com", phone: "+1 (555) 345-6789", plan: "Elite", activeTasks: 1, status: "active", joinDate: "Dec 5, 2025", manager: "John Anderson" },
-    { id: 4, name: "Lisa Chen", company: "Fashion Forward", email: "lisa@fashion.com", phone: "+1 (555) 456-7890", plan: "Platinum", activeTasks: 0, status: "pending", joinDate: "Jan 2, 2026", manager: "Unassigned" },
-    { id: 5, name: "Robert Kim", company: "Tech Innovators", email: "robert@tech.com", phone: "+1 (555) 567-8901", plan: "Elite", activeTasks: 2, status: "active", joinDate: "Dec 15, 2025", manager: "John Anderson" },
-    { id: 6, name: "Amanda White", company: "Sports Gear Pro", email: "amanda@sports.com", phone: "+1 (555) 678-9012", plan: "Premium", activeTasks: 1, status: "active", joinDate: "Nov 30, 2025", manager: "Emma Wilson" },
-];
+import { getUsers } from "@/lib/actions/user";
+import { getTasks } from "@/lib/actions/task";
 
-const tasksData = [
-    { id: 1, title: "PPC Campaign Setup", clientId: 1, service: "PPC Management", priority: "High", status: "in-progress", dueDate: "Jan 25, 2026", owner: "Sarah Mitchell", description: "Set up and optimize PPC campaigns for product launch", planForWeek: "this-week", reminder: true, isHighPriority: true, isCompleted: false },
-    { id: 2, title: "Listing Optimization - Product A", clientId: 1, service: "Catalog Management", priority: "Medium", status: "completed", dueDate: "Jan 20, 2026", owner: "Sarah Mitchell", description: "Optimize product listings for better visibility", planForWeek: "none", reminder: false, isHighPriority: false, isCompleted: true },
-    { id: 3, title: "A+ Content Design - Product B", clientId: 2, service: "A+ Content", priority: "Medium", status: "in-progress", dueDate: "Jan 28, 2026", owner: "Sarah Mitchell", description: "Design A+ content for product B", planForWeek: "next-week", reminder: true, isHighPriority: false, isCompleted: false },
-    { id: 4, title: "Brand Registry Application", clientId: 3, service: "Brand Registry", priority: "High", status: "pending", dueDate: "Feb 1, 2026", owner: "John Anderson", description: "Apply for Amazon Brand Registry", planForWeek: "this-week", reminder: true, isHighPriority: true, isCompleted: false },
-    { id: 5, title: "Competitor Analysis Report", clientId: 1, service: "Account Management", priority: "Low", status: "completed", dueDate: "Jan 14, 2026", owner: "Sarah Mitchell", description: "Analyze top competitors and provide recommendations", planForWeek: "none", reminder: false, isHighPriority: false, isCompleted: true },
-    { id: 6, title: "Product Photography Review", clientId: 5, service: "Catalog Management", priority: "Medium", status: "in-progress", dueDate: "Jan 30, 2026", owner: "John Anderson", description: "Review and approve product photography", planForWeek: "this-week", reminder: true, isHighPriority: false, isCompleted: false },
-    { id: 7, title: "Advertising Strategy", clientId: 6, service: "PPC Management", priority: "High", status: "pending", dueDate: "Feb 5, 2026", owner: "Emma Wilson", description: "Develop Q1 advertising strategy", planForWeek: "next-week", reminder: true, isHighPriority: true, isCompleted: false },
-];
-
-const notesData = [
-    { id: 1, clientId: 1, author: "Sarah Mitchell", date: "Jan 18, 2026", content: "Client requested priority on PPC campaigns. Discussed budget allocation for Q1." },
-    { id: 2, clientId: 1, author: "John Anderson", date: "Jan 15, 2026", content: "Completed initial consultation. Client has 50 SKUs to optimize." },
-    { id: 3, clientId: 2, author: "Sarah Mitchell", date: "Jan 16, 2026", content: "Client wants focus on beauty category. Seasonal campaigns discussed." },
-    { id: 4, clientId: 3, author: "John Anderson", date: "Jan 10, 2026", content: "Brand registry documents received. Processing application." },
-    { id: 5, clientId: 5, author: "John Anderson", date: "Jan 12, 2026", content: "Client expanding to EU markets. Need to prepare localized content." },
-    { id: 6, clientId: 6, author: "Emma Wilson", date: "Jan 14, 2026", content: "Sports equipment line launching in February. High priority." },
-];
-
-const managers = ["Sarah Mitchell", "John Anderson", "Emma Wilson"];
-
-// Generate week numbers 1-52
 const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
     value: (i + 1).toString(),
     label: `Week ${i + 1}`
 }));
 
 const SuperAdminClientsTab = () => {
+    const [clients, setClients] = useState([]);
+    const [managers, setManagers] = useState([]);
+    const [tasks, setTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [selectedClient, setSelectedClient] = useState(null);
+
+    useEffect(() => {
+        async function loadInitialData() {
+            setLoading(true);
+            const [clientsRes, adminsRes] = await Promise.all([
+                getUsers({ role: 'client' }),
+                getUsers({ role: 'admin' })
+            ]);
+
+            if (clientsRes.users) setClients(clientsRes.users);
+            if (adminsRes.users) setManagers(adminsRes.users.map(u => u.name));
+            setLoading(false);
+        }
+        loadInitialData();
+    }, []);
+
+    // Fetch tasks when a client is selected
+    useEffect(() => {
+        if (selectedClient) {
+            async function loadClientTasks() {
+                const tasksRes = await getTasks({ clientId: selectedClient._id });
+                if (tasksRes.tasks) setTasks(tasksRes.tasks);
+            }
+            loadClientTasks();
+        }
+    }, [selectedClient]);
+
     const [activeView, setActiveView] = useState("tasks"); // "tasks" or "notes"
     const [showCreateTask, setShowCreateTask] = useState(false);
     const [showEditTask, setShowEditTask] = useState(null);
@@ -137,42 +121,39 @@ const SuperAdminClientsTab = () => {
 
     // Filter clients
     const filteredClients = useMemo(() => {
-        return clientsData.filter(client => {
+        return clients.filter(client => {
             const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                client.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (client.company || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
                 client.email.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesPlan = planFilter === "all" || client.plan.toLowerCase() === planFilter;
+            const matchesPlan = planFilter === "all" || (client.plan || "").toLowerCase() === planFilter;
             const matchesManager = managerFilter === "all" ||
-                (managerFilter === "unassigned" && client.manager === "Unassigned") ||
+                (managerFilter === "unassigned" && (!client.manager || client.manager === "Unassigned")) ||
                 client.manager === managerFilter;
             const matchesStatus = statusFilter === "all" || client.status === statusFilter;
             return matchesSearch && matchesPlan && matchesManager && matchesStatus;
         });
-    }, [searchQuery, planFilter, managerFilter, statusFilter]);
+    }, [searchQuery, planFilter, managerFilter, statusFilter, clients]);
 
     // Get tasks for selected client
     const clientTasks = useMemo(() => {
         if (!selectedClient) return [];
-        let tasks = tasksData.filter(task => task.clientId === selectedClient.id);
+        let filteredTasks = tasks;
 
         if (taskStatusFilter !== "all") {
-            tasks = tasks.filter(t => t.status === taskStatusFilter);
+            filteredTasks = filteredTasks.filter(t => t.status.toLowerCase() === taskStatusFilter);
         }
         if (priorityFilter !== "all") {
-            tasks = tasks.filter(t => t.priority.toLowerCase() === priorityFilter);
+            filteredTasks = filteredTasks.filter(t => t.priority.toLowerCase() === priorityFilter);
         }
         if (ownerFilter !== "all") {
-            tasks = tasks.filter(t => t.owner === ownerFilter);
+            filteredTasks = filteredTasks.filter(t => (t.assignee?.name || "") === ownerFilter);
         }
 
-        return tasks;
-    }, [selectedClient, taskStatusFilter, priorityFilter, ownerFilter]);
+        return filteredTasks;
+    }, [selectedClient, taskStatusFilter, priorityFilter, ownerFilter, tasks]);
 
-    // Get notes for selected client
-    const clientNotes = useMemo(() => {
-        if (!selectedClient) return [];
-        return notesData.filter(note => note.clientId === selectedClient.id);
-    }, [selectedClient]);
+    // Notes mapped to Task Updates for now or placeholder
+    const clientNotes = [];
 
     const handleClientClick = (client) => {
         setSelectedClient(client);
@@ -258,6 +239,15 @@ const SuperAdminClientsTab = () => {
 
     // Client List View
     if (!selectedClient) {
+        if (loading) {
+            return (
+                <div className="h-64 flex flex-col items-center justify-center bg-card rounded-xl border">
+                    <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
+                    <p className="text-muted-foreground">Fetching clients...</p>
+                </div>
+            );
+        }
+
         return (
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -329,8 +319,8 @@ const SuperAdminClientsTab = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredClients.map((client) => (
-                                <TableRow key={client.id} className="cursor-pointer hover:bg-accent/50" onClick={() => handleClientClick(client)}>
+                            {filteredClients.length > 0 ? filteredClients.map((client) => (
+                                <TableRow key={client._id} className="cursor-pointer hover:bg-accent/50" onClick={() => handleClientClick(client)}>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
@@ -338,18 +328,18 @@ const SuperAdminClientsTab = () => {
                                             </div>
                                             <div>
                                                 <p className="font-medium">{client.name}</p>
-                                                <p className="text-xs text-muted-foreground">{client.company}</p>
+                                                <p className="text-xs text-muted-foreground">{client.company || "Personal"}</p>
                                             </div>
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">{client.email}</TableCell>
                                     <TableCell>
                                         <Badge variant={client.plan === "Platinum" ? "default" : client.plan === "Premium" ? "secondary" : "outline"}>
-                                            {client.plan}
+                                            {client.plan || "N/A"}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        {client.manager === "Unassigned" ? (
+                                        {!client.manager || client.manager === "Unassigned" ? (
                                             <Badge variant="outline" className="border-destructive text-destructive">
                                                 Unassigned
                                             </Badge>
@@ -358,7 +348,7 @@ const SuperAdminClientsTab = () => {
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        <span className="font-medium">{client.activeTasks}</span>
+                                        <span className="font-medium">{client.activeTasks || 0}</span>
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={client.status === "active" ? "default" : "outline"}
@@ -372,7 +362,11 @@ const SuperAdminClientsTab = () => {
                                         </Button>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">No clients found</TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 </div>
@@ -718,7 +712,7 @@ const SuperAdminClientsTab = () => {
                                     </TableHeader>
                                     <TableBody>
                                         {clientTasks.length > 0 ? clientTasks.map((task) => (
-                                            <TableRow key={task.id}>
+                                            <TableRow key={task._id}>
                                                 <TableCell>
                                                     <div>
                                                         <p className="font-medium">{task.title}</p>

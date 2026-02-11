@@ -1,41 +1,43 @@
 "use client";
-import { useState } from "react";
-import { Plus, Edit, Users, Trash2, Eye, X, Crown, Mail, Phone } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Edit, Users, Trash2, Eye, X, Crown, Mail, Phone, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-import { teams as teamsData } from "@/data/teams";
-import { admins } from "@/data/admins";
-
-// Enrich teams data with full member details
-const teams = teamsData.map(team => {
-    // Get full member objects
-    const members = (team.memberIds || [])
-        .map(id => admins.find(a => a.id === id))
-        .filter(Boolean)
-        .map(member => ({
-            ...member,
-            phone: member.phone || "+1 (555) 000-0000" // Fallback phone
-        }));
-
-    // Get lead object
-    const lead = admins.find(a => a.id === team.leadId) || members[0] || {
-        name: "Unknown",
-        role: "N/A",
-        phone: ""
-    };
-
-    return {
-        ...team,
-        members,
-        lead,
-        // Ensure clientCount is accurate based on members
-        clientCount: members.reduce((sum, m) => sum + (m.clients || 0), 0)
-    };
-});
+import { getTeams } from "@/lib/actions/team";
 
 const SuperAdminTeamsTab = () => {
+    const [teams, setTeams] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [viewingTeam, setViewingTeam] = useState(null);
+
+    useEffect(() => {
+        async function loadTeams() {
+            setLoading(true);
+            const data = await getTeams();
+            if (data) {
+                // Formatting data if needed to match the UI expectations
+                const formattedTeams = data.map(team => ({
+                    ...team,
+                    members: team.memberIds || [],
+                    lead: team.leadId || { name: "N/A", email: "" },
+                    clientCount: 0 // We'd need to aggregate this or have it in the model
+                }));
+                setTeams(formattedTeams);
+            }
+            setLoading(false);
+        }
+        loadTeams();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="h-64 flex flex-col items-center justify-center">
+                <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
+                <p className="text-muted-foreground">Loading teams...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -52,8 +54,8 @@ const SuperAdminTeamsTab = () => {
 
             {/* Teams Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {teams.map((team) => (
-                    <div key={team.id} className="bg-card rounded-xl border p-6">
+                {teams.length > 0 ? teams.map((team) => (
+                    <div key={team._id} className="bg-card rounded-xl border p-6">
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -70,11 +72,11 @@ const SuperAdminTeamsTab = () => {
                             <p className="text-xs text-muted-foreground mb-2">Team Lead</p>
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary">
-                                    {team.lead.name.split(' ').map(n => n[0]).join('')}
+                                    {team.lead?.name?.split(' ').map(n => n[0]).join('') || "N"}
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium">{team.lead.name}</p>
-                                    <Badge variant="secondary" className="text-xs">{team.lead.role}</Badge>
+                                    <p className="text-sm font-medium">{team.lead?.name || "Unassigned"}</p>
+                                    <Badge variant="secondary" className="text-xs">{team.lead?.adminRole || "Lead"}</Badge>
                                 </div>
                             </div>
                         </div>
@@ -82,15 +84,17 @@ const SuperAdminTeamsTab = () => {
                         <div className="mb-4">
                             <p className="text-xs text-muted-foreground mb-2">Members ({team.members.length})</p>
                             <div className="flex -space-x-2">
-                                {team.members.slice(0, 4).map((member) => (
+                                {team.members.length > 0 ? team.members.slice(0, 4).map((member, idx) => (
                                     <div
-                                        key={member.id}
+                                        key={member._id || idx}
                                         className="w-8 h-8 rounded-full bg-primary/10 border-2 border-card flex items-center justify-center text-xs font-medium text-primary"
                                         title={member.name}
                                     >
-                                        {member.name.split(' ').map(n => n[0]).join('')}
+                                        {member.name?.split(' ').map(n => n[0]).join('') || "?"}
                                     </div>
-                                ))}
+                                )) : (
+                                    <span className="text-xs text-muted-foreground italic">No members assigned</span>
+                                )}
                                 {team.members.length > 4 && (
                                     <div className="w-8 h-8 rounded-full bg-accent border-2 border-card flex items-center justify-center text-xs font-medium">
                                         +{team.members.length - 4}
@@ -118,7 +122,13 @@ const SuperAdminTeamsTab = () => {
                             </Button>
                         </div>
                     </div>
-                ))}
+                )) : (
+                    <div className="col-span-full py-20 text-center bg-card rounded-xl border">
+                        <Users className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="font-heading font-semibold">No teams found</h3>
+                        <p className="text-sm text-muted-foreground">Get started by creating your first team.</p>
+                    </div>
+                )}
             </div>
 
             {/* View Team Members Modal */}
@@ -126,7 +136,7 @@ const SuperAdminTeamsTab = () => {
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-card rounded-xl border shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
                         {/* Modal Header */}
-                        <div className="bg-gradient-primary text-white p-6">
+                        <div className="bg-gradient-to-r from-primary to-primary/80 text-white p-6">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center">
@@ -152,26 +162,26 @@ const SuperAdminTeamsTab = () => {
                         <div className="p-6 overflow-y-auto max-h-[50vh]">
                             <h3 className="font-heading font-semibold mb-4">Team Members</h3>
                             <div className="space-y-3">
-                                {viewingTeam.members.map((member) => (
+                                {viewingTeam.members.length > 0 ? viewingTeam.members.map((member) => (
                                     <div
-                                        key={member.id}
-                                        className={`flex items-center justify-between p-4 rounded-lg border ${member.id === viewingTeam.lead.id ? 'bg-primary/5 border-primary/20' : 'bg-accent/30'}`}
+                                        key={member._id}
+                                        className={`flex items-center justify-between p-4 rounded-lg border ${member._id === viewingTeam.lead?._id ? 'bg-primary/5 border-primary/20' : 'bg-accent/30'}`}
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                                                {member.name.split(' ').map(n => n[0]).join('')}
+                                                {member.name?.split(' ').map(n => n[0]).join('') || "?"}
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <p className="font-medium">{member.name}</p>
-                                                    {member.id === viewingTeam.lead.id && (
+                                                    {member._id === viewingTeam.lead?._id && (
                                                         <Badge className="bg-primary text-primary-foreground text-xs">
                                                             <Crown className="h-3 w-3 mr-1" />
                                                             Team Lead
                                                         </Badge>
                                                     )}
                                                 </div>
-                                                <Badge variant="outline" className="mt-1">{member.role}</Badge>
+                                                <Badge variant="outline" className="mt-1">{member.adminRole || "Member"}</Badge>
                                             </div>
                                         </div>
                                         <div className="text-right text-sm">
@@ -179,14 +189,12 @@ const SuperAdminTeamsTab = () => {
                                                 <Mail className="h-3 w-3" />
                                                 <span>{member.email}</span>
                                             </div>
-                                            <div className="flex items-center gap-1 text-muted-foreground">
-                                                <Phone className="h-3 w-3" />
-                                                <span>{member.phone}</span>
-                                            </div>
-                                            <p className="text-primary font-medium mt-1">{member.clients} clients</p>
+                                            <p className="text-primary font-medium mt-1">{member.clientsCount || 0} clients</p>
                                         </div>
                                     </div>
-                                ))}
+                                )) : (
+                                    <p className="text-muted-foreground text-center py-10 italic">No members found in this team.</p>
+                                )}
                             </div>
                         </div>
 
