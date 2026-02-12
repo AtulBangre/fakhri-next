@@ -17,6 +17,7 @@ import Job from '../models/Job.js';
 import Milestone from '../models/Milestone.js';
 import Note from '../models/Note.js';
 import Team from '../models/Team.js';
+import CatalogService from '../models/CatalogService.js';
 
 import { admins } from '../data/admins.js';
 import { clients } from '../data/clients.js';
@@ -36,6 +37,7 @@ import { jobPositions } from '../data/jobs.js';
 import { companymilestones } from '../data/milestones.js';
 import { notesData } from '../data/notes.js';
 import { teams } from '../data/teams.js';
+import { servicesCatalog } from '../data/servicesCatalog.js';
 
 async function seed() {
     try {
@@ -60,6 +62,7 @@ async function seed() {
         await Milestone.deleteMany({});
         await Note.deleteMany({});
         await Team.deleteMany({});
+        await CatalogService.deleteMany({});
 
         console.log('Cleared existing data');
 
@@ -197,15 +200,12 @@ async function seed() {
         console.log(`Seeded ${plans.length} pricing plans`);
 
         // Seed FAQs
-        await FAQ.insertMany(allFAQs.map(faq => {
-            const category = faq.categories.home ? 'home' : (faq.categories.pricing ? 'pricing' : 'dashboard');
-            return {
-                question: faq.question,
-                answer: faq.answer,
-                category,
-                order: 0
-            };
-        }));
+        await FAQ.insertMany(allFAQs.map(faq => ({
+            question: faq.question,
+            answer: faq.answer,
+            categories: faq.categories,
+            order: faq.order || 0
+        })));
         console.log(`Seeded ${allFAQs.length} FAQs`);
 
         // Seed Testimonials
@@ -216,14 +216,15 @@ async function seed() {
             image: t.author.image,
             content: t.content,
             rating: t.rating,
-            category: t.category
+            category: t.category,
+            metric: t.metric
         })));
         console.log(`Seeded ${allTestimonials.length} testimonials`);
 
         // Seed Tasks
         await Task.insertMany(allTasks.map(task => ({
             ...task,
-            taskId: task.id.toString(),
+            taskId: `T-${task.id}`,
             id: undefined,
             client: {
                 name: task.client,
@@ -233,7 +234,12 @@ async function seed() {
                 name: task.owner,
                 id: managerMap[task.managerId] || managerMap[task.owner]
             },
-            status: task.status === 'in-progress' ? 'In Progress' : (task.status === 'completed' ? 'Completed' : 'To Do')
+            status: task.status === 'in-progress' ? 'In Progress' : (task.status === 'completed' ? 'Completed' : 'To Do'),
+            updates: (task.activity || []).map(a => ({
+                user: a.user,
+                message: a.content,
+                date: new Date()
+            }))
         })));
         console.log(`Seeded ${allTasks.length} tasks`);
 
@@ -259,6 +265,14 @@ async function seed() {
             category: tm.category === 'Core Leadership' ? 'Leadership Team' : tm.category
         })));
         console.log(`Seeded ${teammembers.length} team members`);
+
+        // Seed CatalogServices
+        await CatalogService.insertMany(servicesCatalog.map(s => ({
+            ...s,
+            serviceId: s.id,
+            id: undefined
+        })));
+        console.log(`Seeded ${servicesCatalog.length} catalog services`);
 
         // Seed ActivityLogs
         await ActivityLog.insertMany(activityLogs.map(log => ({

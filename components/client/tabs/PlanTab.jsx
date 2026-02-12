@@ -157,7 +157,7 @@ const ClientPlanTab = () => {
                                         <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
                                             <div className="flex items-center gap-3">
                                                 <CheckCircle2 className="h-4 w-4 text-primary" />
-                                                <span>{feature}</span>
+                                                <span>{feature.text}</span>
                                             </div>
                                         </div>
                                     ))

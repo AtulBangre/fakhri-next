@@ -84,15 +84,21 @@ const SuperAdminTeamsTab = () => {
                         <div className="mb-4">
                             <p className="text-xs text-muted-foreground mb-2">Members ({team.members.length})</p>
                             <div className="flex -space-x-2">
-                                {team.members.length > 0 ? team.members.slice(0, 4).map((member, idx) => (
-                                    <div
-                                        key={member._id || idx}
-                                        className="w-8 h-8 rounded-full bg-primary/10 border-2 border-card flex items-center justify-center text-xs font-medium text-primary"
-                                        title={member.name}
-                                    >
-                                        {member.name?.split(' ').map(n => n[0]).join('') || "?"}
-                                    </div>
-                                )) : (
+                                {team.members.length > 0 ? team.members.slice(0, 4).map((member, idx) => {
+                                    const memberId = typeof member === 'string' ? member : (member._id || member.id);
+                                    const memberName = typeof member === 'string' ? 'Member' : (member.name || 'Member');
+                                    return (
+                                        <div
+                                            key={memberId || idx}
+                                            className="w-8 h-8 rounded-full bg-primary/10 border-2 border-card flex items-center justify-center text-xs font-medium text-primary"
+                                            title={memberName}
+                                        >
+                                            {typeof member === 'object' && member.name
+                                                ? member.name.split(' ').map(n => n[0]).join('')
+                                                : "?"}
+                                        </div>
+                                    );
+                                }) : (
                                     <span className="text-xs text-muted-foreground italic">No members assigned</span>
                                 )}
                                 {team.members.length > 4 && (
@@ -162,9 +168,9 @@ const SuperAdminTeamsTab = () => {
                         <div className="p-6 overflow-y-auto max-h-[50vh]">
                             <h3 className="font-heading font-semibold mb-4">Team Members</h3>
                             <div className="space-y-3">
-                                {viewingTeam.members.length > 0 ? viewingTeam.members.map((member) => (
+                                {viewingTeam.members.length > 0 ? viewingTeam.members.map((member, idx) => (
                                     <div
-                                        key={member._id}
+                                        key={typeof member === 'string' ? member : (member._id || idx)}
                                         className={`flex items-center justify-between p-4 rounded-lg border ${member._id === viewingTeam.lead?._id ? 'bg-primary/5 border-primary/20' : 'bg-accent/30'}`}
                                     >
                                         <div className="flex items-center gap-3">

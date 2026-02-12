@@ -203,6 +203,11 @@ function CompanyManager({ data, onUpdate }) {
         contact: { phone: { primary: "", secondary: "" }, email: { info: "", support: "" }, address: { full: "" }, social: { linkedin: "", instagram: "" } },
         mission: "", vision: "", story: { title: "", content: "" }
     });
+
+    useEffect(() => {
+        if (data && Object.keys(data).length > 0) setFormData(data);
+    }, [data]);
+
     const [isSaving, setIsSaving] = useState(false);
 
     const handleChange = (section, field, value) => {
@@ -297,7 +302,12 @@ function CompanyManager({ data, onUpdate }) {
 // 2. Team Manager
 // 2. Team Manager
 function TeamManager({ data, onUpdate }) {
-    const [members, setMembers] = useState(data || []);
+    const [members, setMembers] = useState(Array.isArray(data) ? data : []);
+
+    useEffect(() => {
+        if (Array.isArray(data)) setMembers(data);
+    }, [data]);
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentMember, setCurrentMember] = useState(null);
     const [isViewMode, setIsViewMode] = useState(false);
@@ -388,7 +398,7 @@ function TeamManager({ data, onUpdate }) {
                     <DialogHeader><DialogTitle>{isViewMode ? "View Member" : currentMember ? "Edit Member" : "Add Member"}</DialogTitle></DialogHeader>
                     {isViewMode ? (
                         <div className="space-y-4">
-                            <div className="flex justify-center"><img src={currentMember?.image} className="w-24 h-24 rounded-full object-cover" /></div>
+                            <div className="flex justify-center"><img src={currentMember?.image || undefined} className="w-24 h-24 rounded-full object-cover" /></div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div><Label>Name</Label><p>{currentMember?.name}</p></div><div><Label>Role</Label><p>{currentMember?.role}</p></div>
                                 <div><Label>Category</Label><Badge>{currentMember?.category}</Badge></div><div><Label>Email</Label><p>{currentMember?.email}</p></div>
@@ -425,7 +435,12 @@ function TeamManager({ data, onUpdate }) {
 // 3. Pricing Manager
 // 3. Pricing Manager
 function PricingManager({ data, onUpdate }) {
-    const [pricingData, setPricingData] = useState(data || []);
+    const [pricingData, setPricingData] = useState(Array.isArray(data) ? data : []);
+
+    useEffect(() => {
+        if (Array.isArray(data)) setPricingData(data);
+    }, [data]);
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentPlan, setCurrentPlan] = useState(null);
     const [isViewMode, setIsViewMode] = useState(false);
@@ -529,7 +544,12 @@ function PricingManager({ data, onUpdate }) {
 // 4. Catalog Manager
 // 4. Catalog Manager
 function CatalogManager({ data, onUpdate }) {
-    const [services, setServices] = useState(data || []);
+    const [services, setServices] = useState(Array.isArray(data) ? data : []);
+
+    useEffect(() => {
+        if (Array.isArray(data)) setServices(data);
+    }, [data]);
+
     const [search, setSearch] = useState("");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentService, setCurrentService] = useState(null);
@@ -661,7 +681,16 @@ const quillModules = {
 
 // 5. Blog Manager
 function BlogManager({ data, onUpdate }) {
-    const [posts, setPosts] = useState(data || []);
+    const [posts, setPosts] = useState(Array.isArray(data) ? data : []);
+
+    // Sync with parent data if it's fetched asynchronously
+    useEffect(() => {
+        if (Array.isArray(data)) {
+            setPosts(data);
+            setAvailableCategories(Array.from(new Set(data.map(p => p.category))));
+        }
+    }, [data]);
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentPost, setCurrentPost] = useState(null);
     const [isViewMode, setIsViewMode] = useState(false);
@@ -675,7 +704,7 @@ function BlogManager({ data, onUpdate }) {
 
     // Category Management
     const [availableCategories, setAvailableCategories] = useState(
-        Array.from(new Set((data || []).map(p => p.category)))
+        Array.from(new Set((Array.isArray(data) ? data : []).map(p => p.category)))
     );
     const [selectedCategory, setSelectedCategory] = useState("");
     const [customCategory, setCustomCategory] = useState("");
@@ -710,7 +739,7 @@ function BlogManager({ data, onUpdate }) {
                 if (res.success) {
                     const updated = posts.filter(p => p._id !== id && p.id !== id);
                     setPosts(updated);
-                    onUpdate({ posts: updated }); // Note: WebsiteTab passes posts array, but update expects structure? No, WebsiteTab expects setPosts to be called with array. Wait, onUpdate is setPosts.
+                    onUpdate(updated);
                     toast.success("Deleted");
                 } else {
                     toast.error("Failed to delete");
@@ -758,13 +787,7 @@ function BlogManager({ data, onUpdate }) {
                     updatedPosts = [savedPost, ...posts];
                 }
                 setPosts(updatedPosts);
-                onUpdate({ posts: updatedPosts }); // WebsiteTab uses setPosts directly, but let's check.
-                // In WebsiteTab: <BlogManager data={posts} onUpdate={setPosts} />
-                // setPosts expects an array. But wait, loadAllData sets posts to `blogData?.posts`.
-                // So here onUpdate should receive an array.
-                // Wait, getBlogPosts returns { posts: [], ... }.
-                // My update logic in WebsiteTab updates the `posts` state which is an array.
-                // So onUpdate(updatedPosts) is correct.
+                onUpdate(updatedPosts);
 
                 toast.success(currentPost ? "Updated" : "Created");
                 setIsDialogOpen(false);
@@ -802,7 +825,7 @@ function BlogManager({ data, onUpdate }) {
                     <DialogHeader><DialogTitle>{isViewMode ? "View Post" : "Edit Post"}</DialogTitle></DialogHeader>
                     {isViewMode ? (
                         <div className="space-y-4">
-                            <img src={currentPost?.thumbnail} alt="cover" className="w-full h-40 object-cover rounded-md" />
+                            <img src={currentPost?.thumbnail || undefined} alt="cover" className="w-full h-40 object-cover rounded-md" />
                             <h2 className="text-xl font-bold">{currentPost?.title}</h2>
                             <div className="flex gap-2 text-sm text-muted-foreground"><span>{currentPost?.date}</span><span>•</span><span>{currentPost?.readTime}</span><span>•</span><span>{currentPost?.author?.name}</span></div>
                             <div className="flex gap-2">{currentPost?.tags?.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}</div>
@@ -908,7 +931,12 @@ function BlogManager({ data, onUpdate }) {
 
 // 6. Service Manager
 function ServiceManager({ data, onUpdate }) {
-    const [services, setServices] = useState(data || []);
+    const [services, setServices] = useState(Array.isArray(data) ? data : []);
+
+    useEffect(() => {
+        if (Array.isArray(data)) setServices(data);
+    }, [data]);
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentService, setCurrentService] = useState(null);
     const [isViewMode, setIsViewMode] = useState(false);
@@ -1051,7 +1079,12 @@ function ServiceManager({ data, onUpdate }) {
 
 // 7. Testimonial Manager
 function TestimonialManager({ data, onUpdate }) {
-    const [testimonials, setTestimonials] = useState(data || []);
+    const [testimonials, setTestimonials] = useState(Array.isArray(data) ? data : []);
+
+    useEffect(() => {
+        if (Array.isArray(data)) setTestimonials(data);
+    }, [data]);
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentTestimonial, setCurrentTestimonial] = useState(null);
     const [isViewMode, setIsViewMode] = useState(false);
@@ -1150,7 +1183,7 @@ function TestimonialManager({ data, onUpdate }) {
                     <Card key={t._id || t.id} className="relative group hover:shadow-md transition-shadow">
                         <CardHeader className="pb-2">
                             <div className="flex items-center gap-4">
-                                <img src={t.author?.image} className="w-12 h-12 rounded-full object-cover" />
+                                <img src={t.author?.image || undefined} className="w-12 h-12 rounded-full object-cover" />
                                 <div><h4 className="font-semibold">{t.author?.name}</h4><p className="text-xs text-muted-foreground">{t.author?.role}, {t.author?.company}</p></div>
                             </div>
                         </CardHeader>
@@ -1173,7 +1206,7 @@ function TestimonialManager({ data, onUpdate }) {
                     <DialogHeader><DialogTitle>{isViewMode ? "View Testimonial" : "Edit Testimonial"}</DialogTitle></DialogHeader>
                     {isViewMode ? (
                         <div className="space-y-4">
-                            <div className="flex items-center gap-4"><img src={currentTestimonial?.author?.image} className="w-16 h-16 rounded-full" /><div><h4 className="text-lg font-bold">{currentTestimonial?.author?.name}</h4><p>{currentTestimonial?.author?.role}, {currentTestimonial?.author?.company}</p></div></div>
+                            <div className="flex items-center gap-4"><img src={currentTestimonial?.author?.image || undefined} className="w-16 h-16 rounded-full" /><div><h4 className="text-lg font-bold">{currentTestimonial?.author?.name}</h4><p>{currentTestimonial?.author?.role}, {currentTestimonial?.author?.company}</p></div></div>
                             <p className="text-xl italic font-serif">"{currentTestimonial?.quote}"</p>
                             <div className="flex gap-4"><div><Label>Rating</Label><div className="flex text-yellow-500">{[...Array(currentTestimonial?.rating || 5)].map((_, i) => <span key={i}>★</span>)}</div></div>{currentTestimonial?.metric?.value && <div><Label>Metric</Label><Badge>{currentTestimonial?.metric.value} {currentTestimonial?.metric.label}</Badge></div>}</div>
                         </div>
@@ -1218,7 +1251,12 @@ function TestimonialManager({ data, onUpdate }) {
 
 // 8. FAQ Manager
 function FAQManager({ data, onUpdate }) {
-    const [faqs, setFaqs] = useState(data || []);
+    const [faqs, setFaqs] = useState(Array.isArray(data) ? data : []);
+
+    useEffect(() => {
+        if (Array.isArray(data)) setFaqs(data);
+    }, [data]);
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentFaq, setCurrentFaq] = useState(null);
     const [isViewMode, setIsViewMode] = useState(false);
@@ -1367,7 +1405,12 @@ function FAQManager({ data, onUpdate }) {
 
 // 9. Job Manager
 function JobManager({ data, onUpdate }) {
-    const [jobs, setJobs] = useState(data || []);
+    const [jobs, setJobs] = useState(Array.isArray(data) ? data : []);
+
+    useEffect(() => {
+        if (Array.isArray(data)) setJobs(data);
+    }, [data]);
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentJob, setCurrentJob] = useState(null);
     const [isViewMode, setIsViewMode] = useState(false);

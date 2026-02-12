@@ -1,9 +1,9 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
     Plus, Eye, X, Mail, Phone, Building2, CreditCard,
     CheckSquare, StickyNote, Edit, Save, Calendar, User,
-    Filter, ChevronDown, ChevronUp, Clock, ArrowLeft, UserCog
+    Filter, ChevronDown, ChevronUp, Clock, ArrowLeft, UserCog, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

@@ -7,7 +7,7 @@ import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import ShareButtons from '@/components/blog/ShareButtons';
 
 export async function generateMetadata({ params }) {
-    const { slug } = params;
+    const { slug } = await params;
     const post = await getBlogPostBySlug(slug);
 
     if (!post) {
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BlogPostPage({ params }) {
-    const { slug } = params;
+    const { slug } = await params;
     const post = await getBlogPostBySlug(slug);
 
     if (!post) {
