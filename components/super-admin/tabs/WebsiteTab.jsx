@@ -1,7 +1,7 @@
 ﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, Edit, Trash2, Save, X, ChevronRight, FileText, MessageSquare, HelpCircle, Briefcase, Building, Users, DollarSign, List, Shield, Eye, Check, GripVertical, Loader2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Save, X, ChevronRight, FileText, MessageSquare, HelpCircle, Briefcase, Building, Users, DollarSign, List, Shield, Eye, RefreshCw, Check, GripVertical, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -107,6 +107,63 @@ export default function WebsiteTab() {
         }
     }, []);
 
+    const refreshCategoryData = useCallback(async () => {
+        toast.loading(`Refreshing ${activeCategory}...`, { id: "refresh-cms" });
+        try {
+            switch (activeCategory) {
+                case "Company":
+                    const company = await getCompanyData();
+                    setCompanyInfo(company);
+                    break;
+                case "Team":
+                    const team = await getTeamMembers();
+                    setMembers(team);
+                    break;
+                case "Pricing":
+                    const prices = await getPricingPlans();
+                    setPricingPlans(prices);
+                    break;
+                case "Services":
+                    const srvs = await getServices();
+                    setServices(srvs);
+                    break;
+                case "Catalog":
+                    const cat = await getCatalogServices();
+                    setCatalog(cat);
+                    break;
+                case "Blogs":
+                    const blog = await getBlogPosts();
+                    setPosts(blog?.posts || []);
+                    break;
+                case "Testimonials":
+                    const tests = await getTestimonials();
+                    const processed = (tests || []).map(t => ({
+                        ...t,
+                        rating: t.rating || 5,
+                        author: t.author || { name: "Anonymous", role: "Client", company: "", handle: "", image: "" },
+                        metric: t.metric || { label: "", value: "" }
+                    }));
+                    setTestimonials(processed);
+                    break;
+                case "FAQs":
+                    const faqsData = await getFAQs();
+                    const processedFaqs = (faqsData || []).map(f => ({
+                        ...f,
+                        categories: f.categories || { home: false, pricing: false, dashboard: false }
+                    }));
+                    setFaqs(processedFaqs);
+                    break;
+                case "Jobs":
+                    const roles = await getJobs();
+                    setJobs(roles);
+                    break;
+            }
+            toast.success(`${activeCategory} data refreshed`, { id: "refresh-cms" });
+        } catch (error) {
+            toast.error(`Failed to refresh ${activeCategory}`, { id: "refresh-cms" });
+        }
+    }, [activeCategory]);
+
     useEffect(() => {
         loadAllData();
     }, [loadAllData]);
@@ -158,15 +215,15 @@ export default function WebsiteTab() {
             </div>
 
             <div className="min-h-[500px]">
-                {activeCategory === "Company" && <CompanyManager data={companyInfo} onUpdate={setCompanyInfo} refreshData={loadAllData} />}
-                {activeCategory === "Team" && <TeamManager data={members} onUpdate={setMembers} refreshData={loadAllData} />}
-                {activeCategory === "Pricing" && <PricingManager data={pricingPlans} onUpdate={setPricingPlans} refreshData={loadAllData} />}
-                {activeCategory === "Services" && <ServiceManager data={services} onUpdate={setServices} refreshData={loadAllData} />}
-                {activeCategory === "Catalog" && <CatalogManager data={catalog} onUpdate={setCatalog} refreshData={loadAllData} />}
-                {activeCategory === "Blogs" && <BlogManager data={posts} onUpdate={setPosts} refreshData={loadAllData} />}
-                {activeCategory === "Testimonials" && <TestimonialManager data={testimonials} onUpdate={setTestimonials} refreshData={loadAllData} />}
-                {activeCategory === "FAQs" && <FAQManager data={faqs} onUpdate={setFaqs} refreshData={loadAllData} />}
-                {activeCategory === "Jobs" && <JobManager data={jobs} onUpdate={setJobs} refreshData={loadAllData} />}
+                {activeCategory === "Company" && <CompanyManager data={companyInfo} onUpdate={setCompanyInfo} refreshData={refreshCategoryData} />}
+                {activeCategory === "Team" && <TeamManager data={members} onUpdate={setMembers} refreshData={refreshCategoryData} />}
+                {activeCategory === "Pricing" && <PricingManager data={pricingPlans} onUpdate={setPricingPlans} refreshData={refreshCategoryData} />}
+                {activeCategory === "Services" && <ServiceManager data={services} onUpdate={setServices} refreshData={refreshCategoryData} />}
+                {activeCategory === "Catalog" && <CatalogManager data={catalog} onUpdate={setCatalog} refreshData={refreshCategoryData} />}
+                {activeCategory === "Blogs" && <BlogManager data={posts} onUpdate={setPosts} refreshData={refreshCategoryData} />}
+                {activeCategory === "Testimonials" && <TestimonialManager data={testimonials} onUpdate={setTestimonials} refreshData={refreshCategoryData} />}
+                {activeCategory === "FAQs" && <FAQManager data={faqs} onUpdate={setFaqs} refreshData={refreshCategoryData} />}
+                {activeCategory === "Jobs" && <JobManager data={jobs} onUpdate={setJobs} refreshData={refreshCategoryData} />}
             </div>
         </div>
     );
@@ -201,7 +258,7 @@ function ArrayInput({ values, onChange, label, placeholder }) {
 
 // 1. Company Manager
 // 1. Company Manager
-function CompanyManager({ data, onUpdate }) {
+function CompanyManager({ data, onUpdate, refreshData }) {
     const [formData, setFormData] = useState(data || {
         name: "", tagline: "", established: "", description: "", logo: "",
         contact: { phone: { primary: "", secondary: "" }, email: { info: "", support: "" }, address: { full: "" }, social: { linkedin: "", instagram: "" } },
@@ -241,7 +298,11 @@ function CompanyManager({ data, onUpdate }) {
 
     return (
         <div className="space-y-6 animate-in fade-in">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => refreshData()} title="Refresh Data">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh
+                </Button>
                 <Button onClick={handleSave} disabled={isSaving}>
                     {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     <Save className="w-4 h-4 mr-2" />
@@ -379,7 +440,19 @@ function TeamManager({ data, onUpdate, refreshData }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between"><Input placeholder="Search..." className="max-w-sm" /><Button onClick={() => { setCurrentMember(null); setIsViewMode(false); setIsDialogOpen(true); }}><Plus className="w-4 h-4 mr-2" /> Add Member</Button></div>
+            <div className="flex justify-between items-center">
+                <Input placeholder="Search..." className="max-w-sm" />
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => refreshData()} title="Refresh Data">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Refresh
+                    </Button>
+                    <Button onClick={() => { setCurrentMember(null); setIsViewMode(false); setIsDialogOpen(true); }}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Member
+                    </Button>
+                </div>
+            </div>
             <div className="rounded-md border bg-card">
                 <Table>
                     <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Role</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
@@ -491,6 +564,12 @@ function PricingManager({ data, onUpdate, refreshData }) {
 
     return (
         <div className="space-y-6">
+            <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => refreshData()} title="Refresh Data">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh
+                </Button>
+            </div>
             <div className="grid md:grid-cols-3 gap-6">
                 {pricingData.map((plan, index) => (
                     <Card key={`${plan._id || plan.id || plan.planId || 'plan'}-${index}`} className={plan.highlighted ? "border-primary ring-1 ring-primary" : ""}>
@@ -617,7 +696,19 @@ function CatalogManager({ data, onUpdate, refreshData }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between"><Input placeholder="Search..." className="max-w-sm" onChange={(e) => setSearch(e.target.value)} /><Button onClick={() => { setCurrentService(null); setIsViewMode(false); setIsDialogOpen(true); }}>Add Item</Button></div>
+            <div className="flex justify-between items-center">
+                <Input placeholder="Search..." className="max-w-sm" onChange={(e) => setSearch(e.target.value)} />
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => refreshData()} title="Refresh Data">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Refresh
+                    </Button>
+                    <Button onClick={() => { setCurrentService(null); setIsViewMode(false); setIsDialogOpen(true); }}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Item
+                    </Button>
+                </div>
+            </div>
             <div className="rounded-md border bg-card">
                 <Table>
                     <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Category</TableHead><TableHead>Standard</TableHead><TableHead>Priority (2 hr) </TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
@@ -801,7 +892,19 @@ function BlogManager({ data, onUpdate, refreshData }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between"><Input placeholder="Search..." className="max-w-sm" /><Button onClick={() => handleOpen(null, false)}>Add Post</Button></div>
+            <div className="flex justify-between items-center">
+                <Input placeholder="Search..." className="max-w-sm" />
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => refreshData()} title="Refresh Data">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Refresh
+                    </Button>
+                    <Button onClick={() => handleOpen(null, false)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Post
+                    </Button>
+                </div>
+            </div>
             <div className="rounded-md border bg-card">
                 <Table>
                     <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Author</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
@@ -1015,7 +1118,19 @@ function ServiceManager({ data, onUpdate, refreshData }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between"><Input placeholder="Search..." className="max-w-sm" /><Button onClick={() => handleOpen(null, false)}>Add Service</Button></div>
+            <div className="flex justify-between items-center">
+                <Input placeholder="Search..." className="max-w-sm" />
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => refreshData()} title="Refresh Data">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Refresh
+                    </Button>
+                    <Button onClick={() => handleOpen(null, false)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Service
+                    </Button>
+                </div>
+            </div>
             <div className="rounded-md border bg-card">
                 <Table>
                     <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Icon</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
@@ -1089,9 +1204,10 @@ function TestimonialManager({ data, onUpdate, refreshData }) {
     const [isLoading, setIsLoading] = useState(false);
 
     const handleOpen = (t, view) => {
-        // Ensure author object exists
+        // Ensure author and content exist
         const testimonial = t ? {
             ...t,
+            content: t.content || t.quote || "",
             author: t.author || { name: "", role: "", company: "", handle: "", image: "" },
             metric: t.metric || { label: "", value: "" }
         } : null;
@@ -1128,7 +1244,9 @@ function TestimonialManager({ data, onUpdate, refreshData }) {
 
         const newTestimonial = {
             id: currentTestimonial ? (currentTestimonial._id || currentTestimonial.id) : undefined,
-            quote: formData.get("quote"),
+            type: formData.get("type"),
+            category: formData.get("category") || "General",
+            content: formData.get("content"),
             rating: Number(formData.get("rating")),
             featured: formData.get("featured") === "on",
             author: {
@@ -1176,29 +1294,68 @@ function TestimonialManager({ data, onUpdate, refreshData }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between"><Input placeholder="Search..." className="max-w-sm" /><Button onClick={() => handleOpen(null, false)}>Add Testimonial</Button></div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {testimonials.map((t, index) => (
-                    <Card key={`${t._id || t.id || 'testimonial'}-${index}`} className="relative group hover:shadow-md transition-shadow">
-                        <CardHeader className="pb-2">
-                            <div className="flex items-center gap-4">
-                                <img src={t.author?.image || undefined} className="w-12 h-12 rounded-full object-cover" />
-                                <div><h4 className="font-semibold">{t.author?.name}</h4><p className="text-xs text-muted-foreground">{t.author?.role}, {t.author?.company}</p></div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <p className="text-sm italic text-muted-foreground line-clamp-3">"{t.quote}"</p>
-                            <div className="flex justify-between items-center text-sm">
-                                <div className="flex text-yellow-500">{[...Array(t.rating || 5)].map((_, i) => <span key={i}>★</span>)}</div>
-                                {t.metric?.value && <Badge variant="secondary">{t.metric.value} {t.metric.label}</Badge>}
-                            </div>
-                            <div className="flex justify-end gap-2 pt-2 border-t">
-                                <Button variant="ghost" size="sm" onClick={() => handleOpen(t, false)}><Edit className="w-4 h-4 mr-1" /> Edit</Button>
-                                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(t._id || t.id)}><Trash2 className="w-4 h-4 mr-1" /> Delete</Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+            <div className="flex justify-between items-center">
+                <Input placeholder="Search testimonials..." className="max-w-sm" />
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => refreshData()} title="Refresh Data">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Refresh
+                    </Button>
+                    <Button onClick={() => handleOpen(null, false)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Testimonial
+                    </Button>
+                </div>
+            </div>
+
+            <div className="rounded-md border bg-card">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[80px]">Image</TableHead>
+                            <TableHead>Author</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Rating</TableHead>
+                            <TableHead>Featured</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {testimonials.map((t, index) => (
+                            <TableRow key={`${t._id || t.id || 'testimonial'}-${index}`}>
+                                <TableCell>
+                                    <img src={t.author?.image || undefined} className="w-10 h-10 rounded-full object-cover" />
+                                </TableCell>
+                                <TableCell>
+                                    <div>
+                                        <div className="font-medium">{t.author?.name}</div>
+                                        <div className="text-xs text-muted-foreground">{t.author?.role}, {t.author?.company}</div>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant="secondary" className="capitalize">{t.type || 'social'}</Badge>
+                                </TableCell>
+                                <TableCell>{t.category}</TableCell>
+                                <TableCell>
+                                    <div className="flex text-yellow-500 text-xs">
+                                        {[...Array(t.rating || 5)].map((_, i) => <span key={i}>★</span>)}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    {t.featured ? <Badge variant="success">Yes</Badge> : <Badge variant="outline">No</Badge>}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <div className="flex justify-end gap-1">
+                                        <Button variant="ghost" size="icon" onClick={() => handleOpen(t, true)}><Eye className="h-4 w-4" /></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => handleOpen(t, false)}><Edit className="h-4 w-4" /></Button>
+                                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(t._id || t.id)}><Trash2 className="h-4 w-4" /></Button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-h-[85vh] overflow-y-auto">
@@ -1206,12 +1363,30 @@ function TestimonialManager({ data, onUpdate, refreshData }) {
                     {isViewMode ? (
                         <div className="space-y-4">
                             <div className="flex items-center gap-4"><img src={currentTestimonial?.author?.image || undefined} className="w-16 h-16 rounded-full" /><div><h4 className="text-lg font-bold">{currentTestimonial?.author?.name}</h4><p>{currentTestimonial?.author?.role}, {currentTestimonial?.author?.company}</p></div></div>
-                            <p className="text-xl italic font-serif">"{currentTestimonial?.quote}"</p>
+                            <p className="text-xl italic font-serif">"{currentTestimonial?.content}"</p>
                             <div className="flex gap-4"><div><Label>Rating</Label><div className="flex text-yellow-500">{[...Array(currentTestimonial?.rating || 5)].map((_, i) => <span key={i}>★</span>)}</div></div>{currentTestimonial?.metric?.value && <div><Label>Metric</Label><Badge>{currentTestimonial?.metric.value} {currentTestimonial?.metric.label}</Badge></div>}</div>
                         </div>
                     ) : (
                         <form onSubmit={handleSave} className="space-y-4">
-                            <div className="space-y-2"><Label>Quote</Label><Textarea name="quote" defaultValue={currentTestimonial?.quote} required /></div>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Type</Label>
+                                    <Select name="type" defaultValue={currentTestimonial?.type || "social"}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="social">Social Proof (Home Page)</SelectItem>
+                                            <SelectItem value="detailed">Detailed Case Study</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Category</Label>
+                                    <Input name="category" defaultValue={currentTestimonial?.category || "General"} placeholder="General" />
+                                </div>
+                            </div>
+                            <div className="space-y-2"><Label>Content / Quote</Label><Textarea name="content" defaultValue={currentTestimonial?.content} required /></div>
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2"><Label>Author Name</Label><Input name="authorName" defaultValue={currentTestimonial?.author?.name} required /></div>
                                 <div className="space-y-2"><Label>Role</Label><Input name="authorRole" defaultValue={currentTestimonial?.author?.role} /></div>
@@ -1340,7 +1515,21 @@ function FAQManager({ data, onUpdate, refreshData }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-end"><Button onClick={() => handleOpen(null, false)}>Add FAQ</Button></div>
+            <div className="flex justify-between items-center">
+                <div className="flex gap-1">
+                    <Badge variant="outline">Total FAQs: {faqs.length}</Badge>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => refreshData()} title="Refresh Data">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Refresh
+                    </Button>
+                    <Button onClick={() => handleOpen(null, false)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add FAQ
+                    </Button>
+                </div>
+            </div>
             <div className="grid md:grid-cols-2 gap-4">
                 {faqs.map((f, index) => (
                     <div key={`${f._id || f.id || 'faq'}-${index}`} className="p-4 rounded-lg border bg-card flex justify-between group">
@@ -1486,7 +1675,21 @@ function JobManager({ data, onUpdate, refreshData }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-end"><Button onClick={() => handleOpen(null, false)}>Post Job</Button></div>
+            <div className="flex justify-between items-center">
+                <div className="flex gap-1">
+                    <Badge variant="outline">Open Roles: {jobs.length}</Badge>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => refreshData()} title="Refresh Data">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Refresh
+                    </Button>
+                    <Button onClick={() => handleOpen(null, false)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Post Job
+                    </Button>
+                </div>
+            </div>
             <div className="rounded-md border bg-card">
                 <Table>
                     <TableHeader><TableRow><TableHead>Position</TableHead><TableHead>Department</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>

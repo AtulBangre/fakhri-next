@@ -210,14 +210,21 @@ async function seed() {
 
         // Seed Testimonials
         await Testimonial.insertMany(allTestimonials.map(t => ({
-            name: t.author.name,
-            role: t.author.role || t.author.handle,
-            company: t.author.company,
-            image: t.author.image,
+            type: t.type || 'social',
+            category: t.category || 'General',
+            author: {
+                name: t.author.name,
+                role: t.author.role,
+                company: t.author.company,
+                handle: t.author.handle,
+                image: t.author.image
+            },
             content: t.content,
-            rating: t.rating,
-            category: t.category,
-            metric: t.metric
+            quote: t.content,
+            rating: t.rating || 5,
+            metric: t.metric,
+            featured: t.featured || false,
+            order: t.order || 0
         })));
         console.log(`Seeded ${allTestimonials.length} testimonials`);
 
