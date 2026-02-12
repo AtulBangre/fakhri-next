@@ -1,5 +1,6 @@
 ﻿"use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Search, Edit, Trash2, Save, X, ChevronRight, FileText, MessageSquare, HelpCircle, Briefcase, Building, Users, DollarSign, List, Shield, Eye, Check, GripVertical, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ import {
 import { getBlogPosts, upsertBlogPost, deleteBlogPost } from "@/lib/actions/blog";
 
 export default function WebsiteTab() {
+    const router = useRouter();
     const [activeCategory, setActiveCategory] = useState("Company");
     const [loading, setLoading] = useState(true);
 
@@ -47,65 +49,67 @@ export default function WebsiteTab() {
     const [jobs, setJobs] = useState([]);
     const [posts, setPosts] = useState([]);
 
-    useEffect(() => {
-        async function loadAllData() {
-            try {
-                const [
-                    companyData,
-                    teamData,
-                    plansData,
-                    servicesData,
-                    catalogData,
-                    testimonialData,
-                    faqsData,
-                    jobsData,
-                    blogData
-                ] = await Promise.all([
-                    getCompanyData(),
-                    getTeamMembers(),
-                    getPricingPlans(),
-                    getServices(),
-                    getCatalogServices(),
-                    getTestimonials(),
-                    getFAQs(),
-                    getJobs(),
-                    getBlogPosts()
-                ]);
+    const loadAllData = useCallback(async (silent = false) => {
+        if (!silent) setLoading(true);
+        try {
+            const [
+                companyData,
+                teamData,
+                plansData,
+                servicesData,
+                catalogData,
+                testimonialData,
+                faqsData,
+                jobsData,
+                blogData
+            ] = await Promise.all([
+                getCompanyData(),
+                getTeamMembers(),
+                getPricingPlans(),
+                getServices(),
+                getCatalogServices(),
+                getTestimonials(),
+                getFAQs(),
+                getJobs(),
+                getBlogPosts()
+            ]);
 
-                setCompanyInfo(companyData || {});
-                setMembers(teamData || []);
-                setPricingPlans(plansData || []);
-                setServices(servicesData || []);
-                setCatalog(catalogData || []);
+            setCompanyInfo(companyData || {});
+            setMembers(teamData || []);
+            setPricingPlans(plansData || []);
+            setServices(servicesData || []);
+            setCatalog(catalogData || []);
 
-                // Add default values for testimonials if needed
-                const processedTestimonials = (testimonialData || []).map(t => ({
-                    ...t,
-                    rating: t.rating || 5,
-                    author: t.author || { name: "Anonymous", role: "Client", company: "", handle: "", image: "" },
-                    metric: t.metric || { label: "", value: "" }
-                }));
-                setTestimonials(processedTestimonials);
+            // Add default values for testimonials if needed
+            const processedTestimonials = (testimonialData || []).map(t => ({
+                ...t,
+                rating: t.rating || 5,
+                author: t.author || { name: "Anonymous", role: "Client", company: "", handle: "", image: "" },
+                metric: t.metric || { label: "", value: "" }
+            }));
+            setTestimonials(processedTestimonials);
 
-                // Ensure FAQ categories exist
-                const processedFaqs = (faqsData || []).map(f => ({
-                    ...f,
-                    categories: f.categories || { home: false, pricing: false, dashboard: false }
-                }));
-                setFaqs(processedFaqs);
+            // Ensure FAQ categories exist
+            const processedFaqs = (faqsData || []).map(f => ({
+                ...f,
+                categories: f.categories || { home: false, pricing: false, dashboard: false }
+            }));
+            setFaqs(processedFaqs);
 
-                setJobs(jobsData || []);
-                setPosts(blogData?.posts || []);
+            setJobs(jobsData || []);
+            setPosts(blogData?.posts || []);
 
-            } catch (error) {
-                console.error("Failed to load CMS data:", error);
-                toast.error("Failed to load some content data");
-            } finally {
-                setLoading(false);
-            }
+        } catch (error) {
+            console.error("Failed to load CMS data:", error);
+            if (!silent) toast.error("Failed to load some content data");
+        } finally {
+            setLoading(false);
         }
-        loadAllData();
     }, []);
+
+    useEffect(() => {
+        loadAllData();
+    }, [loadAllData]);
 
     const categories = [
         { id: "Company", label: "Company Info", icon: Building },
@@ -154,15 +158,15 @@ export default function WebsiteTab() {
             </div>
 
             <div className="min-h-[500px]">
-                {activeCategory === "Company" && <CompanyManager data={companyInfo} onUpdate={setCompanyInfo} />}
-                {activeCategory === "Team" && <TeamManager data={members} onUpdate={setMembers} />}
-                {activeCategory === "Pricing" && <PricingManager data={pricingPlans} onUpdate={setPricingPlans} />}
-                {activeCategory === "Services" && <ServiceManager data={services} onUpdate={setServices} />}
-                {activeCategory === "Catalog" && <CatalogManager data={catalog} onUpdate={setCatalog} />}
-                {activeCategory === "Blogs" && <BlogManager data={posts} onUpdate={setPosts} />}
-                {activeCategory === "Testimonials" && <TestimonialManager data={testimonials} onUpdate={setTestimonials} />}
-                {activeCategory === "FAQs" && <FAQManager data={faqs} onUpdate={setFaqs} />}
-                {activeCategory === "Jobs" && <JobManager data={jobs} onUpdate={setJobs} />}
+                {activeCategory === "Company" && <CompanyManager data={companyInfo} onUpdate={setCompanyInfo} refreshData={loadAllData} />}
+                {activeCategory === "Team" && <TeamManager data={members} onUpdate={setMembers} refreshData={loadAllData} />}
+                {activeCategory === "Pricing" && <PricingManager data={pricingPlans} onUpdate={setPricingPlans} refreshData={loadAllData} />}
+                {activeCategory === "Services" && <ServiceManager data={services} onUpdate={setServices} refreshData={loadAllData} />}
+                {activeCategory === "Catalog" && <CatalogManager data={catalog} onUpdate={setCatalog} refreshData={loadAllData} />}
+                {activeCategory === "Blogs" && <BlogManager data={posts} onUpdate={setPosts} refreshData={loadAllData} />}
+                {activeCategory === "Testimonials" && <TestimonialManager data={testimonials} onUpdate={setTestimonials} refreshData={loadAllData} />}
+                {activeCategory === "FAQs" && <FAQManager data={faqs} onUpdate={setFaqs} refreshData={loadAllData} />}
+                {activeCategory === "Jobs" && <JobManager data={jobs} onUpdate={setJobs} refreshData={loadAllData} />}
             </div>
         </div>
     );
@@ -301,7 +305,7 @@ function CompanyManager({ data, onUpdate }) {
 
 // 2. Team Manager
 // 2. Team Manager
-function TeamManager({ data, onUpdate }) {
+function TeamManager({ data, onUpdate, refreshData }) {
     const [members, setMembers] = useState(Array.isArray(data) ? data : []);
 
     useEffect(() => {
@@ -353,16 +357,15 @@ function TeamManager({ data, onUpdate }) {
         try {
             const savedMember = await upsertTeamMember(newMember);
             if (savedMember) {
-                let updatedMembers;
-                if (currentMember) {
-                    updatedMembers = members.map(m => (m._id === savedMember._id || m.id === savedMember.id) ? savedMember : m);
-                } else {
-                    updatedMembers = [...members, savedMember];
-                }
+                const updatedMembers = members.some(m => m._id === savedMember._id || m.id === savedMember.id)
+                    ? members.map(m => (m._id === savedMember._id || m.id === savedMember.id) ? savedMember : m)
+                    : [...members, savedMember];
+
                 setMembers(updatedMembers);
                 onUpdate(updatedMembers);
                 toast.success(currentMember ? "Updated" : "Added");
                 setIsDialogOpen(false);
+                if (refreshData) refreshData(true);
             } else {
                 toast.error("Failed to save team member");
             }
@@ -380,8 +383,8 @@ function TeamManager({ data, onUpdate }) {
             <div className="rounded-md border bg-card">
                 <Table>
                     <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Role</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                    <TableBody>{members.map(m => (
-                        <TableRow key={m._id || m.id}>
+                    <TableBody>{members.map((m, index) => (
+                        <TableRow key={`${m._id || m.id || 'member'}-${index}`}>
                             <TableCell className="font-medium flex items-center gap-2"><img src={m.image} className="w-8 h-8 rounded-full object-cover" />{m.name}</TableCell>
                             <TableCell>{m.role}</TableCell><TableCell><Badge variant="outline">{m.category}</Badge></TableCell>
                             <TableCell className="text-right">
@@ -434,7 +437,7 @@ function TeamManager({ data, onUpdate }) {
 
 // 3. Pricing Manager
 // 3. Pricing Manager
-function PricingManager({ data, onUpdate }) {
+function PricingManager({ data, onUpdate, refreshData }) {
     const [pricingData, setPricingData] = useState(Array.isArray(data) ? data : []);
 
     useEffect(() => {
@@ -466,19 +469,15 @@ function PricingManager({ data, onUpdate }) {
         try {
             const savedPlan = await upsertPricingPlan(updatedPlan);
             if (savedPlan) {
-                const updatedList = pricingData.map(p =>
-                    (p._id === savedPlan._id || p.id === savedPlan.id || p.planId === savedPlan.planId) ? savedPlan : p
-                );
-
-                // If not found in map (because it's theoretically new, although UI seems to only allow editing existing for now, but assume adding possible too)
-                if (!updatedList.find(p => p._id === savedPlan._id)) {
-                    updatedList.push(savedPlan);
-                }
+                const updatedList = pricingData.some(p => p._id === savedPlan._id || p.id === savedPlan.id || (p.planId && p.planId === savedPlan.planId))
+                    ? pricingData.map(p => (p._id === savedPlan._id || p.id === savedPlan.id || (p.planId && p.planId === savedPlan.planId)) ? savedPlan : p)
+                    : [...pricingData, savedPlan];
 
                 setPricingData(updatedList);
                 onUpdate(updatedList);
-                toast.success("Updated");
+                toast.success("Pricing plan updated successfully");
                 setIsDialogOpen(false);
+                if (refreshData) refreshData(true);
             } else {
                 toast.error("Failed to update plan");
             }
@@ -493,8 +492,8 @@ function PricingManager({ data, onUpdate }) {
     return (
         <div className="space-y-6">
             <div className="grid md:grid-cols-3 gap-6">
-                {pricingData.map((plan) => (
-                    <Card key={plan._id || plan.id || plan.planId} className={plan.highlighted ? "border-primary ring-1 ring-primary" : ""}>
+                {pricingData.map((plan, index) => (
+                    <Card key={`${plan._id || plan.id || plan.planId || 'plan'}-${index}`} className={plan.highlighted ? "border-primary ring-1 ring-primary" : ""}>
                         <CardHeader>
                             <div className="flex justify-between items-start">
                                 <div><CardTitle>{plan.name}</CardTitle><CardDescription>{plan.subtitle}</CardDescription></div>
@@ -543,7 +542,7 @@ function PricingManager({ data, onUpdate }) {
 
 // 4. Catalog Manager
 // 4. Catalog Manager
-function CatalogManager({ data, onUpdate }) {
+function CatalogManager({ data, onUpdate, refreshData }) {
     const [services, setServices] = useState(Array.isArray(data) ? data : []);
 
     useEffect(() => {
@@ -575,16 +574,15 @@ function CatalogManager({ data, onUpdate }) {
         try {
             const savedService = await upsertCatalogService(newService);
             if (savedService) {
-                let updatedServices;
-                if (currentService) {
-                    updatedServices = services.map(s => (s._id === savedService._id || s.id === savedService.id) ? savedService : s);
-                } else {
-                    updatedServices = [...services, savedService];
-                }
+                const updatedServices = services.some(s => s._id === savedService._id || s.id === savedService.id)
+                    ? services.map(s => (s._id === savedService._id || s.id === savedService.id) ? savedService : s)
+                    : [...services, savedService];
+
                 setServices(updatedServices);
                 onUpdate(updatedServices);
                 toast.success(currentService ? "Updated" : "Added");
                 setIsDialogOpen(false);
+                if (refreshData) refreshData(true);
             } else {
                 toast.error("Failed to save catalog item");
             }
@@ -623,8 +621,8 @@ function CatalogManager({ data, onUpdate }) {
             <div className="rounded-md border bg-card">
                 <Table>
                     <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Category</TableHead><TableHead>Standard</TableHead><TableHead>Priority (2 hr) </TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                    <TableBody>{services.filter(s => s.name?.toLowerCase().includes(search.toLowerCase())).map(s => (
-                        <TableRow key={s._id || s.id}>
+                    <TableBody>{services.filter(s => s.name?.toLowerCase().includes(search.toLowerCase())).map((s, index) => (
+                        <TableRow key={`${s._id || s.id || 'catalog'}-${index}`}>
                             <TableCell className="font-medium">{s.name}</TableCell><TableCell><Badge variant="outline">{s.category}</Badge></TableCell>
                             <TableCell>{s.pricing?.standard ? `₹${s.pricing.standard.price}` : "-"}</TableCell><TableCell>{s.pricing?.priority ? `₹${s.pricing.priority.price}` : "-"}</TableCell>
                             <TableCell className="text-right">
@@ -680,7 +678,7 @@ const quillModules = {
 };
 
 // 5. Blog Manager
-function BlogManager({ data, onUpdate }) {
+function BlogManager({ data, onUpdate, refreshData }) {
     const [posts, setPosts] = useState(Array.isArray(data) ? data : []);
 
     // Sync with parent data if it's fetched asynchronously
@@ -780,17 +778,16 @@ function BlogManager({ data, onUpdate }) {
         try {
             const savedPost = await upsertBlogPost(newPost);
             if (savedPost) {
-                let updatedPosts;
-                if (currentPost) {
-                    updatedPosts = posts.map(p => (p._id === savedPost._id || p.id === savedPost.id) ? savedPost : p);
-                } else {
-                    updatedPosts = [savedPost, ...posts];
-                }
+                const updatedPosts = posts.some(p => p._id === savedPost._id || p.id === savedPost.id)
+                    ? posts.map(p => (p._id === savedPost._id || p.id === savedPost.id) ? savedPost : p)
+                    : [savedPost, ...posts];
+
                 setPosts(updatedPosts);
                 onUpdate(updatedPosts);
 
                 toast.success(currentPost ? "Updated" : "Created");
                 setIsDialogOpen(false);
+                if (refreshData) refreshData(true);
             } else {
                 toast.error("Failed to save blog post");
             }
@@ -808,8 +805,8 @@ function BlogManager({ data, onUpdate }) {
             <div className="rounded-md border bg-card">
                 <Table>
                     <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Author</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                    <TableBody>{posts.map(p => (
-                        <TableRow key={p._id || p.id}>
+                    <TableBody>{posts.map((p, index) => (
+                        <TableRow key={`${p._id || p.id || 'post'}-${index}`}>
                             <TableCell className="font-medium max-w-xs truncate">{p.title}</TableCell><TableCell><Badge variant="outline">{p.category}</Badge></TableCell><TableCell>{p.author?.name}</TableCell>
                             <TableCell className="text-right">
                                 <Button variant="ghost" size="icon" onClick={() => handleOpen(p, true)}><Eye className="w-4 h-4" /></Button>
@@ -930,7 +927,7 @@ function BlogManager({ data, onUpdate }) {
 }
 
 // 6. Service Manager
-function ServiceManager({ data, onUpdate }) {
+function ServiceManager({ data, onUpdate, refreshData }) {
     const [services, setServices] = useState(Array.isArray(data) ? data : []);
 
     useEffect(() => {
@@ -994,16 +991,17 @@ function ServiceManager({ data, onUpdate }) {
         try {
             const savedService = await upsertService(newService);
             if (savedService) {
-                let updatedServices;
-                if (currentService) {
-                    updatedServices = services.map(s => (s._id === savedService._id || s.id === savedService.id) ? savedService : s);
-                } else {
-                    updatedServices = [...services, savedService];
-                }
-                setServices(updatedServices);
-                onUpdate(updatedServices);
+                const updatedServices = services.some(s => s._id === savedService._id || s.id === savedService.id)
+                    ? services.map(s => (s._id === savedService._id || s.id === savedService.id) ? savedService : s)
+                    : [...services, savedService];
+
+                const sortedServices = updatedServices.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+                setServices(sortedServices);
+                onUpdate(sortedServices);
                 toast.success(currentService ? "Updated" : "Added");
                 setIsDialogOpen(false);
+                if (refreshData) refreshData(true);
             } else {
                 toast.error("Failed to save service");
             }
@@ -1021,8 +1019,8 @@ function ServiceManager({ data, onUpdate }) {
             <div className="rounded-md border bg-card">
                 <Table>
                     <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Icon</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                    <TableBody>{services.map(s => (
-                        <TableRow key={s._id || s.id}>
+                    <TableBody>{services.map((s, index) => (
+                        <TableRow key={`${s._id || s.id || 'service'}-${index}`}>
                             <TableCell className="font-medium">{s.title}</TableCell><TableCell><Badge variant="outline">{s.category}</Badge></TableCell><TableCell><code className="text-xs bg-muted px-1 rounded">{s.icon}</code></TableCell>
                             <TableCell className="text-right">
                                 <Button variant="ghost" size="icon" onClick={() => handleOpen(s, true)}><Eye className="w-4 h-4" /></Button>
@@ -1078,7 +1076,7 @@ function ServiceManager({ data, onUpdate }) {
 }
 
 // 7. Testimonial Manager
-function TestimonialManager({ data, onUpdate }) {
+function TestimonialManager({ data, onUpdate, refreshData }) {
     const [testimonials, setTestimonials] = useState(Array.isArray(data) ? data : []);
 
     useEffect(() => {
@@ -1154,16 +1152,17 @@ function TestimonialManager({ data, onUpdate }) {
                 savedTestimonial.author = savedTestimonial.author || {};
                 savedTestimonial.metric = savedTestimonial.metric || {};
 
-                let updatedTestimonials;
-                if (currentTestimonial) {
-                    updatedTestimonials = testimonials.map(t => (t._id === savedTestimonial._id || t.id === savedTestimonial.id) ? savedTestimonial : t);
-                } else {
-                    updatedTestimonials = [...testimonials, savedTestimonial];
-                }
-                setTestimonials(updatedTestimonials);
-                onUpdate(updatedTestimonials);
+                const updatedTestimonials = testimonials.some(t => t._id === savedTestimonial._id || t.id === savedTestimonial.id)
+                    ? testimonials.map(t => (t._id === savedTestimonial._id || t.id === savedTestimonial.id) ? savedTestimonial : t)
+                    : [...testimonials, savedTestimonial];
+
+                const sortedTestimonials = updatedTestimonials.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+                setTestimonials(sortedTestimonials);
+                onUpdate(sortedTestimonials);
                 toast.success(currentTestimonial ? "Updated" : "Added");
                 setIsDialogOpen(false);
+                if (refreshData) refreshData(true);
             } else {
                 toast.error("Failed to save testimonial");
             }
@@ -1179,8 +1178,8 @@ function TestimonialManager({ data, onUpdate }) {
         <div className="space-y-4">
             <div className="flex justify-between"><Input placeholder="Search..." className="max-w-sm" /><Button onClick={() => handleOpen(null, false)}>Add Testimonial</Button></div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {testimonials.map((t) => (
-                    <Card key={t._id || t.id} className="relative group hover:shadow-md transition-shadow">
+                {testimonials.map((t, index) => (
+                    <Card key={`${t._id || t.id || 'testimonial'}-${index}`} className="relative group hover:shadow-md transition-shadow">
                         <CardHeader className="pb-2">
                             <div className="flex items-center gap-4">
                                 <img src={t.author?.image || undefined} className="w-12 h-12 rounded-full object-cover" />
@@ -1250,7 +1249,7 @@ function TestimonialManager({ data, onUpdate }) {
 }
 
 // 8. FAQ Manager
-function FAQManager({ data, onUpdate }) {
+function FAQManager({ data, onUpdate, refreshData }) {
     const [faqs, setFaqs] = useState(Array.isArray(data) ? data : []);
 
     useEffect(() => {
@@ -1317,16 +1316,17 @@ function FAQManager({ data, onUpdate }) {
                 // Ensure helper structures exist for UI consistency
                 savedFaq.categories = savedFaq.categories || { home: false, pricing: false, dashboard: false };
 
-                let updatedFaqs;
-                if (currentFaq) {
-                    updatedFaqs = faqs.map(f => (f._id === savedFaq._id || f.id === savedFaq.id) ? savedFaq : f);
-                } else {
-                    updatedFaqs = [...faqs, savedFaq];
-                }
-                setFaqs(updatedFaqs);
-                onUpdate(updatedFaqs);
+                const updatedFaqs = faqs.some(f => f._id === savedFaq._id || f.id === savedFaq.id)
+                    ? faqs.map(f => (f._id === savedFaq._id || f.id === savedFaq.id) ? savedFaq : f)
+                    : [...faqs, savedFaq];
+
+                const sortedFaqs = updatedFaqs.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+                setFaqs(sortedFaqs);
+                onUpdate(sortedFaqs);
                 toast.success(currentFaq ? "Updated" : "Added");
                 setIsDialogOpen(false);
+                if (refreshData) refreshData(true);
             } else {
                 toast.error("Failed to save FAQ");
             }
@@ -1342,8 +1342,8 @@ function FAQManager({ data, onUpdate }) {
         <div className="space-y-4">
             <div className="flex justify-end"><Button onClick={() => handleOpen(null, false)}>Add FAQ</Button></div>
             <div className="grid md:grid-cols-2 gap-4">
-                {faqs.map((f, i) => (
-                    <div key={f._id || f.id || i} className="p-4 rounded-lg border bg-card flex justify-between group">
+                {faqs.map((f, index) => (
+                    <div key={`${f._id || f.id || 'faq'}-${index}`} className="p-4 rounded-lg border bg-card flex justify-between group">
                         <div className="flex-1 space-y-2">
                             <div className="flex items-center gap-2">
                                 <h4 className="font-medium">{f.question}</h4>
@@ -1404,7 +1404,7 @@ function FAQManager({ data, onUpdate }) {
 }
 
 // 9. Job Manager
-function JobManager({ data, onUpdate }) {
+function JobManager({ data, onUpdate, refreshData }) {
     const [jobs, setJobs] = useState(Array.isArray(data) ? data : []);
 
     useEffect(() => {
@@ -1464,16 +1464,15 @@ function JobManager({ data, onUpdate }) {
         try {
             const savedJob = await upsertJob(newJob);
             if (savedJob) {
-                let updatedJobs;
-                if (currentJob) {
-                    updatedJobs = jobs.map(j => (j._id === savedJob._id || j.id === savedJob.id) ? savedJob : j);
-                } else {
-                    updatedJobs = [...jobs, savedJob];
-                }
+                const updatedJobs = jobs.some(j => j._id === savedJob._id || j.id === savedJob.id)
+                    ? jobs.map(j => (j._id === savedJob._id || j.id === savedJob.id) ? savedJob : j)
+                    : [...jobs, savedJob];
+
                 setJobs(updatedJobs);
                 onUpdate(updatedJobs);
                 toast.success(currentJob ? "Updated" : "Created");
                 setIsDialogOpen(false);
+                if (refreshData) refreshData(true);
             } else {
                 toast.error("Failed to save job");
             }
@@ -1491,8 +1490,8 @@ function JobManager({ data, onUpdate }) {
             <div className="rounded-md border bg-card">
                 <Table>
                     <TableHeader><TableRow><TableHead>Position</TableHead><TableHead>Department</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                    <TableBody>{jobs.map(j => (
-                        <TableRow key={j._id || j.id}>
+                    <TableBody>{jobs.map((j, index) => (
+                        <TableRow key={`${j._id || j.id || 'job'}-${index}`}>
                             <TableCell className="font-medium">{j.title}</TableCell><TableCell>{j.department}</TableCell><TableCell><Badge variant="secondary">{j.type}</Badge></TableCell>
                             <TableCell className="text-right">
                                 <Button variant="ghost" size="icon" onClick={() => handleOpen(j, true)}><Eye className="h-4 w-4" /></Button>
