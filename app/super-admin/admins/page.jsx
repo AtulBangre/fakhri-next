@@ -1,12 +1,42 @@
 "use client";
-import { Plus, MoreVertical } from "lucide-react";
+
+import { useState, useEffect } from "react";
+import { Plus, MoreVertical, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu";
-import { admins } from "@/data/admins";
+import { getUsers } from "@/lib/actions/user";
+
 const SuperAdminAdmins = () => {
+  const [admins, setAdmins] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadAdmins = async () => {
+      setLoading(true);
+      try {
+        const { users } = await getUsers({ role: 'admin' });
+        setAdmins(users || []);
+      } catch (error) {
+        console.error("Error loading admins:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAdmins();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground animate-pulse">Loading admins...</p>
+      </div>
+    );
+  }
+
   return (<div className="space-y-6">
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
@@ -33,11 +63,11 @@ const SuperAdminAdmins = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {admins.map((admin) => (<TableRow key={admin.id}>
+          {admins.length > 0 ? admins.map((admin) => (<TableRow key={admin._id}>
             <TableCell>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                  {admin.name.split(' ').map(n => n[0]).join('')}
+                  {admin.name?.split(' ').map(n => n[0]).join('') || "AD"}
                 </div>
                 <div>
                   <p className="font-medium">{admin.name}</p>
@@ -47,11 +77,11 @@ const SuperAdminAdmins = () => {
             </TableCell>
             <TableCell>
               <Badge variant={admin.role === "Senior Manager" || admin.role === "Team Lead" ? "default" : "secondary"}>
-                {admin.role}
+                {admin.adminRole || admin.role}
               </Badge>
             </TableCell>
-            <TableCell className="text-muted-foreground">{admin.team}</TableCell>
-            <TableCell>{admin.clients}</TableCell>
+            <TableCell className="text-muted-foreground">{admin.teamName || admin.team || "N/A"}</TableCell>
+            <TableCell>{admin.clientsCount || 0}</TableCell>
             <TableCell>
               <div className="flex items-center gap-2">
                 <Switch defaultChecked={admin.status === "active"} />
@@ -75,10 +105,17 @@ const SuperAdminAdmins = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             </TableCell>
-          </TableRow>))}
+          </TableRow>)) : (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                No admin users found.
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
     </div>
   </div>);
 };
 export default SuperAdminAdmins;
+

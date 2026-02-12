@@ -1,3 +1,4 @@
+import { getPricingPlans, getFAQs, getServices } from '@/lib/actions/content';
 import PricingContent from '@/components/pricing/PricingContent';
 
 export const metadata = {
@@ -6,6 +7,22 @@ export const metadata = {
     keywords: "Amazon services pricing, seller services cost, Amazon management packages",
 };
 
-export default function PricingPage() {
-    return <PricingContent />;
+export default async function PricingPage() {
+    const [plans, faqs, servicesRaw] = await Promise.all([
+        getPricingPlans(),
+        getFAQs('pricing'),
+        getServices()
+    ]);
+
+    // Format services for the add-ons list
+    const services = servicesRaw
+        .filter(srv => srv.pricing && srv.pricing.standard && srv.pricing.standard.price)
+        .map(srv => ({
+            id: srv._id,
+            name: srv.title,
+            category: srv.category,
+            price: srv.pricing.standard.price
+        }));
+
+    return <PricingContent plans={plans} faqs={faqs} services={services} />;
 }

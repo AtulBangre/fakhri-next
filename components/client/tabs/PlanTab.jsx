@@ -1,69 +1,87 @@
 "use client";
-import { useState } from "react";
-import { CheckCircle2, Star, Plus, ShoppingCart, Zap, Image, Target, TrendingUp, Package, DollarSign, FileText } from "lucide-react";
+
+import { useState, useEffect, useMemo } from "react";
+import { CheckCircle2, Star, Plus, ShoppingCart, Loader2, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { servicesCatalog } from "@/data/servicesCatalog";
-import { getClientById } from "@/data/clients";
-import { plans, planFeatures as allPlanFeatures } from "@/data/pricingPlans";
-
-const CURRENT_CLIENT_ID = 1;
-
-const purchasedAddOns = [
-    { id: 1, name: "Extra A+ Content Design", quantity: 2, date: "Jan 10, 2026", status: "completed" },
-    { id: 2, name: "PPC Campaign Boost", quantity: 1, date: "Dec 20, 2025", status: "in-progress" },
-];
+import { getUsers } from "@/lib/actions/user";
+import { getPricingPlans, getCatalogServices } from "@/lib/actions/content";
 
 const ClientPlanTab = () => {
+    const [loading, setLoading] = useState(true);
     const [activeSubTab, setActiveSubTab] = useState("plan");
+    const [client, setClient] = useState(null);
+    const [allPlans, setAllPlans] = useState([]);
+    const [catalogServices, setCatalogServices] = useState([]);
 
-    const client = getClientById(CURRENT_CLIENT_ID);
+    useEffect(() => {
+        const loadPlanData = async () => {
+            setLoading(true);
+            try {
+                // Fetch first client for demo purposes
+                const { users } = await getUsers({ role: 'client', limit: 1 });
+                if (users && users.length > 0) {
+                    setClient(users[0]);
+                }
 
-    if (!client) return <div>Loading...</div>;
+                const plansData = await getPricingPlans();
+                setAllPlans(plansData);
+
+                const servicesData = await getCatalogServices();
+                setCatalogServices(servicesData);
+            } catch (error) {
+                console.error("Error loading plan data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadPlanData();
+    }, []);
 
     // Find current plan details
-    const currentPlan = plans.find(p =>
-        p.heading?.toLowerCase() === client.plan.toLowerCase() ||
-        p.name?.toLowerCase() === client.plan.toLowerCase() ||
-        p.id?.toLowerCase() === client.plan.toLowerCase()
-    );
+    const currentPlan = useMemo(() => {
+        if (!client || !allPlans.length) return null;
+        return allPlans.find(p =>
+            p.name?.toLowerCase() === client.plan?.toLowerCase() ||
+            p._id === client.plan
+        );
+    }, [client, allPlans]);
 
-    // Map features for the UI
-    const planFeatures = allPlanFeatures.map(feature => {
-        const planKey = client.plan.toLowerCase();
-        const value = feature.values[planKey];
-        const isIncluded = feature.included.includes(planKey);
-
-        // Determine display text
-        let displayText = feature.text;
-        if (value && typeof value === 'string' && value !== 'Basic' && value !== 'Advanced') {
-            displayText = `${feature.text} (${value})`;
-        }
-
-        return {
-            name: displayText,
-            included: isIncluded,
-            // Mock usage for specific features if needed, or leave undefined
-            value: value
-        };
-    });
-
-    const availableAddOnServices = servicesCatalog
-        .filter(s => s.pricing.standard !== null)
-        .map(s => ({
-            id: s.id,
+    // Available Add-on Services from Catalog
+    const availableAddOnServices = useMemo(() => {
+        return catalogServices.map(s => ({
+            id: s._id,
             name: s.name,
-            description: s.shortDescription || "Professional service for your Amazon business.",
-            price: `₹${s.pricing.standard.price}`,
-            priceType: s.pricing.standard.label || "per service",
-            icon: Package, // Default icon
-            popular: false
+            description: s.description || "Professional service for your Amazon business.",
+            price: s.price ? `₹${s.price}` : "Custom",
+            priceType: s.priceType || "per service",
+            icon: Package,
+            popular: s.isPopular || false
         }));
+    }, [catalogServices]);
 
     // Mock dates
-    const startDate = client.joinedDate || "Dec 15, 2025";
-    const validUntil = "Mar 15, 2026";
+    const startDate = client?.createdAt ? new Date(client.createdAt).toLocaleDateString() : "N/A";
+    const validUntil = client?.createdAt ? new Date(new Date(client.createdAt).setMonth(new Date(client.createdAt).getMonth() + 1)).toLocaleDateString() : "N/A";
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground animate-pulse">Loading plan details...</p>
+            </div>
+        );
+    }
+
+    if (!client) {
+        return (
+            <div className="bg-card rounded-xl border p-12 text-center">
+                <h2 className="text-xl font-semibold mb-2">Account Not Found</h2>
+                <p className="text-muted-foreground">We couldn't load your plan details. Please contact support.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -104,14 +122,14 @@ const ClientPlanTab = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <Badge className="bg-white/20 text-white mb-2">Current Plan</Badge>
-                                    <h2 className="font-heading text-3xl font-bold">{currentPlan?.name || client.plan}</h2>
-                                    <p className="text-white/80 mt-1">{currentPlan?.prices.monthly || "₹0"} / month</p>
+                                    <h2 className="font-heading text-3xl font-bold uppercase">{currentPlan?.name || client.plan || "No Plan"}</h2>
+                                    <p className="text-white/80 mt-1">₹{currentPlan?.price || 0} / month</p>
                                 </div>
                                 <div className="text-right">
                                     <div className="flex items-center gap-1 text-yellow-300 mb-2">
                                         {[1, 2, 3, 4, 5].map((i) => (<Star key={i} className="h-4 w-4 fill-current" />))}
                                     </div>
-                                    <p className="text-sm text-white/80">{currentPlan?.highlighted ? "Most Popular" : "Active Plan"}</p>
+                                    <p className="text-sm text-white/80">{currentPlan?.isPopular ? "Most Popular" : "Active Plan"}</p>
                                 </div>
                             </div>
                         </div>
@@ -127,22 +145,25 @@ const ClientPlanTab = () => {
                                     <p className="font-semibold">{validUntil}</p>
                                 </div>
                                 <div className="p-4 rounded-lg bg-accent/50">
-                                    <p className="text-sm text-muted-foreground">Days Remaining</p>
-                                    <p className="font-semibold">52 days</p>
+                                    <p className="text-sm text-muted-foreground">Account Status</p>
+                                    <p className="font-semibold capitalize text-primary">{client.status || "Active"}</p>
                                 </div>
                             </div>
 
                             <h3 className="font-heading font-semibold mb-4">Included Services</h3>
                             <div className="space-y-3">
-                                {planFeatures.map((feature, i) => (
-                                    <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
-                                        <div className="flex items-center gap-3">
-                                            <CheckCircle2 className={`h-4 w-4 ${feature.included ? "text-primary" : "text-muted-foreground"}`} />
-                                            <span className={feature.included ? "" : "text-muted-foreground"}>{feature.name}</span>
+                                {currentPlan?.features?.length > 0 ? (
+                                    currentPlan.features.map((feature, i) => (
+                                        <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
+                                            <div className="flex items-center gap-3">
+                                                <CheckCircle2 className="h-4 w-4 text-primary" />
+                                                <span>{feature}</span>
+                                            </div>
                                         </div>
-                                        {!feature.included && (<Badge variant="outline" className="text-xs">Not Included</Badge>)}
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">Contact support for list of included services.</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -151,11 +172,11 @@ const ClientPlanTab = () => {
                     <div className="bg-card rounded-xl border p-6 text-center">
                         <h3 className="font-heading font-semibold mb-2">Need More Features?</h3>
                         <p className="text-sm text-muted-foreground mb-4">
-                            Upgrade to Platinum for dedicated account manager and 24/7 phone support.
+                            Upgrade your plan to get dedicated support and more features.
                         </p>
-                        <button className="px-6 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
+                        <Button className="px-6 py-2">
                             View Upgrade Options
-                        </button>
+                        </Button>
                     </div>
                 </>
             )}
@@ -163,69 +184,49 @@ const ClientPlanTab = () => {
             {/* Add-on Services Tab Content */}
             {activeSubTab === "addons" && (
                 <>
-                    {/* Purchased Add-ons */}
-                    {purchasedAddOns.length > 0 && (
-                        <div className="bg-card rounded-xl border p-6">
-                            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
-                                <ShoppingCart className="h-5 w-5 text-primary" />
-                                Your Purchased Add-ons
-                            </h3>
-                            <div className="space-y-3">
-                                {purchasedAddOns.map((addon) => (
-                                    <div key={addon.id} className="flex items-center justify-between py-3 border-b last:border-0">
-                                        <div>
-                                            <p className="font-medium">{addon.name}</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Qty: {addon.quantity} • Purchased: {addon.date}
-                                            </p>
-                                        </div>
-                                        <Badge variant={addon.status === "completed" ? "default" : "secondary"}>
-                                            {addon.status === "completed" ? "Completed" : "In Progress"}
-                                        </Badge>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
                     {/* Available Add-on Services */}
                     <div>
-                        <h3 className="font-heading font-semibold mb-4">Available Add-on Services</h3>
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-
-                            {availableAddOnServices.map((service) => {
-                                const IconComponent = service.icon;
-                                return (
-                                    <div
-                                        key={service.id}
-                                        className="bg-card rounded-xl border p-5 hover:border-primary/30 transition-colors relative"
-                                    >
-                                        {service.popular && (
-                                            <Badge className="absolute -top-2 -right-2 bg-primary">Popular</Badge>
-                                        )}
-                                        <div className="flex items-start gap-3 mb-3">
-                                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                                <IconComponent className="h-5 w-5 text-primary" />
+                        <h3 className="font-heading font-semibold mb-4 text-lg">Available Add-on Services</h3>
+                        {availableAddOnServices.length > 0 ? (
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {availableAddOnServices.map((service) => {
+                                    const IconComponent = service.icon;
+                                    return (
+                                        <div
+                                            key={service.id}
+                                            className="bg-card rounded-xl border p-5 hover:border-primary/30 transition-colors relative"
+                                        >
+                                            {service.popular && (
+                                                <Badge className="absolute -top-2 -right-2 bg-primary">Popular</Badge>
+                                            )}
+                                            <div className="flex items-start gap-3 mb-3">
+                                                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                    <IconComponent className="h-5 w-5 text-primary" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="font-medium text-sm">{service.name}</h4>
+                                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{service.description}</p>
+                                                </div>
                                             </div>
-                                            <div className="flex-1">
-                                                <h4 className="font-medium text-sm">{service.name}</h4>
-                                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{service.description}</p>
+                                            <div className="flex items-center justify-between pt-3 border-t">
+                                                <div>
+                                                    <span className="font-heading font-bold text-lg text-primary">{service.price}</span>
+                                                    <span className="text-xs text-muted-foreground ml-1">{service.priceType}</span>
+                                                </div>
+                                                <Button size="sm" variant="outline">
+                                                    <Plus className="h-4 w-4 mr-1" />
+                                                    Add
+                                                </Button>
                                             </div>
                                         </div>
-                                        <div className="flex items-center justify-between pt-3 border-t">
-                                            <div>
-                                                <span className="font-heading font-bold text-lg text-primary">{service.price}</span>
-                                                <span className="text-xs text-muted-foreground ml-1">{service.priceType}</span>
-                                            </div>
-                                            <Button size="sm" variant="outline">
-                                                <Plus className="h-4 w-4 mr-1" />
-                                                Add
-                                            </Button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="bg-card rounded-xl border p-8 text-center text-muted-foreground">
+                                No add-on services available at the moment.
+                            </div>
+                        )}
                     </div>
 
                     {/* Custom Request CTA */}
@@ -243,4 +244,5 @@ const ClientPlanTab = () => {
         </div>
     );
 };
+
 export default ClientPlanTab;

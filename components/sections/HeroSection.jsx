@@ -1,16 +1,45 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Star } from "lucide-react";
+import { ArrowRight, CheckCircle2, Star, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { companyData } from "@/data/company";
-const stats = [
-  { value: companyData.stats[0].value, label: companyData.stats[0].label },
-  { value: companyData.stats[3].value, label: companyData.stats[3].label },
-  { value: companyData.stats[1].value, label: companyData.stats[1].label },
-  { value: "98%", label: "Client Retention" },
-];
+import { getCompanyData } from "@/lib/actions/content";
+
 const HeroSection = () => {
+  const [company, setCompany] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const data = await getCompanyData();
+        setCompany(data);
+      } catch (error) {
+        console.error("Error loading company data for Hero:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="relative overflow-hidden bg-gradient-hero min-h-[600px] flex items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary/50" />
+      </section>
+    );
+  }
+
+  const stats = [
+    { value: company?.stats?.[0]?.value || "500+", label: company?.stats?.[0]?.label || "Sellers Trusted" },
+    { value: company?.stats?.[3]?.value || "$50M+", label: company?.stats?.[3]?.label || "Client Revenue" },
+    { value: company?.stats?.[1]?.value || "8+", label: company?.stats?.[1]?.label || "Years Experience" },
+    { value: "98%", label: "Client Retention" },
+  ];
+
   return (<section className="relative overflow-hidden bg-gradient-hero">
     {/* Background Pattern */}
     <div className="absolute inset-0 opacity-[0.03]" style={{
@@ -32,9 +61,7 @@ const HeroSection = () => {
           </h1>
 
           <p className="text-lg text-muted-foreground max-w-lg">
-            Transform your Amazon business with expert account management,
-            strategic PPC campaigns, and premium brand services.
-            Trusted by 500+ sellers since 2016.
+            {company?.description || "Transform your Amazon business with expert account management, strategic PPC campaigns, and premium brand services. Trusted by 500+ sellers since 2016."}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4">
@@ -79,7 +106,7 @@ const HeroSection = () => {
                   </div>))}
                 </div>
                 <div className="text-sm">
-                  <span className="font-semibold">50+ expert account managers</span>
+                  <span className="font-semibold">{company?.stats?.[2]?.value || "25+"}+ expert account managers</span>
                   <p className="text-muted-foreground">Ready to scale your business</p>
                 </div>
               </div>
@@ -95,3 +122,4 @@ const HeroSection = () => {
   </section>);
 };
 export default HeroSection;
+

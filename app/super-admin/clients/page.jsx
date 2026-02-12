@@ -1,13 +1,47 @@
 "use client";
-import { Plus, Eye } from "lucide-react";
+
+import { useState, useEffect } from "react";
+import { Plus, Eye, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
-import { clients } from "@/data/clients";
-import { managerNames as managers } from "@/data/admins";
+import { getUsers } from "@/lib/actions/user";
+
 const SuperAdminClients = () => {
+  const [clients, setClients] = useState([]);
+  const [managers, setManagers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setLoading(true);
+      try {
+        const [clientsRes, adminsRes] = await Promise.all([
+          getUsers({ role: 'client' }),
+          getUsers({ role: 'admin' })
+        ]);
+        setClients(clientsRes.users || []);
+        setManagers(adminsRes.users || []);
+      } catch (error) {
+        console.error("Error loading clients data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadInitialData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground animate-pulse">Loading clients...</p>
+      </div>
+    );
+  }
+
   return (<div className="space-y-6">
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
@@ -41,7 +75,7 @@ const SuperAdminClients = () => {
         <SelectContent>
           <SelectItem value="all">All Managers</SelectItem>
           <SelectItem value="unassigned">Unassigned</SelectItem>
-          {managers.map((m) => (<SelectItem key={m} value={m.toLowerCase().replace(' ', '-')}>{m}</SelectItem>))}
+          {managers.map((m) => (<SelectItem key={m._id} value={m._id}>{m.name}</SelectItem>))}
         </SelectContent>
       </Select>
     </div>
@@ -60,33 +94,33 @@ const SuperAdminClients = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {clients.map((client) => (<TableRow key={client.id}>
+          {clients.length > 0 ? clients.map((client) => (<TableRow key={client._id}>
             <TableCell>
               <div>
                 <p className="font-medium">{client.name}</p>
-                <p className="text-xs text-muted-foreground">{client.company}</p>
+                <p className="text-xs text-muted-foreground">{client.company || "Personal"}</p>
               </div>
             </TableCell>
             <TableCell className="text-muted-foreground">{client.email}</TableCell>
             <TableCell>
               <Badge variant={client.plan === "Platinum" ? "default" : client.plan === "Premium" ? "secondary" : "outline"}>
-                {client.plan}
+                {client.plan || "N/A"}
               </Badge>
             </TableCell>
             <TableCell>
-              {client.manager === "Unassigned" ? (<Select>
+              {!client.managerId ? (<Select>
                 <SelectTrigger className="w-[160px] h-8 border-destructive">
                   <SelectValue placeholder="Assign Manager" />
                 </SelectTrigger>
                 <SelectContent>
-                  {managers.map((m) => (<SelectItem key={m} value={m.toLowerCase().replace(' ', '-')}>{m}</SelectItem>))}
+                  {managers.map((m) => (<SelectItem key={m._id} value={m._id}>{m.name}</SelectItem>))}
                 </SelectContent>
-              </Select>) : (<Select defaultValue={client.manager.toLowerCase().replace(' ', '-')}>
+              </Select>) : (<Select defaultValue={client.managerId}>
                 <SelectTrigger className="w-[160px] h-8">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {managers.map((m) => (<SelectItem key={m} value={m.toLowerCase().replace(' ', '-')}>{m}</SelectItem>))}
+                  {managers.map((m) => (<SelectItem key={m._id} value={m._id}>{m.name}</SelectItem>))}
                 </SelectContent>
               </Select>)}
             </TableCell>
@@ -100,10 +134,17 @@ const SuperAdminClients = () => {
                 <Eye className="h-4 w-4" />
               </Button>
             </TableCell>
-          </TableRow>))}
+          </TableRow>)) : (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                No clients found.
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
     </div>
   </div>);
 };
 export default SuperAdminClients;
+

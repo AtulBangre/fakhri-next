@@ -1,0 +1,52 @@
+﻿
+> fakhri-it-services@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.5 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 4.6s
+  Running TypeScript ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/29) ...
+  Generating static pages using 11 workers (7/29) 
+  Generating static pages using 11 workers (14/29) 
+  Generating static pages using 11 workers (21/29) 
+Γ£ô Generating static pages using 11 workers (29/29) in 1189.6ms
+  Finalizing page optimization ...
+
+Route (app)
+Γöî Γùï /
+Γö£ Γùï /_not-found
+Γö£ Γùï /about
+Γö£ Γùï /admin/clients
+Γö£ Γùï /admin/dashboard
+Γö£ Γùï /admin/files
+Γö£ Γùï /admin/profile
+Γö£ Γùï /admin/tasks
+Γö£ Γùï /blog
+Γö£ ╞Æ /blog/[slug]
+Γö£ Γùï /career
+Γö£ Γùï /client/billing
+Γö£ Γùï /client/dashboard
+Γö£ Γùï /client/files
+Γö£ Γùï /client/plan
+Γö£ Γùï /client/profile
+Γö£ Γùï /client/tasks
+Γö£ Γùï /contact
+Γö£ Γùï /pricing
+Γö£ Γùï /services
+Γö£ Γùï /super-admin/admins
+Γö£ Γùï /super-admin/clients
+Γö£ Γùï /super-admin/dashboard
+Γö£ Γùï /super-admin/sales
+Γö£ Γùï /super-admin/settings
+Γö£ Γùï /super-admin/tasks
+Γö£ Γùï /super-admin/teams
+Γöö Γùï /within-2-hours
+
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

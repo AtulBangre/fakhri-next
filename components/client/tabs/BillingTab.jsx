@@ -1,35 +1,68 @@
 "use client";
-import { Download, Eye, CreditCard } from "lucide-react";
+
+import { useState, useEffect } from "react";
+import { Download, Eye, CreditCard, Loader2 } from "lucide-react";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatINR } from "@/lib/utils";
-import { getInvoicesByClientId, getBillingSummaryByClientId } from "@/data/invoices";
-import { getClientById } from "@/data/clients";
-import { plans } from "@/data/pricingPlans";
-
-const CURRENT_CLIENT_ID = 1;
+import { getInvoices, getInvoiceSummary } from "@/lib/actions/invoice";
+import { getUsers } from "@/lib/actions/user";
 
 const ClientBillingTab = () => {
-    const client = getClientById(CURRENT_CLIENT_ID);
-    const invoices = getInvoicesByClientId(CURRENT_CLIENT_ID);
-    const billingSummary = getBillingSummaryByClientId(CURRENT_CLIENT_ID);
+    const [loading, setLoading] = useState(true);
+    const [client, setClient] = useState(null);
+    const [invoices, setInvoices] = useState([]);
+    const [summary, setSummary] = useState(null);
 
-    if (!client) return <div>Loading...</div>;
+    useEffect(() => {
+        const loadBillingData = async () => {
+            setLoading(true);
+            try {
+                // Fetch first client for demo purposes
+                const { users } = await getUsers({ role: 'client', limit: 1 });
+                if (users && users.length > 0) {
+                    const currentClient = users[0];
+                    setClient(currentClient);
 
-    // Find current plan details
-    const currentPlan = plans.find(p =>
-        p.name.toLowerCase() === client.plan.toLowerCase() ||
-        p.id.toLowerCase() === client.plan.toLowerCase()
-    );
+                    const invoicesResponse = await getInvoices({ clientId: currentClient._id, limit: 10 });
+                    setInvoices(invoicesResponse.invoices || []);
 
-    // Default to a fallback if plan not found (shouldn't happen with correct data)
-    const planPrice = currentPlan ? currentPlan.prices.monthly : "₹0";
+                    const summaryResponse = await getInvoiceSummary(currentClient._id);
+                    setSummary(summaryResponse);
+                }
+            } catch (error) {
+                console.error("Error loading client billing data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    // Calculate next payment date (mock: 30 days from last invoice or today)
-    const lastInvoiceDate = invoices.length > 0 ? new Date(invoices[0].date) : new Date();
-    const nextPaymentDate = new Date(lastInvoiceDate);
-    nextPaymentDate.setDate(nextPaymentDate.getDate() + 30);
+        loadBillingData();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground animate-pulse">Loading billing information...</p>
+            </div>
+        );
+    }
+
+    if (!client) {
+        return (
+            <div className="bg-card rounded-xl border p-12 text-center">
+                <h2 className="text-xl font-semibold mb-2">Account Not Found</h2>
+                <p className="text-muted-foreground">We couldn't load your billing details. Please contact support.</p>
+            </div>
+        );
+    }
+
+    // Calculate next payment date (mock logic)
+    const nextPaymentDate = new Date();
+    nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+    nextPaymentDate.setDate(1); // Set to 1st of next month
     const nextPaymentDateString = nextPaymentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
     return (
@@ -46,8 +79,8 @@ const ClientBillingTab = () => {
                         <CreditCard className="h-5 w-5 text-primary" />
                         <span className="text-sm text-muted-foreground">Current Plan</span>
                     </div>
-                    <p className="text-2xl font-heading font-bold">{client.plan}</p>
-                    <p className="text-sm text-muted-foreground">{planPrice}/month</p>
+                    <p className="text-2xl font-heading font-bold uppercase">{client.plan || "N/A"}</p>
+                    <p className="text-sm text-muted-foreground">Status: {client.status || "Active"}</p>
                 </div>
                 <div className="bg-card rounded-xl border p-6">
                     <div className="flex items-center gap-3 mb-2">
@@ -55,15 +88,15 @@ const ClientBillingTab = () => {
                         <span className="text-sm text-muted-foreground">Next Payment</span>
                     </div>
                     <p className="text-2xl font-heading font-bold">{nextPaymentDateString}</p>
-                    <p className="text-sm text-muted-foreground">{planPrice} due</p>
+                    <p className="text-sm text-muted-foreground">Monthly recurrence</p>
                 </div>
                 <div className="bg-card rounded-xl border p-6">
                     <div className="flex items-center gap-3 mb-2">
                         <CreditCard className="h-5 w-5 text-primary" />
                         <span className="text-sm text-muted-foreground">Total Paid</span>
                     </div>
-                    <p className="text-2xl font-heading font-bold">₹{formatINR(billingSummary.totalPaid)}</p>
-                    <p className="text-sm text-muted-foreground">{billingSummary.paidCount} invoices</p>
+                    <p className="text-2xl font-heading font-bold">₹{formatINR(summary?.totalPaid || 0)}</p>
+                    <p className="text-sm text-muted-foreground">{summary?.paidInvoices || 0} invoices paid</p>
                 </div>
             </div>
 
@@ -75,7 +108,7 @@ const ClientBillingTab = () => {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Invoice</TableHead>
+                            <TableHead>Invoice #</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead>Amount</TableHead>
                             <TableHead>Status</TableHead>
@@ -85,20 +118,26 @@ const ClientBillingTab = () => {
                     <TableBody>
                         {invoices.length > 0 ? (
                             invoices.map((invoice) => (
-                                <TableRow key={invoice.id}>
-                                    <TableCell className="font-medium">{invoice.id}</TableCell>
-                                    <TableCell className="text-muted-foreground">{invoice.date}</TableCell>
-                                    <TableCell>{invoice.amount}</TableCell>
+                                <TableRow key={invoice._id}>
+                                    <TableCell className="font-medium">{invoice.invoiceNumber || invoice._id.slice(-8).toUpperCase()}</TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {new Date(invoice.createdAt).toLocaleDateString()}
+                                    </TableCell>
+                                    <TableCell>₹{formatINR(invoice.totalAmount || invoice.amount)}</TableCell>
                                     <TableCell>
                                         <StatusBadge status={invoice.status} />
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
-                                            <Button variant="ghost" size="sm">
-                                                <Eye className="h-4 w-4" />
+                                            <Button variant="ghost" size="sm" asChild>
+                                                <a href={invoice.url} target="_blank" rel="noopener noreferrer">
+                                                    <Eye className="h-4 w-4" />
+                                                </a>
                                             </Button>
-                                            <Button variant="ghost" size="sm">
-                                                <Download className="h-4 w-4" />
+                                            <Button variant="ghost" size="sm" asChild>
+                                                <a href={invoice.url} download={`invoice-${invoice.invoiceNumber || invoice._id}.pdf`}>
+                                                    <Download className="h-4 w-4" />
+                                                </a>
                                             </Button>
                                         </div>
                                     </TableCell>
@@ -118,18 +157,25 @@ const ClientBillingTab = () => {
             {/* Payment Methods */}
             <div className="bg-card rounded-xl border p-6">
                 <h2 className="font-heading font-semibold mb-4">Payment Method</h2>
-                <div className="flex items-center justify-between p-4 rounded-lg bg-accent/50">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center text-white text-xs font-bold">
-                            VISA
+                {client.paymentMethod ? (
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-accent/50">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center text-white text-xs font-bold uppercase">
+                                {client.paymentMethod.type || "Card"}
+                            </div>
+                            <div>
+                                <p className="font-medium">•••• •••• •••• {client.paymentMethod.last4 || "4242"}</p>
+                                <p className="text-sm text-muted-foreground">Expires {client.paymentMethod.expiry || "12/2027"}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="font-medium">•••• •••• •••• 4242</p>
-                            <p className="text-sm text-muted-foreground">Expires 12/2027</p>
-                        </div>
+                        <Button variant="outline" size="sm">Update</Button>
                     </div>
-                    <Button variant="outline" size="sm">Update</Button>
-                </div>
+                ) : (
+                    <div className="p-4 rounded-lg bg-accent/50 text-center">
+                        <p className="text-sm text-muted-foreground mb-4">No payment method on file.</p>
+                        <Button variant="outline" size="sm">Add Payment Method</Button>
+                    </div>
+                )}
             </div>
         </div>
     );

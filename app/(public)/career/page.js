@@ -1,11 +1,13 @@
+import { getJobs } from '@/lib/actions/content';
 import CareerContent from '@/components/career/CareerContent';
 
 export const metadata = {
-    title: "Careers | Fakhri IT Services - Join Our Growing Team",
-    description: "Join the Fakhri IT Services team. Explore career opportunities in Amazon seller services, e-commerce, and digital marketing.",
-    keywords: "Amazon jobs, e-commerce careers, seller services jobs",
+    title: "Careers | Fakhri IT Services - Join Our Amazon Agency Team",
+    description: "Build your career with Fakhri IT Services. Explore current job openings for account managers, PPC specialists, content creators, and more.",
+    keywords: "Amazon agency jobs, e-commerce careers, work at Fakhri IT Services",
 };
 
-export default function CareerPage() {
-    return <CareerContent />;
+export default async function CareerPage() {
+    const jobs = await getJobs();
+    return <CareerContent jobs={jobs} />;
 }

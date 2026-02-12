@@ -1,27 +1,13 @@
 "use client";
-import { useState, useMemo } from "react";
-import { Plus, Edit, Eye, X, Save } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Plus, Edit, Eye, X, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const clients = [
-    { id: 1, name: "John Doe", company: "TechGadgets Co" },
-    { id: 2, name: "Emily Smith", company: "BeautyBrand Inc" },
-    { id: 3, name: "Michael Brown", company: "HomeEssentials" },
-];
-
-const tasksData = [
-    { id: 1, title: "PPC Campaign Setup", client: "John Doe", clientId: 1, service: "PPC Management", priority: "High", status: "in-progress", dueDate: "Jan 25, 2026", owner: "Sarah Mitchell", description: "Set up and optimize PPC campaigns", planForWeek: "this-week", reminder: true, isHighPriority: true, isCompleted: false },
-    { id: 2, title: "A+ Content Design - Product B", client: "Emily Smith", clientId: 2, service: "A+ Content", priority: "Medium", status: "in-progress", dueDate: "Jan 28, 2026", owner: "Sarah Mitchell", description: "Design A+ content for product B", planForWeek: "next-week", reminder: true, isHighPriority: false, isCompleted: false },
-    { id: 3, title: "Brand Registry Application", client: "Michael Brown", clientId: 3, service: "Brand Registry", priority: "High", status: "pending", dueDate: "Feb 1, 2026", owner: "John Anderson", description: "Apply for Amazon Brand Registry", planForWeek: "this-week", reminder: true, isHighPriority: true, isCompleted: false },
-    { id: 4, title: "Competitor Analysis Report", client: "John Doe", clientId: 1, service: "Account Management", priority: "Low", status: "completed", dueDate: "Jan 14, 2026", owner: "Sarah Mitchell", description: "Analyze top competitors", planForWeek: "none", reminder: false, isHighPriority: false, isCompleted: true },
-    { id: 5, title: "Listing Optimization", client: "Emily Smith", clientId: 2, service: "Catalog Management", priority: "Medium", status: "completed", dueDate: "Jan 12, 2026", owner: "Sarah Mitchell", description: "Optimize product listings", planForWeek: "none", reminder: false, isHighPriority: false, isCompleted: true },
-];
-
-const managers = ["Sarah Mitchell", "John Anderson", "Emma Wilson"];
+import { getClients, getTasks, upsertTask } from "@/lib/actions/admin";
+import { toast } from "sonner";
 
 // Generate week numbers 1-52
 const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
@@ -29,7 +15,13 @@ const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
     label: `Week ${i + 1}`
 }));
 
+const managers = ["Sarah Mitchell", "John Anderson", "Emma Wilson"];
+
 const AdminTasksTab = () => {
+    const [clients, setClients] = useState([]);
+    const [tasks, setTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const [showCreateTask, setShowCreateTask] = useState(false);
     const [showEditTask, setShowEditTask] = useState(null);
 
@@ -37,6 +29,24 @@ const AdminTasksTab = () => {
     const [statusFilter, setStatusFilter] = useState("all");
     const [clientFilter, setClientFilter] = useState("all");
     const [priorityFilter, setPriorityFilter] = useState("all");
+
+    useEffect(() => {
+        async function loadData() {
+            setLoading(true);
+            try {
+                const [c, t] = await Promise.all([getClients(), getTasks()]);
+                // Ensure clients have id property for consistency
+                setClients(c.map(client => ({ ...client, id: client._id })));
+                setTasks(t);
+            } catch (error) {
+                console.error("Failed to load data", error);
+                toast.error("Failed to load tasks");
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadData();
+    }, []);
 
     // Get current week number
     const getCurrentWeek = () => {
@@ -61,13 +71,13 @@ const AdminTasksTab = () => {
 
     // Filter tasks
     const filteredTasks = useMemo(() => {
-        return tasksData.filter(task => {
-            const matchesStatus = statusFilter === "all" || task.status === statusFilter;
-            const matchesClient = clientFilter === "all" || task.client.toLowerCase().includes(clientFilter.toLowerCase());
-            const matchesPriority = priorityFilter === "all" || task.priority.toLowerCase() === priorityFilter;
+        return tasks.filter(task => {
+            const matchesStatus = statusFilter === "all" || task.status?.toLowerCase() === statusFilter.toLowerCase();
+            const matchesClient = clientFilter === "all" || task.client?.name?.toLowerCase().includes(clientFilter.toLowerCase());
+            const matchesPriority = priorityFilter === "all" || task.priority?.toLowerCase() === priorityFilter.toLowerCase();
             return matchesStatus && matchesClient && matchesPriority;
         });
-    }, [statusFilter, clientFilter, priorityFilter]);
+    }, [statusFilter, clientFilter, priorityFilter, tasks]);
 
     const resetNewTaskForm = () => {
         setNewTask({
@@ -82,11 +92,48 @@ const AdminTasksTab = () => {
         });
     };
 
-    const handleCreateTask = () => {
-        console.log("Creating task:", newTask);
-        setShowCreateTask(false);
-        resetNewTaskForm();
+    const handleCreateTask = async () => {
+        if (!newTask.title || !newTask.relatedTo) {
+            toast.error("Task title and client are required");
+            return;
+        }
+
+        const selectedClient = clients.find(c => c.id.toString() === newTask.relatedTo);
+
+        try {
+            const taskPayload = {
+                title: newTask.title,
+                description: newTask.description,
+                status: newTask.isCompleted ? 'Completed' : 'To Do',
+                priority: newTask.isHighPriority ? 'High' : 'Medium',
+                client: {
+                    id: selectedClient?.id,
+                    name: selectedClient?.name,
+                    company: selectedClient?.company
+                },
+                clientId: selectedClient?.id,
+                assignee: {
+                    name: newTask.owner
+                },
+                owner: newTask.owner,
+                dueDate: newTask.dueDate,
+                planForWeek: newTask.planForWeek,
+                taskId: `TSK-${Date.now().toString().slice(-6)}`
+            };
+
+            const savedTask = await upsertTask(taskPayload);
+            if (savedTask) {
+                setTasks(prev => [savedTask, ...prev]);
+                setShowCreateTask(false);
+                resetNewTaskForm();
+                toast.success("Task created");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to create task");
+        }
     };
+
 
     return (
         <div className="space-y-6">
@@ -109,9 +156,9 @@ const AdminTasksTab = () => {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="To Do">To Do</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
                     </SelectContent>
                 </Select>
                 <Select value={clientFilter} onValueChange={setClientFilter}>
@@ -279,15 +326,21 @@ const AdminTasksTab = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredTasks.map((task) => (
-                            <TableRow key={task.id}>
+                        {filteredTasks.length === 0 && !loading ? (
+                            <TableRow>
+                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                    No tasks found.
+                                </TableCell>
+                            </TableRow>
+                        ) : filteredTasks.map((task) => (
+                            <TableRow key={task._id || task.id}>
                                 <TableCell>
                                     <div>
                                         <p className="font-medium">{task.title}</p>
-                                        <p className="text-xs text-muted-foreground">{task.service}</p>
+                                        <p className="text-xs text-muted-foreground">{task.category || 'General'}</p>
                                     </div>
                                 </TableCell>
-                                <TableCell>{task.client}</TableCell>
+                                <TableCell>{task.client?.name || task.client}</TableCell>
                                 <TableCell className="text-muted-foreground">{task.owner}</TableCell>
                                 <TableCell>
                                     <Badge variant={task.priority === "High" ? "destructive" : task.priority === "Medium" ? "secondary" : "outline"}>
@@ -295,14 +348,14 @@ const AdminTasksTab = () => {
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <Select defaultValue={task.status}>
+                                    <Select defaultValue={task.status} disabled >
                                         <SelectTrigger className="w-[130px] h-8">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="pending">Pending</SelectItem>
-                                            <SelectItem value="in-progress">In Progress</SelectItem>
-                                            <SelectItem value="completed">Completed</SelectItem>
+                                            <SelectItem value="To Do">To Do</SelectItem>
+                                            <SelectItem value="In Progress">In Progress</SelectItem>
+                                            <SelectItem value="Completed">Completed</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </TableCell>

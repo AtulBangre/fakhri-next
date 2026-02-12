@@ -1,12 +1,14 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Users, CheckSquare, FileText, User, Menu, X, LogOut, Bell } from "lucide-react";
+import { LayoutDashboard, Users, CheckSquare, FileText, User, Menu, X, LogOut, Loader2 } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
-import { mockNotifications, notificationSettings } from "@/data/notifications";
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, clearAllNotifications } from "@/lib/actions/notification";
+import { getUsers } from "@/lib/actions/user";
 
 // Tabs
 import AdminDashboardTab from "@/components/admin/tabs/DashboardTab";
@@ -25,31 +27,83 @@ const navigation = [
 ];
 
 export default function AdminDashboardPage() {
+  const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Dashboard");
-  const [notifications, setNotifications] = useState(mockNotifications.admin);
-  const [notifSettings, setNotifSettings] = useState(notificationSettings);
+  const [notifications, setNotifications] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
-  const handleMarkAsRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setLoading(true);
+      try {
+        // Fetch first admin for demo purposes
+        const { users } = await getUsers({ role: 'admin', limit: 1 });
+        if (users && users.length > 0) {
+          const admin = users[0];
+          setCurrentUser(admin);
+
+          const { notifications: notifs } = await getNotifications({ recipientId: admin._id, limit: 10 });
+          setNotifications(notifs || []);
+        }
+      } catch (error) {
+        console.error("Error loading admin dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, []);
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await markNotificationAsRead(id);
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  const handleMarkAllAsRead = async () => {
+    if (!currentUser) return;
+    try {
+      await markAllNotificationsAsRead(currentUser._id);
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+    }
   };
 
-  const handleDeleteNotification = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  const handleDeleteNotification = async (id) => {
+    try {
+      await deleteNotification(id);
+      setNotifications(prev => prev.filter(n => n._id !== id));
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+    }
   };
 
-  const handleClearAll = () => {
-    setNotifications([]);
+  const handleClearAll = async () => {
+    if (!currentUser) return;
+    try {
+      await clearAllNotifications(currentUser._id);
+      setNotifications([]);
+    } catch (error) {
+      console.error("Error clearing all notifications:", error);
+    }
   };
 
-  const handleSettingsChange = (newSettings) => {
-    setNotifSettings(newSettings);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-muted-foreground animate-pulse font-medium">Loading Admin Dashboard...</p>
+      </div>
+    );
+  }
 
+  const userInitials = currentUser?.name?.split(" ").map(n => n[0]).join("") || "AD";
 
   return (
     <div className="min-h-screen bg-[#F4F4F5]">
@@ -98,12 +152,12 @@ export default function AdminDashboardPage() {
           {/* User Section */}
           <div className="p-4 border-t border-sidebar-border">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center font-medium">
-                SM
+              <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center font-medium text-sm">
+                {userInitials}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">Sarah Mitchell</p>
-                <p className="text-xs text-sidebar-foreground/70 truncate">Account Manager</p>
+              <div className="flex-1 min-w-0 text-white">
+                <p className="text-sm font-medium truncate">{currentUser?.name || "Admin"}</p>
+                <p className="text-xs text-sidebar-foreground/70 truncate">{currentUser?.adminRole || "Account Manager"}</p>
               </div>
             </div>
             <Button variant="outline" size="sm" className="w-full border-white/20 text-white bg-white/10 hover:bg-white/20 hover:text-white" asChild>
@@ -133,8 +187,6 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-3">
             <NotificationDropdown
               notifications={notifications}
-              settings={notifSettings}
-              onSettingsChange={handleSettingsChange}
               onMarkAsRead={handleMarkAsRead}
               onMarkAllAsRead={handleMarkAllAsRead}
               onDelete={handleDeleteNotification}
@@ -155,3 +207,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+

@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
-import { getCompanyData } from '@/lib/actions/content';
 import {
     MapPin,
     Phone,
@@ -18,8 +17,7 @@ import {
     Linkedin,
     Twitter,
     Facebook,
-    Instagram,
-    Loader2
+    Instagram
 } from 'lucide-react';
 
 const contactSchema = z.object({
@@ -31,19 +29,8 @@ const contactSchema = z.object({
     message: z.string().min(10, { message: "Message must be at least 10 characters." }),
 });
 
-export default function ContactContent() {
-    const [company, setCompany] = useState(null);
-    const [loading, setLoading] = useState(true);
+export default function ContactContent({ company = null }) {
 
-    useEffect(() => {
-        async function loadData() {
-            setLoading(true);
-            const data = await getCompanyData();
-            setCompany(data);
-            setLoading(false);
-        }
-        loadData();
-    }, []);
 
     const {
         register,
@@ -80,14 +67,7 @@ export default function ContactContent() {
         { icon: Instagram, href: company?.contact?.social?.instagram || '#', label: 'Instagram' },
     ];
 
-    if (loading) {
-        return (
-            <div className="min-h-[80vh] flex flex-col items-center justify-center">
-                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                <p className="text-muted-foreground font-medium">Loading contact information...</p>
-            </div>
-        );
-    }
+
 
     return (
         <>

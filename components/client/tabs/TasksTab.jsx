@@ -1,21 +1,48 @@
 "use client";
-import { useState, useMemo } from "react";
-import { Eye, Filter, X, Calendar, User, CheckCircle } from "lucide-react";
+
+import { useState, useMemo, useEffect } from "react";
+import { Eye, Filter, X, Calendar, User, CheckCircle, Loader2 } from "lucide-react";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-import { allTasks as tasks } from "@/data/tasks";
-
-// Get unique managers from tasks
-const managers = [...new Set(tasks.map(task => task.manager))];
+import { getTasks } from "@/lib/actions/task";
+import { getUsers } from "@/lib/actions/user";
 
 const ClientTasksTab = () => {
+    const [loading, setLoading] = useState(true);
+    const [tasks, setTasks] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
     const [statusFilter, setStatusFilter] = useState("all");
     const [managerFilter, setManagerFilter] = useState("all");
     const [dateRange, setDateRange] = useState({ start: "", end: "" });
+
+    useEffect(() => {
+        const loadTasksData = async () => {
+            setLoading(true);
+            try {
+                // Fetch first client for demo purposes
+                const { users } = await getUsers({ role: 'client', limit: 1 });
+                if (users && users.length > 0) {
+                    const currentClient = users[0];
+                    const response = await getTasks({ clientId: currentClient._id, limit: 50 });
+                    setTasks(response.tasks || []);
+                }
+            } catch (error) {
+                console.error("Error loading client tasks:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadTasksData();
+    }, []);
+
+    // Get unique managers from tasks
+    const managers = useMemo(() => {
+        const unique = [...new Set(tasks.map(task => task.assignee?.name).filter(Boolean))];
+        return unique;
+    }, [tasks]);
 
     // Parse date string to Date object
     const parseDate = (dateStr) => {
@@ -32,12 +59,12 @@ const ClientTasksTab = () => {
             }
 
             // Manager filter
-            if (managerFilter !== "all" && task.manager !== managerFilter) {
+            if (managerFilter !== "all" && task.assignee?.name !== managerFilter) {
                 return false;
             }
 
             // Date range filter
-            const taskDate = parseDate(task.completedDate || task.eta);
+            const taskDate = parseDate(task.dueDate || task.updatedAt);
             if (dateRange.start && taskDate) {
                 const startDate = new Date(dateRange.start);
                 if (taskDate < startDate) return false;
@@ -49,15 +76,16 @@ const ClientTasksTab = () => {
 
             return true;
         });
-    }, [statusFilter, managerFilter, dateRange]);
+    }, [statusFilter, managerFilter, dateRange, tasks]);
 
     // Count tasks by status
     const taskCounts = useMemo(() => {
-        const inProgress = filteredTasks.filter(t => t.status === "in-progress").length;
-        const pending = filteredTasks.filter(t => t.status === "pending").length;
-        const completed = filteredTasks.filter(t => t.status === "completed").length;
-        return { inProgress, pending, completed };
-    }, [filteredTasks]);
+        const inProgress = tasks.filter(t => t.status === "In Progress").length;
+        const review = tasks.filter(t => t.status === "In Review").length;
+        const completed = tasks.filter(t => t.status === "Completed").length;
+        const todo = tasks.filter(t => t.status === "To Do").length;
+        return { inProgress, review, completed, todo };
+    }, [tasks]);
 
     const clearFilters = () => {
         setStatusFilter("all");
@@ -66,6 +94,15 @@ const ClientTasksTab = () => {
     };
 
     const hasActiveFilters = statusFilter !== "all" || managerFilter !== "all" || dateRange.start || dateRange.end;
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground animate-pulse">Loading tasks...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -117,9 +154,11 @@ const ClientTasksTab = () => {
                                 className="w-full px-3 py-2 border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                             >
                                 <option value="all">All Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="in-progress">In Progress</option>
-                                <option value="completed">Completed</option>
+                                <option value="To Do">To Do</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="In Review">In Review</option>
+                                <option value="Completed">Completed</option>
+                                <option value="On Hold">On Hold</option>
                             </select>
                         </div>
 
@@ -127,14 +166,14 @@ const ClientTasksTab = () => {
                         <div className="space-y-2">
                             <label className="text-sm font-medium flex items-center gap-2">
                                 <User className="h-4 w-4 text-muted-foreground" />
-                                Manager
+                                Assigned To
                             </label>
                             <select
                                 value={managerFilter}
                                 onChange={(e) => setManagerFilter(e.target.value)}
                                 className="w-full px-3 py-2 border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                             >
-                                <option value="all">All Managers</option>
+                                <option value="all">Everyone</option>
                                 {managers.map(manager => (
                                     <option key={manager} value={manager}>{manager}</option>
                                 ))}
@@ -173,17 +212,21 @@ const ClientTasksTab = () => {
             )}
 
             {/* Task Stats */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
                 <div className="p-4 rounded-xl bg-card border text-center">
-                    <p className="text-2xl font-heading font-bold text-yellow-600">{taskCounts.inProgress}</p>
+                    <p className="text-2xl font-heading font-bold text-blue-600">{taskCounts.todo}</p>
+                    <p className="text-sm text-muted-foreground">To Do</p>
+                </div>
+                <div className="p-4 rounded-xl bg-card border text-center">
+                    <p className="text-2xl font-heading font-bold text-amber-600">{taskCounts.inProgress}</p>
                     <p className="text-sm text-muted-foreground">In Progress</p>
                 </div>
                 <div className="p-4 rounded-xl bg-card border text-center">
-                    <p className="text-2xl font-heading font-bold text-muted-foreground">{taskCounts.pending}</p>
-                    <p className="text-sm text-muted-foreground">Pending</p>
+                    <p className="text-2xl font-heading font-bold text-purple-600">{taskCounts.review}</p>
+                    <p className="text-sm text-muted-foreground">In Review</p>
                 </div>
                 <div className="p-4 rounded-xl bg-card border text-center">
-                    <p className="text-2xl font-heading font-bold text-primary">{taskCounts.completed}</p>
+                    <p className="text-2xl font-heading font-bold text-green-600">{taskCounts.completed}</p>
                     <p className="text-sm text-muted-foreground">Completed</p>
                 </div>
             </div>
@@ -194,25 +237,25 @@ const ClientTasksTab = () => {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Task</TableHead>
-                            <TableHead>Service</TableHead>
-                            <TableHead>Manager</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Assigned To</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead>ETA</TableHead>
+                            <TableHead>Due Date</TableHead>
                             <TableHead className="text-right">Action</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {filteredTasks.length > 0 ? (
                             filteredTasks.map((task) => (
-                                <TableRow key={task.id}>
+                                <TableRow key={task._id}>
                                     <TableCell className="font-medium">{task.title}</TableCell>
-                                    <TableCell className="text-muted-foreground">{task.service}</TableCell>
-                                    <TableCell className="text-muted-foreground">{task.manager}</TableCell>
+                                    <TableCell className="text-muted-foreground">{task.category || "General"}</TableCell>
+                                    <TableCell className="text-muted-foreground">{task.assignee?.name || "Unassigned"}</TableCell>
                                     <TableCell>
                                         <StatusBadge status={task.status} />
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
-                                        {task.completedDate || task.eta}
+                                        {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="sm">

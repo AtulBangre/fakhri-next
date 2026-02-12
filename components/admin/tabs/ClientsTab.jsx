@@ -1,20 +1,17 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
     Plus, Eye, X, Mail, Phone, Building2, CreditCard,
     CheckSquare, StickyNote, Edit, Save, Calendar, User,
-    Filter, ChevronDown, ChevronUp, Clock, ArrowLeft
+    Filter, ChevronDown, ChevronUp, Clock, ArrowLeft, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-import { clients as clientsData } from "@/data/clients";
-import { allTasks as tasksData } from "@/data/tasks";
-import { notesData } from "@/data/notes";
-import { managerNames as managers } from "@/data/admins";
+import { getClients, getTasks, upsertTask, getNotes, upsertNote } from "@/lib/actions/admin";
+import { toast } from "sonner";
 
 // Generate week numbers 1-52
 const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
@@ -23,6 +20,11 @@ const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
 }));
 
 const AdminClientsTab = () => {
+    const [clients, setClients] = useState([]);
+    const [tasks, setTasks] = useState([]);
+    const [notes, setNotes] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const [selectedClient, setSelectedClient] = useState(null);
     const [activeView, setActiveView] = useState("tasks");
     const [showCreateTask, setShowCreateTask] = useState(false);
@@ -34,6 +36,28 @@ const AdminClientsTab = () => {
     const [statusFilter, setStatusFilter] = useState("all");
     const [priorityFilter, setPriorityFilter] = useState("all");
     const [ownerFilter, setOwnerFilter] = useState("all");
+
+    useEffect(() => {
+        async function loadData() {
+            setLoading(true);
+            try {
+                const [c, t] = await Promise.all([getClients(), getTasks()]);
+                const clientsWithCounts = c.map(client => {
+                    const clientTasks = t.filter(task => task.client?.id === client._id || task.clientId === client._id);
+                    const activeCount = clientTasks.filter(task => task.status !== 'Completed').length;
+                    return { ...client, activeTasks: activeCount, id: client._id }; // Ensure id property exists
+                });
+                setClients(clientsWithCounts);
+                setTasks(t);
+            } catch (error) {
+                console.error("Failed to load data", error);
+                toast.error("Failed to load clients");
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadData();
+    }, []);
 
     // Get current week number
     const getCurrentWeek = () => {
@@ -47,7 +71,7 @@ const AdminClientsTab = () => {
     // New task form
     const [newTask, setNewTask] = useState({
         title: "",
-        owner: "Sarah Mitchell",
+        owner: "Sarah Mitchell", // Default, could be current user
         dueDate: "",
         planForWeek: getCurrentWeek(),
         description: "",
@@ -63,50 +87,69 @@ const AdminClientsTab = () => {
     const [mailSubject, setMailSubject] = useState("");
     const [mailBody, setMailBody] = useState("");
 
+    // Mock managers for now
+    const managers = ["Sarah Mitchell", "Alex Thompson", "Maria Garcia"];
+
     // Filter clients
     const filteredClients = useMemo(() => {
-        return clientsData.filter(client =>
-            client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            client.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            client.email.toLowerCase().includes(searchQuery.toLowerCase())
+        return clients.filter(client =>
+            (client.name && client.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (client.company && client.company.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (client.email && client.email.toLowerCase().includes(searchQuery.toLowerCase()))
         );
-    }, [searchQuery]);
+    }, [searchQuery, clients]);
 
     // Get tasks for selected client
     const clientTasks = useMemo(() => {
         if (!selectedClient) return [];
-        let tasks = tasksData.filter(task => task.clientId === selectedClient.id);
+        // Match by client ID (mongo _id or string id)
+        let t = tasks.filter(task =>
+            (task.client?.id === selectedClient._id) ||
+            (task.clientId === selectedClient._id) ||
+            (task.client?.id === selectedClient.id)
+        );
 
         if (statusFilter !== "all") {
-            tasks = tasks.filter(t => t.status === statusFilter);
+            t = t.filter(task => task.status?.toLowerCase() === statusFilter.toLowerCase());
         }
         if (priorityFilter !== "all") {
-            tasks = tasks.filter(t => t.priority.toLowerCase() === priorityFilter);
+            t = t.filter(task => task.priority?.toLowerCase() === priorityFilter.toLowerCase());
         }
         if (ownerFilter !== "all") {
-            tasks = tasks.filter(t => t.owner === ownerFilter);
+            t = t.filter(task => task.assignee?.name === ownerFilter || task.owner === ownerFilter);
         }
 
-        return tasks;
-    }, [selectedClient, statusFilter, priorityFilter, ownerFilter]);
+        return t;
+    }, [selectedClient, statusFilter, priorityFilter, ownerFilter, tasks]);
 
     // Get notes for selected client
     const clientNotes = useMemo(() => {
-        if (!selectedClient) return [];
-        return notesData.filter(note => note.clientId === selectedClient.id);
-    }, [selectedClient]);
+        return notes;
+    }, [notes]);
 
-    const handleClientClick = (client) => {
-        setSelectedClient(client);
+    const handleClientClick = async (client) => {
+        // Normalize ID usage
+        const clientWithId = { ...client, id: client._id || client.id };
+        setSelectedClient(clientWithId);
         setActiveView("tasks");
         setShowCreateTask(false);
         setShowEditTask(null);
         setShowAddNote(false);
+
+        // Fetch Notes
+        try {
+            const clientNotes = await getNotes(clientWithId.id);
+            setNotes(clientNotes);
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to load notes");
+        }
     };
 
     const handleBackToList = () => {
         setSelectedClient(null);
         setActiveView("tasks");
+        setNotes([]);
     };
 
     const resetNewTaskForm = () => {
@@ -121,22 +164,76 @@ const AdminClientsTab = () => {
         });
     };
 
-    const handleCreateTask = () => {
-        console.log("Creating task for client:", selectedClient.name, newTask);
-        setShowCreateTask(false);
-        resetNewTaskForm();
+    const handleCreateTask = async () => {
+        if (!newTask.title) {
+            toast.error("Task title is required");
+            return;
+        }
+
+        try {
+            const taskPayload = {
+                title: newTask.title,
+                description: newTask.description,
+                status: newTask.isCompleted ? 'Completed' : 'To Do',
+                priority: newTask.isHighPriority ? 'High' : 'Medium',
+                client: {
+                    id: selectedClient.id,
+                    name: selectedClient.name,
+                    company: selectedClient.company
+                },
+                clientId: selectedClient.id, // redundancy for easier query
+                assignee: {
+                    name: newTask.owner
+                },
+                owner: newTask.owner,
+                dueDate: newTask.dueDate,
+                planForWeek: newTask.planForWeek,
+                taskId: `TSK-${Date.now().toString().slice(-6)}` // Simple ID gen
+            };
+
+            const savedTask = await upsertTask(taskPayload);
+            if (savedTask) {
+                setTasks(prev => [savedTask, ...prev]);
+                setShowCreateTask(false);
+                resetNewTaskForm();
+                toast.success("Task created");
+            } else {
+                toast.error("Failed to create task");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("An error occurred");
+        }
     };
 
-    const handleAddNote = () => {
-        console.log("Adding note:", newNote);
-        setShowAddNote(false);
-        setNewNote("");
+    const handleAddNote = async () => {
+        if (!newNote.trim()) return;
+
+        try {
+            const notePayload = {
+                clientId: selectedClient.id,
+                author: "Sarah Mitchell", // current user mock
+                content: newNote,
+                date: new Date()
+            };
+
+            const savedNote = await upsertNote(notePayload);
+            if (savedNote) {
+                setNotes(prev => [savedNote, ...prev]);
+                setShowAddNote(false);
+                setNewNote("");
+                toast.success("Note added");
+            } else {
+                toast.error("Failed to add note");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Error adding note");
+        }
     };
 
     const handleSendMail = () => {
-        console.log(`Sending mail to ${selectedClient.email} from Manager`);
-        console.log("Subject:", mailSubject);
-        console.log("Body:", mailBody);
+        toast.success(`Mail sent to ${selectedClient.email}`);
         setShowMailForm(false);
         setMailSubject("");
         setMailBody("");
@@ -274,9 +371,9 @@ const AdminClientsTab = () => {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">All Status</SelectItem>
-                                            <SelectItem value="pending">Pending</SelectItem>
-                                            <SelectItem value="in-progress">In Progress</SelectItem>
-                                            <SelectItem value="completed">Completed</SelectItem>
+                                            <SelectItem value="To Do">To Do</SelectItem>
+                                            <SelectItem value="In Progress">In Progress</SelectItem>
+                                            <SelectItem value="Completed">Completed</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <Select value={priorityFilter} onValueChange={setPriorityFilter}>
@@ -447,7 +544,7 @@ const AdminClientsTab = () => {
                                                 <TableCell>
                                                     <div>
                                                         <p className="font-medium">{task.title}</p>
-                                                        <p className="text-xs text-muted-foreground">{task.service}</p>
+                                                        <p className="text-xs text-muted-foreground">{task.category || 'General'}</p>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-muted-foreground">{task.owner}</TableCell>
@@ -462,9 +559,9 @@ const AdminClientsTab = () => {
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="pending">Pending</SelectItem>
-                                                            <SelectItem value="in-progress">In Progress</SelectItem>
-                                                            <SelectItem value="completed">Completed</SelectItem>
+                                                            <SelectItem value="To Do">To Do</SelectItem>
+                                                            <SelectItem value="In Progress">In Progress</SelectItem>
+                                                            <SelectItem value="Completed">Completed</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                 </TableCell>

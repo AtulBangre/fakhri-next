@@ -1,17 +1,15 @@
 "use client";
-import { useState } from "react";
-import { allFAQs } from "@/data/allFAQs";
+
+import { useState, useEffect } from "react";
 import {
     Accordion,
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion";
-
-import { HelpCircle, MessageSquarePlus, CheckCircle2, X, Send } from "lucide-react";
+import { HelpCircle, MessageSquarePlus, CheckCircle2, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const faqData = allFAQs.filter(f => f.categories.dashboard);
+import { getFAQs } from "@/lib/actions/content";
 
 const feedbackCategories = [
     { value: "general", label: "General Feedback" },
@@ -22,6 +20,8 @@ const feedbackCategories = [
 ];
 
 const SupportTab = () => {
+    const [loading, setLoading] = useState(true);
+    const [faqData, setFaqData] = useState([]);
     const [showFeedbackForm, setShowFeedbackForm] = useState(false);
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
     const [formData, setFormData] = useState({
@@ -31,6 +31,25 @@ const SupportTab = () => {
         rating: 0
     });
 
+    useEffect(() => {
+        const loadFAQs = async () => {
+            setLoading(true);
+            try {
+                // Fetch FAQs with 'dashboard' category or filter locally
+                const faqs = await getFAQs();
+                // Filter for dashboard related FAQs if category exists in model, 
+                // but since the original code did it, we'll try to match it.
+                // If model doesn't have categories field, we'll just show all.
+                setFaqData(faqs.filter(f => !f.category || f.category.toLowerCase().includes('dashboard') || f.category.toLowerCase().includes('general')));
+            } catch (error) {
+                console.error("Error loading FAQs:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadFAQs();
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -80,18 +99,29 @@ const SupportTab = () => {
                     </div>
 
                     <div className="bg-card rounded-xl border overflow-hidden p-4">
-                        <Accordion type="single" collapsible className="w-full">
-                            {faqData.map((faq, index) => (
-                                <AccordionItem key={faq.id || index} value={`item-${index}`}>
-                                    <AccordionTrigger className="text-left font-medium text-sm">
-                                        {faq.question}
-                                    </AccordionTrigger>
-                                    <AccordionContent className="text-muted-foreground">
-                                        {faq.answer}
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center py-12 gap-4">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                <p className="text-sm text-muted-foreground">Loading FAQs...</p>
+                            </div>
+                        ) : faqData.length > 0 ? (
+                            <Accordion type="single" collapsible className="w-full">
+                                {faqData.map((faq, index) => (
+                                    <AccordionItem key={faq._id || index} value={`item-${index}`}>
+                                        <AccordionTrigger className="text-left font-medium text-sm">
+                                            {faq.question}
+                                        </AccordionTrigger>
+                                        <AccordionContent className="text-muted-foreground">
+                                            {faq.answer}
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                        ) : (
+                            <div className="text-center py-8 text-muted-foreground text-sm">
+                                No FAQs found at the moment.
+                            </div>
+                        )}
                     </div>
                 </div>
 

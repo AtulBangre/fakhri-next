@@ -1,12 +1,14 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { LayoutDashboard, CreditCard, CheckSquare, FileText, Receipt, User, Menu, X, LogOut, Bell, HelpCircle } from "lucide-react";
+import { LayoutDashboard, CreditCard, CheckSquare, FileText, Receipt, User, Menu, X, LogOut, HelpCircle, Loader2 } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
 import WhatsAppButton from "@/components/client/WhatsAppButton";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
-import { mockNotifications, notificationSettings } from "@/data/notifications";
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, clearAllNotifications } from "@/lib/actions/notification";
+import { getUsers } from "@/lib/actions/user";
 
 // Tabs
 import ClientDashboardTab from "@/components/client/tabs/DashboardTab";
@@ -28,31 +30,83 @@ const navigation = [
 ];
 
 export default function ClientDashboardPage() {
+  const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Dashboard");
-  const [notifications, setNotifications] = useState(mockNotifications.client);
-  const [notifSettings, setNotifSettings] = useState(notificationSettings);
+  const [notifications, setNotifications] = useState([]);
+  const [user, setUser] = useState(null);
 
-  const handleMarkAsRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setLoading(true);
+      try {
+        // Fetch first client for demo purposes
+        const { users } = await getUsers({ role: 'client', limit: 1 });
+        if (users && users.length > 0) {
+          const currentUser = users[0];
+          setUser(currentUser);
+
+          const { notifications: notifs } = await getNotifications({ recipientId: currentUser._id, limit: 10 });
+          setNotifications(notifs || []);
+        }
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, []);
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await markNotificationAsRead(id);
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  const handleMarkAllAsRead = async () => {
+    if (!user) return;
+    try {
+      await markAllNotificationsAsRead(user._id);
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+    }
   };
 
-  const handleDeleteNotification = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  const handleDeleteNotification = async (id) => {
+    try {
+      await deleteNotification(id);
+      setNotifications(prev => prev.filter(n => n._id !== id));
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+    }
   };
 
-  const handleClearAll = () => {
-    setNotifications([]);
+  const handleClearAll = async () => {
+    if (!user) return;
+    try {
+      await clearAllNotifications(user._id);
+      setNotifications([]);
+    } catch (error) {
+      console.error("Error clearing all notifications:", error);
+    }
   };
 
-  const handleSettingsChange = (newSettings) => {
-    setNotifSettings(newSettings);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-muted-foreground animate-pulse font-medium">Loading Dashboard...</p>
+      </div>
+    );
+  }
 
+  const userInitials = user?.name?.split(" ").map(n => n[0]).join("") || "CL";
 
   return (
     <div className="min-h-screen bg-[#F4F4F5]">
@@ -69,7 +123,7 @@ export default function ClientDashboardPage() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
-            <Logo variant="white" /> {/* Assuming Logo can handle white variant or dark bg */}
+            <Logo variant="white" />
             <button className="lg:hidden text-sidebar-foreground" onClick={() => setSidebarOpen(false)}>
               <X className="h-5 w-5" />
             </button>
@@ -98,12 +152,12 @@ export default function ClientDashboardPage() {
           {/* User Section */}
           <div className="p-4 border-t border-sidebar-border">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium bg-white text-black">
-                JD
+              <div className="w-10 h-10 rounded-full flex items-center justify-center font-medium bg-white text-black text-sm">
+                {userInitials}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">John Doe</p>
-                <p className="text-xs text-sidebar-foreground/70 truncate">Premium Plan</p>
+              <div className="flex-1 min-w-0 text-white">
+                <p className="text-sm font-medium truncate">{user?.name || "Client"}</p>
+                <p className="text-xs text-sidebar-foreground/70 truncate uppercase">{user?.plan || "Basic"} Plan</p>
               </div>
             </div>
             <Button variant="outline" size="sm" className="w-full border-white/20 text-white bg-white/10 hover:bg-white/20 hover:text-white" asChild>
@@ -133,8 +187,6 @@ export default function ClientDashboardPage() {
           <div className="flex items-center gap-3">
             <NotificationDropdown
               notifications={notifications}
-              settings={notifSettings}
-              onSettingsChange={handleSettingsChange}
               onMarkAsRead={handleMarkAsRead}
               onMarkAllAsRead={handleMarkAllAsRead}
               onDelete={handleDeleteNotification}
@@ -163,3 +215,4 @@ export default function ClientDashboardPage() {
     </div>
   );
 }
+

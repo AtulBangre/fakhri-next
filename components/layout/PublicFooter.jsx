@@ -1,11 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Mail, Phone, MapPin, Linkedin, Twitter, Facebook, Youtube, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Linkedin, Twitter, Facebook, Instagram, Send, Loader2 } from "lucide-react";
 import Logo from "@/components/ui/Logo";
-import { companyData } from "@/data/company";
+import { getCompanyData } from "@/lib/actions/content";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const footerLinks = {
   services: [
@@ -27,11 +30,26 @@ const footerLinks = {
     { label: "FAQs", href: "/pricing#faq" },
   ],
 };
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 const PublicFooter = () => {
+  const [company, setCompany] = useState(null);
+  const [loading, setLoading] = useState(true);
   const { register, handleSubmit, reset } = useForm();
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const data = await getCompanyData();
+        setCompany(data);
+      } catch (error) {
+        console.error("Error loading company data for footer:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const onSubscribe = (data) => {
     console.log("Subscribing email:", data.email);
@@ -39,6 +57,24 @@ const PublicFooter = () => {
       toast.success("Subscribed to newsletter!");
       reset();
     }, 1000);
+  };
+
+  if (loading) {
+    return (
+      <footer className="bg-brand-dark text-white pt-16 pb-8 border-t border-white/5">
+        <div className="container-custom flex items-center justify-center p-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
+        </div>
+      </footer>
+    );
+  }
+
+  const companyName = company?.name || "Fakhri IT Services";
+  const companyDescription = company?.description || "Empowering Amazon Sellers with strategic growth and expert account management.";
+  const contact = company?.contact || {
+    email: { general: "info@fakhriitservices.com" },
+    phone: { primary: "+91 8982675004" },
+    social: { linkedin: "#", twitter: "#", facebook: "#", instagram: "#" }
   };
 
   return (
@@ -49,20 +85,20 @@ const PublicFooter = () => {
           <div className="lg:col-span-4">
             <Logo variant="white" size="lg" />
             <p className="mt-4 text-gray-400 max-w-sm">
-              {companyData.description}
+              {companyDescription}
             </p>
             <div className="mt-6 space-y-3">
               <div className="flex items-center gap-3 text-sm text-gray-400 group">
                 <div className="p-2 rounded-lg bg-white/5 group-hover:bg-primary/20 transition-colors">
                   <Mail className="h-4 w-4 group-hover:text-primary transition-colors" />
                 </div>
-                <span>{companyData.contact?.email?.general || "info@fakhriitservices.com"}</span>
+                <span>{contact.email?.general}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-400 group">
                 <div className="p-2 rounded-lg bg-white/5 group-hover:bg-primary/20 transition-colors">
                   <Phone className="h-4 w-4 group-hover:text-primary transition-colors" />
                 </div>
-                <span>{companyData.contact?.phone?.primary || "+91 8982675004"}</span>
+                <span>{contact.phone?.primary}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-400 group">
                 <div className="p-2 rounded-lg bg-white/5 group-hover:bg-primary/20 transition-colors">
@@ -129,16 +165,16 @@ const PublicFooter = () => {
             <div className="mt-8">
               <h5 className="text-sm font-semibold mb-4 text-gray-300">Follow Us</h5>
               <div className="flex gap-3">
-                <a href={companyData.contact.social.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
+                <a href={contact.social?.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
                   <Linkedin className="h-5 w-5" />
                 </a>
-                <a href={companyData.contact.social.twitter} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
+                <a href={contact.social?.twitter} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
                   <Twitter className="h-5 w-5" />
                 </a>
-                <a href={companyData.contact.social.facebook} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
+                <a href={contact.social?.facebook} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
                   <Facebook className="h-5 w-5" />
                 </a>
-                <a href={companyData.contact.social.instagram} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
+                <a href={contact.social?.instagram} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-primary hover:text-white transition-all hover:-translate-y-1">
                   <Instagram className="h-5 w-5" />
                 </a>
               </div>
@@ -150,7 +186,7 @@ const PublicFooter = () => {
         <div className="pt-8 border-t border-white/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-500">
-              © {new Date().getFullYear()} {companyData.name}. All rights reserved.
+              © {new Date().getFullYear()} {companyName}. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
@@ -175,3 +211,4 @@ const PublicFooter = () => {
 };
 
 export default PublicFooter;
+

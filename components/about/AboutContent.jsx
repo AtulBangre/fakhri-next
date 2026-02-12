@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
 import CompanyTimeline from './CompanyTimeline';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Target, Zap, BarChart, Shield, Trophy, ArrowRight, Quote, Search, Filter, Loader2 } from 'lucide-react';
-import { getTeamMembers, getCompanyData } from '@/lib/actions/content';
+import { Users, Target, Zap, BarChart, Shield, Trophy, ArrowRight, Quote, Search, Filter } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
@@ -53,26 +52,10 @@ const whyChooseUs = [
     }
 ];
 
-export default function AboutContent() {
-    const [team, setTeam] = useState([]);
-    const [company, setCompany] = useState(null);
-    const [loading, setLoading] = useState(true);
+export default function AboutContent({ team = [], company = null }) {
     const [activeCategory, setActiveCategory] = useState("All");
     const [searchQuery, setSearchQuery] = useState("");
 
-    useEffect(() => {
-        async function loadData() {
-            setLoading(true);
-            const [teamData, companyData] = await Promise.all([
-                getTeamMembers(),
-                getCompanyData()
-            ]);
-            setTeam(teamData);
-            setCompany(companyData);
-            setLoading(false);
-        }
-        loadData();
-    }, []);
 
     const teamCategories = useMemo(() => {
         const categories = ["All", ...new Set(team.map(m => m.category))];
@@ -96,14 +79,7 @@ export default function AboutContent() {
         return filtered.sort((a, b) => (a.order || 99) - (b.order || 99));
     }, [activeCategory, searchQuery, team]);
 
-    if (loading) {
-        return (
-            <div className="min-h-[80vh] flex flex-col items-center justify-center">
-                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                <p className="text-muted-foreground font-medium">Getting everything ready...</p>
-            </div>
-        );
-    }
+
 
     return (
         <>
@@ -173,7 +149,7 @@ export default function AboutContent() {
                             <div>
                                 <h2 className="heading-lg mb-6">Amazon-First Approach to Digital Commerce</h2>
                                 <p className="body-md mb-8">
-                                    {company?.story || "Your trusted partner for Amazon success. We provide end-to-end Amazon seller services that help brands scale from startup to marketplace dominance. Our methodology combines data-driven insights with creative excellence to deliver measurable results."}
+                                    {company?.story?.content || "Your trusted partner for Amazon success. We provide end-to-end Amazon seller services that help brands scale from startup to marketplace dominance. Our methodology combines data-driven insights with creative excellence to deliver measurable results."}
                                 </p>
                                 <ul className="space-y-4">
                                     {[

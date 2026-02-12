@@ -1,18 +1,47 @@
 "use client";
-import { Star, Quote } from "lucide-react";
-import { allTestimonials } from "@/data/allTestimonials";
 
-/* Local mock removed, using data/allTestimonials */
+import { useState, useEffect } from "react";
+import { Star, Quote, Loader2 } from "lucide-react";
+import { getTestimonials } from "@/lib/actions/content";
+
 const TestimonialsSection = () => {
-  const detailedTestimonials = allTestimonials
-    .filter(t => t.type === 'detailed')
-    .map(t => ({
-      name: t.author.name,
-      role: t.author.role,
-      company: t.author.company,
-      content: t.content,
-      rating: t.rating
-    }));
+  const [testimonials, setTestimonials] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const data = await getTestimonials();
+        // Filter detailed testimonials and map to the format expected by the UI
+        const detailed = data
+          .filter(t => t.type === 'detailed' || !t.type)
+          .map(t => ({
+            name: t.author?.name || t.name,
+            role: t.author?.role || t.role,
+            company: t.author?.company || t.company,
+            content: t.content,
+            rating: t.rating || 5
+          }));
+        setTestimonials(detailed);
+      } catch (error) {
+        console.error("Error loading testimonials section:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="py-20 lg:py-32 bg-accent/30 flex flex-col items-center justify-center min-h-[400px]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary/50 mb-4" />
+        <p className="text-muted-foreground animate-pulse">Loading testimonials...</p>
+      </section>
+    );
+  }
+
   return (<section className="py-20 lg:py-32 bg-accent/30">
     <div className="container">
       <div className="text-center max-w-3xl mx-auto mb-16">
@@ -28,7 +57,7 @@ const TestimonialsSection = () => {
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {detailedTestimonials.slice(0, 3).map((testimonial, index) => (<div key={testimonial.name} className="relative p-6 rounded-xl bg-card border hover:shadow-lg transition-shadow">
+        {testimonials.length > 0 ? testimonials.slice(0, 3).map((testimonial, index) => (<div key={testimonial.name + index} className="relative p-6 rounded-xl bg-card border hover:shadow-lg transition-shadow">
           <Quote className="absolute top-6 right-6 h-8 w-8 text-primary/10" />
 
           <div className="flex gap-1 mb-4">
@@ -41,16 +70,21 @@ const TestimonialsSection = () => {
 
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-medium">
-              {testimonial.name.charAt(0)}
+              {testimonial.name?.charAt(0) || "U"}
             </div>
             <div>
               <div className="font-medium text-sm">{testimonial.name}</div>
               <div className="text-xs text-muted-foreground">{testimonial.role}, {testimonial.company}</div>
             </div>
           </div>
-        </div>))}
+        </div>)) : (
+          <div className="col-span-full py-10 text-center text-muted-foreground">
+            No testimonials found.
+          </div>
+        )}
       </div>
     </div>
   </section>);
 };
 export default TestimonialsSection;
+

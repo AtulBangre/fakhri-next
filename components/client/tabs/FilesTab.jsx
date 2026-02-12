@@ -1,43 +1,54 @@
 "use client";
-import { useState, useMemo } from "react";
-import { Download, FileText, Image, FileSpreadsheet, Eye, Calendar, X } from "lucide-react";
+
+import { useState, useMemo, useEffect } from "react";
+import { Download, FileText, Image, FileSpreadsheet, Eye, Calendar, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-import { getFilesByClientId } from "@/data/files";
-
-const CURRENT_CLIENT_ID = 1; // Mock logged-in client
-const files = getFilesByClientId(CURRENT_CLIENT_ID);
+import { getFilesByClientId } from "@/lib/actions/file";
+import { getUsers } from "@/lib/actions/user";
 
 const getFileIcon = (type) => {
-    switch (type) {
-        case "pdf":
-            return <FileText className="h-5 w-5 text-red-500" />;
-        case "excel":
-            return <FileSpreadsheet className="h-5 w-5 text-green-500" />;
-        case "image":
-            return <Image className="h-5 w-5 text-blue-500" />;
-        default:
-            return <FileText className="h-5 w-5 text-muted-foreground" />;
-    }
+    const t = type?.toLowerCase();
+    if (t?.includes("pdf") || t?.includes("document")) return <FileText className="h-5 w-5 text-red-500" />;
+    if (t?.includes("excel") || t?.includes("sheet") || t?.includes("csv")) return <FileSpreadsheet className="h-5 w-5 text-green-500" />;
+    if (t?.includes("image") || t?.includes("png") || t?.includes("jpg")) return <Image className="h-5 w-5 text-blue-500" />;
+    return <FileText className="h-5 w-5 text-muted-foreground" />;
 };
 
 const getFileTypeLabel = (type) => {
-    switch (type) {
-        case "pdf":
-            return "PDF";
-        case "excel":
-            return "Excel";
-        case "image":
-            return "Image";
-        default:
-            return "File";
-    }
+    const t = type?.toLowerCase();
+    if (t?.includes("pdf")) return "PDF";
+    if (t?.includes("excel") || t?.includes("sheet")) return "Excel";
+    if (t?.includes("image")) return "Image";
+    return type || "File";
 };
 
 const ClientFilesTab = () => {
+    const [loading, setLoading] = useState(true);
+    const [allFiles, setAllFiles] = useState([]);
     const [dateRange, setDateRange] = useState({ start: "", end: "" });
+
+    useEffect(() => {
+        const loadFilesData = async () => {
+            setLoading(true);
+            try {
+                // Fetch first client for demo purposes
+                const { users } = await getUsers({ role: 'client', limit: 1 });
+                if (users && users.length > 0) {
+                    const currentClient = users[0];
+                    const response = await getFilesByClientId(currentClient._id, { limit: 100 });
+                    setAllFiles(response.files || []);
+                }
+            } catch (error) {
+                console.error("Error loading client files:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadFilesData();
+    }, []);
 
     // Parse date string to Date object
     const parseDate = (dateStr) => {
@@ -47,25 +58,36 @@ const ClientFilesTab = () => {
 
     // Filter files based on date range
     const filteredFiles = useMemo(() => {
-        return files.filter(file => {
-            const fileDate = parseDate(file.date);
+        return allFiles.filter(file => {
+            const fileDate = parseDate(file.createdAt);
             if (dateRange.start && fileDate) {
                 const startDate = new Date(dateRange.start);
                 if (fileDate < startDate) return false;
             }
             if (dateRange.end && fileDate) {
                 const endDate = new Date(dateRange.end);
+                // Set to end of day
+                endDate.setHours(23, 59, 59, 999);
                 if (fileDate > endDate) return false;
             }
             return true;
         });
-    }, [dateRange]);
+    }, [dateRange, allFiles]);
 
     const hasActiveFilters = dateRange.start || dateRange.end;
 
     const clearFilters = () => {
         setDateRange({ start: "", end: "" });
     };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground animate-pulse">Loading files...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -113,7 +135,7 @@ const ClientFilesTab = () => {
             {/* File Stats */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <FileText className="h-4 w-4" />
-                Showing {filteredFiles.length} of {files.length} files
+                Showing {filteredFiles.length} of {allFiles.length} files
             </div>
 
             {/* Files Table */}
@@ -132,7 +154,7 @@ const ClientFilesTab = () => {
                     <TableBody>
                         {filteredFiles.length > 0 ? (
                             filteredFiles.map((file) => (
-                                <TableRow key={file.id}>
+                                <TableRow key={file._id}>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             {getFileIcon(file.type)}
@@ -147,17 +169,23 @@ const ClientFilesTab = () => {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">{file.size}</TableCell>
-                                    <TableCell className="text-muted-foreground">{file.uploadedBy}</TableCell>
-                                    <TableCell className="text-muted-foreground">{file.date}</TableCell>
+                                    <TableCell className="text-muted-foreground">{file.uploadedBy || file.adminName || "System"}</TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {new Date(file.createdAt).toLocaleDateString()}
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end gap-1">
-                                            <Button variant="ghost" size="sm">
-                                                <Eye className="h-4 w-4" />
-                                                <span className="sr-only">Preview</span>
+                                            <Button variant="ghost" size="sm" asChild>
+                                                <a href={file.url} target="_blank" rel="noopener noreferrer">
+                                                    <Eye className="h-4 w-4" />
+                                                    <span className="sr-only">Preview</span>
+                                                </a>
                                             </Button>
-                                            <Button variant="ghost" size="sm">
-                                                <Download className="h-4 w-4" />
-                                                <span className="sr-only">Download</span>
+                                            <Button variant="ghost" size="sm" asChild>
+                                                <a href={file.url} download={file.name}>
+                                                    <Download className="h-4 w-4" />
+                                                    <span className="sr-only">Download</span>
+                                                </a>
                                             </Button>
                                         </div>
                                     </TableCell>
@@ -166,7 +194,7 @@ const ClientFilesTab = () => {
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                    No files found matching your date filter.
+                                    No files found matching your filters.
                                 </TableCell>
                             </TableRow>
                         )}

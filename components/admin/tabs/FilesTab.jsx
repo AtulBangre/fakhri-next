@@ -1,19 +1,10 @@
 "use client";
-import { useState, useMemo } from "react";
-import { Download, FileText, Image, FileSpreadsheet, Eye, Upload, Calendar, X } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Download, FileText, Image, FileSpreadsheet, Eye, Upload, Calendar, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-import { files as allFiles } from "@/data/files";
-import { getClientsByManagerId } from "@/data/clients";
-
-const CURRENT_ADMIN_ID = 1; // Mock logged-in admin
-
-// Get files for clients managed by the current admin
-const myClients = getClientsByManagerId(CURRENT_ADMIN_ID);
-const clientIds = new Set(myClients.map(c => c.id));
-const files = allFiles.filter(f => clientIds.has(f.clientId));
+import { getFiles } from "@/lib/actions/admin";
 
 const getFileIcon = (type) => {
     switch (type) {
@@ -42,7 +33,24 @@ const getFileTypeLabel = (type) => {
 };
 
 const AdminFilesTab = () => {
+    const [files, setFiles] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [dateRange, setDateRange] = useState({ start: "", end: "" });
+
+    useEffect(() => {
+        async function loadFiles() {
+            setLoading(true);
+            try {
+                const data = await getFiles();
+                setFiles(data);
+            } catch (error) {
+                console.error("Failed to load files", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadFiles();
+    }, []);
 
     // Parse date string to Date object
     const parseDate = (dateStr) => {
@@ -53,7 +61,7 @@ const AdminFilesTab = () => {
     // Filter files based on date range
     const filteredFiles = useMemo(() => {
         return files.filter(file => {
-            const fileDate = parseDate(file.date);
+            const fileDate = parseDate(file.date || file.createdAt);
             if (dateRange.start && fileDate) {
                 const startDate = new Date(dateRange.start);
                 if (fileDate < startDate) return false;
@@ -64,7 +72,7 @@ const AdminFilesTab = () => {
             }
             return true;
         });
-    }, [dateRange]);
+    }, [dateRange, files]);
 
     const hasActiveFilters = dateRange.start || dateRange.end;
 
@@ -144,7 +152,7 @@ const AdminFilesTab = () => {
                     <TableBody>
                         {filteredFiles.length > 0 ? (
                             filteredFiles.map((file) => (
-                                <TableRow key={file.id}>
+                                <TableRow key={file._id || file.id}>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             {getFileIcon(file.type)}
@@ -153,7 +161,7 @@ const AdminFilesTab = () => {
                                             </span>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-muted-foreground">{file.client}</TableCell>
+                                    <TableCell className="text-muted-foreground">{file.clientName || file.client || 'N/A'}</TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className="text-xs">
                                             {getFileTypeLabel(file.type)}

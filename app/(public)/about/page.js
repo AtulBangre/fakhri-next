@@ -1,3 +1,4 @@
+import { getCompanyData, getTeamMembers } from '@/lib/actions/content';
 import AboutContent from '@/components/about/AboutContent';
 
 export const metadata = {
@@ -6,6 +7,11 @@ export const metadata = {
     keywords: "About Fakhri IT Services, Amazon agency team, Amazon seller consultants, e-commerce experts",
 };
 
-export default function AboutPage() {
-    return <AboutContent />;
+export default async function AboutPage() {
+    const [company, team] = await Promise.all([
+        getCompanyData(),
+        getTeamMembers()
+    ]);
+
+    return <AboutContent company={company} team={team} />;
 }

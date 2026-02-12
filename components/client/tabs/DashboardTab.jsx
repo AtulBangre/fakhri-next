@@ -1,35 +1,84 @@
 "use client";
-import { LayoutDashboard, CheckSquare, Clock, CheckCircle2, Bell, Mail, Headphones } from "lucide-react";
+
+import { useState, useEffect } from "react";
+import { LayoutDashboard, CheckSquare, Clock, CheckCircle2, Bell, Mail, Headphones, Loader2 } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import StatusBadge from "@/components/dashboard/StatusBadge";
-import { mockNotifications } from "@/data/notifications";
-import { getTasksByClientId } from "@/data/tasks";
-import { getClientById } from "@/data/clients";
-import { admins } from "@/data/admins";
-
-const CURRENT_CLIENT_ID = 1; // Mock logged-in client
+import { getTasks } from "@/lib/actions/task";
+import { getUserById, getUsers } from "@/lib/actions/user";
+import { getNotifications } from "@/lib/actions/notification";
 
 const ClientDashboardTab = ({ setActiveTab }) => {
-    // Fetch data
-    const client = getClientById(CURRENT_CLIENT_ID);
-    const tasks = getTasksByClientId(CURRENT_CLIENT_ID);
-    // Find manager - client.managerId is the FK
-    const manager = admins.find(a => a.id === client?.managerId);
+    const [loading, setLoading] = useState(true);
+    const [client, setClient] = useState(null);
+    const [manager, setManager] = useState(null);
+    const [tasks, setTasks] = useState([]);
+    const [notifications, setNotifications] = useState([]);
+
+    useEffect(() => {
+        const loadDashboardData = async () => {
+            setLoading(true);
+            try {
+                // For demo purposes, we fetch the first client if we don't have a logged-in one
+                // In a real app, this would be the session user ID
+                const { users } = await getUsers({ role: 'client', limit: 1 });
+                if (users && users.length > 0) {
+                    const currentClient = users[0];
+                    setClient(currentClient);
+
+                    // Fetch tasks for this client
+                    const tasksResponse = await getTasks({ clientId: currentClient._id, limit: 10 });
+                    setTasks(tasksResponse.tasks || []);
+
+                    // Fetch notifications
+                    const notifs = await getNotifications(currentClient._id);
+                    setNotifications(notifs);
+
+                    // Fetch manager if assigned
+                    if (currentClient.managerId) {
+                        const managerData = await getUserById(currentClient.managerId);
+                        setManager(managerData);
+                    } else if (currentClient.manager) {
+                        // Fallback if manager is stored as a string or object
+                        setManager(typeof currentClient.manager === 'object' ? currentClient.manager : { name: currentClient.manager });
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading client dashboard data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadDashboardData();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground animate-pulse">Loading dashboard data...</p>
+            </div>
+        );
+    }
+
+    if (!client) {
+        return (
+            <div className="bg-card rounded-xl border p-12 text-center">
+                <h2 className="text-xl font-semibold mb-2">Account Not Found</h2>
+                <p className="text-muted-foreground">We couldn't load your account details. Please contact support.</p>
+            </div>
+        );
+    }
 
     // Calculate stats
-    const activeTasksCount = tasks.filter(t => t.status === "in-progress" || t.status === "pending").length;
-    const completedTasksCount = tasks.filter(t => t.status === "completed").length;
+    const activeTasksCount = tasks.filter(t => ["To Do", "In Progress", "In Review"].includes(t.status)).length;
+    const completedTasksCount = tasks.filter(t => t.status === "Completed").length;
 
     // Get recent tasks
-    const recentTasks = [...tasks]
-        .sort((a, b) => new Date(b.lastUpdated || b.dueDate) - new Date(a.lastUpdated || a.dueDate))
-        .slice(0, 4);
+    const recentTasks = tasks.slice(0, 4);
 
-    const clientNotifications = mockNotifications.client || [];
-
-    if (!client) return <div>Loading...</div>;
-
-    const managerInitials = manager ? manager.name.split(' ').map(n => n[0]).join('') : "A";
+    const managerInitials = manager?.name ? manager.name.split(' ').map(n => n[0]).join('') : "A";
 
     return (
         <div className="space-y-6">
@@ -41,8 +90,8 @@ const ClientDashboardTab = ({ setActiveTab }) => {
 
             {/* Stats Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard title="Active Plan" value={client.plan} icon={<LayoutDashboard className="h-5 w-5" />} />
-                <StatCard title="Plan Valid Until" value="Mar 15, 2026" icon={<Clock className="h-5 w-5" />} />
+                <StatCard title="Active Plan" value={client.plan || "Free"} icon={<LayoutDashboard className="h-5 w-5" />} />
+                <StatCard title="Status" value={client.status || "Active"} icon={<Clock className="h-5 w-5" />} />
                 <StatCard title="Active Tasks" value={activeTasksCount} icon={<CheckSquare className="h-5 w-5" />} />
                 <StatCard title="Completed Tasks" value={completedTasksCount} icon={<CheckCircle2 className="h-5 w-5" />} />
             </div>
@@ -58,7 +107,7 @@ const ClientDashboardTab = ({ setActiveTab }) => {
                             </div>
                             <div>
                                 <p className="font-medium">{manager.name}</p>
-                                <p className="text-sm text-muted-foreground">{manager.role}</p>
+                                <p className="text-sm text-muted-foreground">{manager.adminRole || manager.role || "Manager"}</p>
                                 <a href={`mailto:${manager.email}`} className="text-sm text-primary mt-1 flex items-center gap-1 hover:underline">
                                     <Mail className="h-3 w-3" />
                                     {manager.email}
@@ -95,13 +144,13 @@ const ClientDashboardTab = ({ setActiveTab }) => {
                     <div className="space-y-3">
                         {recentTasks.length > 0 ? (
                             recentTasks.map((task) => (
-                                <div key={task.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                                <div key={task._id} className="flex items-center justify-between py-2 border-b last:border-0">
                                     <div className="flex items-center gap-3">
                                         <CheckSquare className="h-4 w-4 text-muted-foreground" />
                                         <span className="text-sm">{task.title}</span>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <span className="text-xs text-muted-foreground">{task.eta || task.dueDate}</span>
+                                        <span className="text-xs text-muted-foreground">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : (task.eta || 'No date')}</span>
                                         <StatusBadge status={task.status} />
                                     </div>
                                 </div>
@@ -113,26 +162,33 @@ const ClientDashboardTab = ({ setActiveTab }) => {
                 </div>
             </div>
 
-            {/* Notifications */}
+            {/* Notifications Section */}
             <div className="bg-card rounded-xl border p-6">
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-heading font-semibold">Notifications</h2>
+                    <h2 className="font-heading font-semibold">Recent Notifications</h2>
                     <Bell className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="space-y-3">
-                    {clientNotifications.map((notification) => (
-                        <div key={notification.id} className="flex items-start gap-3 py-2 border-b last:border-0">
-                            <div className={`w-2 h-2 rounded-full mt-2 ${notification.isRead ? 'bg-gray-300' : 'bg-primary'}`} />
-                            <div>
-                                <p className="text-sm font-medium">{notification.title}</p>
-                                <p className="text-sm text-muted-foreground">{notification.message}</p>
-                                <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
+                    {notifications.length > 0 ? (
+                        notifications.slice(0, 5).map((notification) => (
+                            <div key={notification._id} className="flex items-start gap-3 py-3 border-b last:border-0">
+                                <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${notification.read ? 'bg-gray-300' : 'bg-primary'}`} />
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium">{notification.title}</p>
+                                    <p className="text-sm text-muted-foreground">{notification.message}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {new Date(notification.createdAt).toLocaleString()}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">No recent notifications.</p>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
+
 export default ClientDashboardTab;

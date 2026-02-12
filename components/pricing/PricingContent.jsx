@@ -1,57 +1,18 @@
 'use client';
-
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { PricingCard } from '@/components/ui/PricingCard';
-import { getPricingPlans, getFAQs, getServices } from '@/lib/actions/content';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from "framer-motion";
-import { ArrowRight, Check, HelpCircle, Loader2 } from 'lucide-react';
+import { ArrowRight, Check, HelpCircle } from 'lucide-react';
 import FaQ from '../home/FaQ';
 import Within2HoursPricingList from '../within-2-hours/Within2HoursPricingList';
-import { useState, useEffect } from 'react';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
-export default function PricingContent() {
-    const [plans, setPlans] = useState([]);
-    const [faqs, setFaqs] = useState([]);
-    const [services, setServices] = useState([]);
-    const [loading, setLoading] = useState(true);
+export default function PricingContent({ plans = [], faqs = [], services = [] }) {
 
-    useEffect(() => {
-        async function loadData() {
-            setLoading(true);
-            const [p, f, s] = await Promise.all([
-                getPricingPlans(),
-                getFAQs('pricing'),
-                getServices()
-            ]);
-            setPlans(p);
-            setFaqs(f);
 
-            // Filter services for the add-ons list
-            const pricingServices = s
-                .filter(srv => srv.pricing && srv.pricing.standard && srv.pricing.standard.price)
-                .map(srv => ({
-                    id: srv._id,
-                    name: srv.title,
-                    category: srv.category,
-                    price: srv.pricing.standard.price
-                }));
-            setServices(pricingServices);
-            setLoading(false);
-        }
-        loadData();
-    }, []);
 
-    if (loading) {
-        return (
-            <div className="min-h-[80vh] flex flex-col items-center justify-center">
-                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                <p className="text-muted-foreground font-medium">Loading our best plans for you...</p>
-            </div>
-        );
-    }
 
     return (
         <>

@@ -1,35 +1,68 @@
 "use client";
-import { Users, CheckSquare, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Users, CheckSquare, Clock, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import { Badge } from "@/components/ui/badge";
-import { admins } from "@/data/admins";
-import { getClientsByManagerId } from "@/data/clients";
-import { getTasksByManagerId } from "@/data/tasks";
+import { getClients, getTasks } from "@/lib/actions/admin";
 
-// Mock logged-in admin ID
-const CURRENT_ADMIN_ID = 1;
+// Mock logged-in admin
+const CURRENT_ADMIN_NAME = "Sarah Mitchell";
 
 const AdminDashboardTab = ({ setActiveTab }) => {
-    const admin = admins.find(a => a.id === CURRENT_ADMIN_ID);
-    const myClients = getClientsByManagerId(CURRENT_ADMIN_ID);
-    const myTasks = getTasksByManagerId(CURRENT_ADMIN_ID);
+    const [clients, setClients] = useState([]);
+    const [tasks, setTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadData() {
+            setLoading(true);
+            try {
+                const [c, t] = await Promise.all([getClients(), getTasks()]);
+                // Filter for current admin if needed, or show all for super-admin view
+                // specialized logic for 'my clients' could be added here
+                setClients(c);
+                setTasks(t);
+            } catch (error) {
+                console.error("Failed to load dashboard data", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadData();
+    }, []);
+
+    // Filter data for "My" views
+    const myTasks = tasks.filter(t => t.owner === CURRENT_ADMIN_NAME || t.assignee?.name === CURRENT_ADMIN_NAME);
 
     // Calculate stats
-    const activeTasksCount = myTasks.filter(t => t.status === "in-progress").length;
-    const pendingTasksCount = myTasks.filter(t => t.status === "pending").length;
-    const completedTasksCount = myTasks.filter(t => t.status === "completed").length;
+    const activeTasksCount = myTasks.filter(t => ["in-progress", "In Progress"].includes(t.status)).length;
+    const pendingTasksCount = myTasks.filter(t => ["pending", "To Do", "To-Do"].includes(t.status)).length;
+    const completedTasksCount = myTasks.filter(t => ["completed", "Completed"].includes(t.status)).length;
+
+    // Enrich clients with active task count
+    const myClients = clients.map(client => {
+        const clientTaskCount = tasks.filter(t =>
+            (t.clientId === client._id || t.client?.id === client._id) &&
+            !["completed", "Completed"].includes(t.status)
+        ).length;
+        return { ...client, activeTasks: clientTaskCount, id: client._id };
+    });
 
     // Get recent tasks (limit 4)
     const recentTasks = [...myTasks]
-        .sort((a, b) => new Date(b.lastUpdated || b.dueDate) - new Date(a.lastUpdated || a.dueDate))
+        .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
         .slice(0, 4);
+
+    if (loading) {
+        return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div>;
+    }
 
     return (
         <div className="space-y-6">
             {/* Welcome Banner */}
             <div className="bg-gradient-primary text-white rounded-xl p-6">
-                <h1 className="font-heading text-2xl font-bold mb-2">Welcome, {admin?.name.split(' ')[0]}!</h1>
+                <h1 className="font-heading text-2xl font-bold mb-2">Welcome, {CURRENT_ADMIN_NAME.split(' ')[0]}!</h1>
                 <p className="text-white/80">You have {activeTasksCount + pendingTasksCount} active tasks and {myClients.length} assigned clients.</p>
             </div>
 
@@ -51,10 +84,10 @@ const AdminDashboardTab = ({ setActiveTab }) => {
                     <div className="space-y-3">
                         {recentTasks.length > 0 ? (
                             recentTasks.map((task) => (
-                                <div key={task.id} className="flex items-center justify-between py-3 border-b last:border-0">
+                                <div key={task._id || task.id} className="flex items-center justify-between py-3 border-b last:border-0">
                                     <div>
                                         <p className="font-medium text-sm">{task.title}</p>
-                                        <p className="text-xs text-muted-foreground">{task.client}</p>
+                                        <p className="text-xs text-muted-foreground">{task.client?.name || task.client || 'General'}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Badge variant={task.priority === "High" ? "destructive" : task.priority === "Medium" ? "secondary" : "outline"} className="text-xs">
@@ -77,11 +110,11 @@ const AdminDashboardTab = ({ setActiveTab }) => {
                         <button onClick={() => setActiveTab("Clients")} className="text-sm text-primary hover:underline">View All</button>
                     </div>
                     <div className="space-y-3">
-                        {myClients.map((client) => (
+                        {myClients.slice(0, 5).map((client) => (
                             <div key={client.id} className="flex items-center justify-between py-3 border-b last:border-0">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm">
-                                        {client.name.split(' ').map(n => n[0]).join('')}
+                                        {client.name ? client.name.split(' ').map(n => n[0]).join('') : 'C'}
                                     </div>
                                     <div>
                                         <p className="font-medium text-sm">{client.name}</p>
@@ -89,7 +122,7 @@ const AdminDashboardTab = ({ setActiveTab }) => {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-xs">{client.plan}</Badge>
+                                    <Badge variant="outline" className="text-xs">{client.plan || 'Free'}</Badge>
                                     <span className="text-xs text-muted-foreground">{client.activeTasks} tasks</span>
                                 </div>
                             </div>
@@ -98,14 +131,14 @@ const AdminDashboardTab = ({ setActiveTab }) => {
                 </div>
             </div>
 
-            {/* Alerts */}
+            {/* Alerts - simplified logic */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
                 <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                     <div>
-                        <p className="font-medium text-yellow-800">Pending Actions</p>
+                        <p className="font-medium text-yellow-800">Status Overview</p>
                         <p className="text-sm text-yellow-700 mt-1">
-                            You have {pendingTasksCount} tasks pending and {myClients.filter(c => c.status === 'pending').length} pending client approvals.
+                            You have {pendingTasksCount} tasks pending attention.
                         </p>
                     </div>
                 </div>
@@ -113,4 +146,5 @@ const AdminDashboardTab = ({ setActiveTab }) => {
         </div>
     );
 };
+
 export default AdminDashboardTab;
