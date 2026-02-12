@@ -4,31 +4,133 @@ import { Plus, Edit, Users, Trash2, Eye, X, Crown, Mail, Phone, Loader2 } from "
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-import { getTeams } from "@/lib/actions/team";
+import { getTeams, createTeam, updateTeam, deleteTeam } from "@/lib/actions/team";
+import { getAdmins } from "@/lib/actions/admin";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 const SuperAdminTeamsTab = () => {
     const [teams, setTeams] = useState([]);
+    const [admins, setAdmins] = useState([]);
     const [loading, setLoading] = useState(true);
     const [viewingTeam, setViewingTeam] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [editingTeam, setEditingTeam] = useState(null);
+    const [formData, setFormData] = useState({
+        name: "",
+        description: "",
+        leadId: "",
+        memberIds: [],
+        status: "active"
+    });
 
-    useEffect(() => {
-        async function loadTeams() {
-            setLoading(true);
-            const data = await getTeams();
-            if (data) {
-                // Formatting data if needed to match the UI expectations
-                const formattedTeams = data.map(team => ({
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const [teamsData, adminsData] = await Promise.all([
+                getTeams(),
+                getAdmins()
+            ]);
+
+            if (teamsData) {
+                const formattedTeams = teamsData.map(team => ({
                     ...team,
                     members: team.memberIds || [],
                     lead: team.leadId || { name: "N/A", email: "" },
-                    clientCount: 0 // We'd need to aggregate this or have it in the model
+                    clientCount: team.clientCount || 0
                 }));
                 setTeams(formattedTeams);
             }
-            setLoading(false);
+            if (adminsData) {
+                setAdmins(adminsData);
+            }
+        } catch (error) {
+            console.error("Error loading data:", error);
+            toast.error("Failed to load teams and admins");
         }
-        loadTeams();
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        loadData();
     }, []);
+
+    const handleOpenModal = (team = null) => {
+        if (team) {
+            setEditingTeam(team);
+            setFormData({
+                name: team.name,
+                description: team.description || "",
+                leadId: team.leadId?._id || team.leadId || "",
+                memberIds: (team.memberIds || []).map(m => typeof m === 'object' ? m._id : m),
+                status: team.status || "active"
+            });
+        } else {
+            setEditingTeam(null);
+            setFormData({
+                name: "",
+                description: "",
+                leadId: "",
+                memberIds: [],
+                status: "active"
+            });
+        }
+        setIsModalOpen(true);
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!formData.name) {
+            toast.error("Team name is required");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            if (editingTeam) {
+                await updateTeam(editingTeam._id, formData);
+                toast.success("Team updated successfully");
+            } else {
+                await createTeam(formData);
+                toast.success("Team created successfully");
+            }
+            setIsModalOpen(false);
+            loadData();
+        } catch (error) {
+            console.error("Error saving team:", error);
+            toast.error(error.message || "Failed to save team");
+        }
+        setIsSubmitting(false);
+    };
+
+    const handleDelete = async (teamId) => {
+        try {
+            await deleteTeam(teamId);
+            toast.success("Team deleted successfully");
+            loadData();
+        } catch (error) {
+            console.error("Error deleting team:", error);
+            toast.error("Failed to delete team");
+        }
+    };
+
+    const toggleMember = (adminId) => {
+        setFormData(prev => {
+            const isMember = prev.memberIds.includes(adminId);
+            if (isMember) {
+                return { ...prev, memberIds: prev.memberIds.filter(id => id !== adminId) };
+            } else {
+                return { ...prev, memberIds: [...prev.memberIds, adminId] };
+            }
+        });
+    };
 
     if (loading) {
         return (
@@ -46,7 +148,7 @@ const SuperAdminTeamsTab = () => {
                     <h1 className="font-heading text-2xl font-bold mb-2">Teams</h1>
                     <p className="text-muted-foreground">Organize account managers into teams.</p>
                 </div>
-                <Button>
+                <Button onClick={() => handleOpenModal()}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Team
                 </Button>
@@ -119,13 +221,35 @@ const SuperAdminTeamsTab = () => {
                                 <Eye className="h-4 w-4 mr-1" />
                                 View
                             </Button>
-                            <Button variant="outline" size="sm" className="flex-1">
+                            <Button variant="outline" size="sm" className="flex-1" onClick={() => handleOpenModal(team)}>
                                 <Edit className="h-4 w-4 mr-1" />
                                 Edit
                             </Button>
-                            <Button variant="ghost" size="sm" className="text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-destructive">
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete the team
+                                            "{team.name}" and remove all member associations.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={() => handleDelete(team._id)}
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                            Delete
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                     </div>
                 )) : (
@@ -209,7 +333,11 @@ const SuperAdminTeamsTab = () => {
                             <Button variant="outline" onClick={() => setViewingTeam(null)}>
                                 Close
                             </Button>
-                            <Button>
+                            <Button onClick={() => {
+                                const teamToEdit = viewingTeam;
+                                setViewingTeam(null);
+                                handleOpenModal(teamToEdit);
+                            }}>
                                 <Edit className="h-4 w-4 mr-1" />
                                 Edit Team
                             </Button>
@@ -217,6 +345,104 @@ const SuperAdminTeamsTab = () => {
                     </div>
                 </div>
             )}
+
+            {/* Create/Edit Team Modal */}
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>{editingTeam ? "Edit Team" : "Create New Team"}</DialogTitle>
+                        <DialogDescription>
+                            Organize your managers into a team for better management.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Team Name</Label>
+                            <Input
+                                id="name"
+                                placeholder="Sales East, Support Team, etc."
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description (Optional)</Label>
+                            <Textarea
+                                id="description"
+                                placeholder="Brief description of the team's purpose..."
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Team Lead</Label>
+                            <Select
+                                value={formData.leadId}
+                                onValueChange={(value) => setFormData({ ...formData, leadId: value })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a team lead" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {admins.map((admin) => (
+                                        <SelectItem key={admin._id} value={admin._id}>
+                                            {admin.name} ({admin.email})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Team Members</Label>
+                            <div className="grid grid-cols-1 gap-2 border rounded-lg p-3 max-h-48 overflow-y-auto bg-accent/10">
+                                {admins.map((admin) => (
+                                    <div key={admin._id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`member-${admin._id}`}
+                                            checked={formData.memberIds.includes(admin._id)}
+                                            onCheckedChange={() => toggleMember(admin._id)}
+                                        />
+                                        <label
+                                            htmlFor={`member-${admin._id}`}
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                            {admin.name}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {formData.memberIds.length} members selected
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Status</Label>
+                            <Select
+                                value={formData.status}
+                                onValueChange={(value) => setFormData({ ...formData, status: value })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <DialogFooter className="pt-4">
+                            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {editingTeam ? "Save Changes" : "Create Team"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
