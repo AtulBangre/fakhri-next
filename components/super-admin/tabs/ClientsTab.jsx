@@ -893,19 +893,19 @@ const SuperAdminClientsTab = () => {
                         <div className="grid grid-cols-3 gap-4 text-center">
                             <div className="p-3 bg-yellow-500/10 rounded-lg">
                                 <p className="text-xl font-bold text-yellow-600">
-                                    {tasksData.filter(t => t.clientId === selectedClient.id && t.status === "in-progress").length}
+                                    {tasks.filter(t => t.status === "in-progress").length}
                                 </p>
                                 <p className="text-xs text-muted-foreground">In Progress</p>
                             </div>
                             <div className="p-3 bg-gray-500/10 rounded-lg">
                                 <p className="text-xl font-bold text-gray-600">
-                                    {tasksData.filter(t => t.clientId === selectedClient.id && t.status === "pending").length}
+                                    {tasks.filter(t => t.status === "pending").length}
                                 </p>
                                 <p className="text-xs text-muted-foreground">Pending</p>
                             </div>
                             <div className="p-3 bg-green-500/10 rounded-lg">
                                 <p className="text-xl font-bold text-green-600">
-                                    {tasksData.filter(t => t.clientId === selectedClient.id && t.status === "completed").length}
+                                    {tasks.filter(t => t.status === "completed").length}
                                 </p>
                                 <p className="text-xs text-muted-foreground">Completed</p>
                             </div>
