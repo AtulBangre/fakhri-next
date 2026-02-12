@@ -26,7 +26,7 @@ export default function FaQ({ data = [] }) {
 
                 <ScrollReveal>
                     <div className="max-w-3xl mx-auto">
-                        <Accordion type="single" collapsible className="space-y-4">
+                        <Accordion type="single" collapsible className="space-y-4" suppressHydrationWarning>
                             {data.map((faq, index) => (
                                 <AccordionItem
                                     key={index}

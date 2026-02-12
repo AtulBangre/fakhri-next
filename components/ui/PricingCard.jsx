@@ -105,6 +105,7 @@ export const PricingCard = ({ plan, index }) => {
                     <ContactDialog
                         trigger={
                             <motion.button
+                                suppressHydrationWarning
                                 className={`w-full py-4 rounded-lg font-poppins font-semibold transition-all duration-300 ${plan.highlighted
                                     ? 'bg-background text-primary hover:bg-background/90'
                                     : 'bg-primary text-primary-foreground hover:shadow-red'

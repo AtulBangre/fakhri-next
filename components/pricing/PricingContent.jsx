@@ -201,7 +201,7 @@ export default function PricingContent({ plans = [], faqs = [], services = [] })
                             </p>
                             <ContactDialog
                                 trigger={
-                                    <button className="btn-primary">
+                                    <button className="btn-primary" suppressHydrationWarning>
                                         Schedule a Call
                                     </button>
                                 }

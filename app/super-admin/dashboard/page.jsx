@@ -171,7 +171,7 @@ export default function SuperAdminDashboardPage() {
                 <p className="text-xs text-sidebar-foreground/70 truncate">Super Administrator</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="w-full border-white/20 text-white hover:bg-white/10" asChild>
+            <Button variant="outline" size="sm" className="w-full border-white/20 text-white bg-white/10" asChild>
               <Link href="/">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out

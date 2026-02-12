@@ -1,6 +1,8 @@
 import { getPricingPlans, getFAQs, getServices } from '@/lib/actions/content';
 import PricingContent from '@/components/pricing/PricingContent';
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
     title: "Pricing Plans | Fakhri IT Services - Transparent Amazon Service Pricing",
     description: "Flexible pricing plans for Amazon sellers. Choose from Elite, Premium, and Platinum packages designed to scale your Amazon business.",
