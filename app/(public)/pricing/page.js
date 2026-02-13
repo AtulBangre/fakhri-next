@@ -1,4 +1,4 @@
-import { getPricingPlans, getFAQs, getServices } from '@/lib/actions/content';
+import { getPricingPlans, getFAQs, getCatalogServices } from '@/lib/actions/content';
 import PricingContent from '@/components/pricing/PricingContent';
 
 export const dynamic = "force-dynamic";
@@ -13,15 +13,15 @@ export default async function PricingPage() {
     const [plans, faqs, servicesRaw] = await Promise.all([
         getPricingPlans(),
         getFAQs('pricing'),
-        getServices()
+        getCatalogServices()
     ]);
 
-    // Format services for the add-ons list
+    // Format services for the add-ons list based on Standard Price
     const services = servicesRaw
-        .filter(srv => srv.pricing && srv.pricing.standard && srv.pricing.standard.price)
+        .filter(srv => srv.pricing && srv.pricing.standard && srv.pricing.standard.price > 0)
         .map(srv => ({
             id: srv._id,
-            name: srv.title,
+            name: srv.name,
             category: srv.category,
             price: srv.pricing.standard.price
         }));

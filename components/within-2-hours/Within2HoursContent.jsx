@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
-import { getServices, getCompanyData } from '@/lib/actions/content';
+import { getCatalogServices, getCompanyData } from '@/lib/actions/content';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -91,7 +91,7 @@ export default function Within2HoursContent() {
         async function loadData() {
             setLoading(true);
             const [servicesData, companyData] = await Promise.all([
-                getServices(),
+                getCatalogServices(),
                 getCompanyData()
             ]);
             setServices(servicesData);

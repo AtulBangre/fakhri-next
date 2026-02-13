@@ -172,8 +172,9 @@ export default function PricingContent({ plans = [], faqs = [], services = [] })
                 <Within2HoursPricingList
                     services={services}
                     pageInfo={{
+                        badge: "A-la-carte",
                         title: "Add-on Services",
-                        subtitle: "Enhance your plan with specialized services"
+                        description: "Enhance your plan with specialized services"
                     }}
                     noticeContent={
                         <>
