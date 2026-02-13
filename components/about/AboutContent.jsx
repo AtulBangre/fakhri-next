@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/animations/ScrollReveal';
 import CompanyTimeline from './CompanyTimeline';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +9,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
 import { Button } from '@/components/ui/button';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from "@/lib/utils";
 
 const iconMap = {
     Users,
@@ -53,31 +57,10 @@ const whyChooseUs = [
 ];
 
 export default function AboutContent({ team = [], company = null }) {
-    const [activeCategory, setActiveCategory] = useState("All");
-    const [searchQuery, setSearchQuery] = useState("");
-
-
     const teamCategories = useMemo(() => {
-        const categories = ["All", ...new Set(team.map(m => m.category))];
+        const categories = [...new Set(team.map(m => m.category))];
         return categories.filter(Boolean);
     }, [team]);
-
-    const filteredTeam = useMemo(() => {
-        let filtered = team;
-
-        if (activeCategory !== "All") {
-            filtered = filtered.filter(member => member.category === activeCategory);
-        }
-
-        if (searchQuery) {
-            filtered = filtered.filter(member =>
-                member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                member.role.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
-
-        return filtered.sort((a, b) => (a.order || 99) - (b.order || 99));
-    }, [activeCategory, searchQuery, team]);
 
 
 
@@ -103,11 +86,7 @@ export default function AboutContent({ team = [], company = null }) {
 
                     <ScrollReveal delay={0.2}>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-                            {[
-                                { value: "500+", label: "Clients Served" },
-                                { value: "8+", label: "Years Experience" },
-                                { value: "35+", label: "Team Members" }
-                            ].map((stat, index) => (
+                            {company?.stats?.slice(0, 3).map((stat, index) => (
                                 <div key={index} className="card-premium text-center p-8 border border-border">
                                     <p className="text-4xl md:text-5xl font-bold text-primary mb-2 font-poppins">
                                         {stat.value}
@@ -175,109 +154,68 @@ export default function AboutContent({ team = [], company = null }) {
             {/* Company Timeline Section */}
             <CompanyTimeline />
 
-            {/* Team & Leadership with Filtering */}
+            {/* Team & Leadership Sections */}
             <section className="section-padding bg-secondary/30 overflow-hidden">
                 <div className="container-custom">
-                    <div className="text-center max-w-3xl mx-auto mb-16">
-                        <ScrollReveal>
-                            <h2 className="heading-lg mb-4">Meet the A-Team</h2>
-                            <p className="body-md">
-                                The experts and visionaries driving excellence and innovation for Amazon sellers globally.
-                            </p>
-                        </ScrollReveal>
-                    </div>
-
-                    {/* Team Filter Controls */}
-                    <div className="mb-12 space-y-6">
-                        <div className="flex flex-wrap items-center justify-center gap-3">
-                            {teamCategories.map((category) => (
-                                <button
-                                    key={category}
-                                    onClick={() => setActiveCategory(category)}
-                                    className={`px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 border ${activeCategory === category
-                                        ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105"
-                                        : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-primary"
-                                        }`}
-                                >
-                                    {category}
-                                </button>
-                            ))}
+                    {/* 1. Leadership Section */}
+                    <div className="mb-24">
+                        <div className="text-center max-w-3xl mx-auto mb-12">
+                            <ScrollReveal>
+                                <h2 className="heading-lg mb-4">Meet Our Leadership</h2>
+                                <p className="body-md">
+                                    The visionaries driving excellence and innovation at Fakhri IT Services.
+                                </p>
+                            </ScrollReveal>
                         </div>
 
-                        <div className="max-w-md mx-auto relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Search team member..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-11 pr-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                        {/* Leadership: Grid on Desktop, Carousel on Mobile */}
+                        <div className="hidden md:grid grid-cols-3 gap-8">
+                            {team.filter(m => m.category === 'Leadership Team' || m.category === 'Core Leadership').slice(0, 3).map((member) => (
+                                <TeamCard key={member._id} member={member} size="lg" />
+                            ))}
+                        </div>
+                        <div className="md:hidden">
+                            <TeamCarousel
+                                members={team.filter(m => m.category === 'Leadership Team' || m.category === 'Core Leadership')}
+                                mobileVisible={1}
+                                desktopVisible={3}
+                                autoplay={true}
+                                size="lg"
                             />
                         </div>
                     </div>
 
-                    {/* Team Grid with Animation */}
-                    <div className="relative min-h-[400px]">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={activeCategory + searchQuery}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.4 }}
-                                className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                            >
-                                {filteredTeam.length > 0 ? (
-                                    filteredTeam.map((member) => (
-                                        <div
-                                            key={member._id}
-                                            className="group bg-card rounded-2xl overflow-hidden border border-border hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 hover:-translate-y-1 flex flex-col h-full"
-                                        >
-                                            <div className="aspect-[4/5] relative overflow-hidden bg-muted">
-                                                <Image
-                                                    src={member.image || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400"}
-                                                    alt={member.name}
-                                                    fill
-                                                    unoptimized={member.image?.startsWith('http')}
-                                                    className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
-                                                    {member.description && (
-                                                        <p className="text-white/90 text-sm mb-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                                                            {member.description}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <div className="absolute top-4 right-4 translate-x-12 group-hover:translate-x-0 transition-transform duration-500">
-                                                    <span className="px-3 py-1 bg-primary text-white text-[10px] font-bold rounded-full uppercase tracking-wider">
-                                                        {member.category}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="p-6">
-                                                <h3 className="text-lg font-bold font-poppins mb-1 group-hover:text-primary transition-colors">{member.name}</h3>
-                                                <p className="text-primary/80 text-sm font-medium">{member.role}</p>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="col-span-full py-20 text-center">
-                                        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Filter className="w-8 h-8 text-muted-foreground" />
-                                        </div>
-                                        <h3 className="text-lg font-bold mb-2">No members found</h3>
-                                        <p className="text-muted-foreground">Try adjusting your filters or search query.</p>
-                                        <Button
-                                            variant="link"
-                                            onClick={() => { setActiveCategory("All"); setSearchQuery(""); }}
-                                            className="mt-2"
-                                        >
-                                            Reset all filters
-                                        </Button>
-                                    </div>
-                                )}
-                            </motion.div>
-                        </AnimatePresence>
+                    {/* 2. Senior Management Section */}
+                    <div className="mb-24">
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-2xl md:text-3xl font-bold font-poppins">Senior Management</h2>
+                            <div className="hidden md:flex gap-2">
+                                {/* Navigation will be handled by Carousel buttons */}
+                            </div>
+                        </div>
+
+                        <TeamCarousel
+                            members={team.filter(m => m.category === 'Senior Management')}
+                            mobileVisible={2}
+                            desktopVisible={5}
+                            autoplay={true}
+                            size="md"
+                        />
+                    </div>
+
+                    {/* 3. Our Rising Stars Section */}
+                    <div>
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-2xl md:text-3xl font-bold font-poppins">Our Rising Stars</h2>
+                        </div>
+
+                        <TeamCarousel
+                            members={team.filter(m => m.category === 'Rising Stars')}
+                            mobileVisible={3}
+                            desktopVisible={6}
+                            autoplay={true}
+                            size="sm"
+                        />
                     </div>
                 </div>
             </section>
@@ -345,5 +283,113 @@ export default function AboutContent({ team = [], company = null }) {
                 </div>
             </section>
         </>
+    );
+}
+
+function TeamCard({ member, size = "md" }) {
+    const sizeClasses = {
+        lg: {
+            container: "rounded-2xl",
+            image: "aspect-[4/5]",
+            content: "p-6",
+            name: "text-xl",
+            role: "text-base"
+        },
+        md: {
+            container: "rounded-xl",
+            image: "aspect-square",
+            content: "p-4",
+            name: "text-base",
+            role: "text-xs"
+        },
+        sm: {
+            container: "rounded-lg",
+            image: "aspect-square",
+            content: "p-3",
+            name: "text-sm",
+            role: "text-[10px]"
+        }
+    };
+
+    const s = sizeClasses[size];
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className={`group bg-card overflow-hidden border border-border hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 h-full ${s.container}`}
+        >
+            <div className={`relative overflow-hidden bg-muted ${s.image}`}>
+                <Image
+                    src={member.image || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400"}
+                    alt={member.name}
+                    fill
+                    unoptimized={member.image?.startsWith('http')}
+                    className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                    {member.description && size !== 'sm' && (
+                        <p className="text-white/90 text-sm mb-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-500 line-clamp-3">
+                            {member.description}
+                        </p>
+                    )}
+                </div>
+            </div>
+            <div className={s.content}>
+                <h3 className={`font-bold font-poppins mb-1 group-hover:text-primary transition-colors truncate ${s.name}`}>{member.name}</h3>
+                <p className={`text-primary/80 font-medium truncate ${s.role}`}>{member.role}</p>
+            </div>
+        </motion.div>
+    );
+}
+
+function TeamCarousel({ members, mobileVisible, desktopVisible, autoplay = true, size = "md" }) {
+    const plugin = React.useRef(
+        Autoplay({ delay: 3000, stopOnInteraction: true })
+    );
+
+    const basis = {
+        1: { sm: "basis-full", md: "md:basis-full", lg: "lg:basis-full" },
+        2: { sm: "basis-1/2", md: "md:basis-1/2", lg: "lg:basis-1/2" },
+        3: { sm: "basis-1/3", md: "md:basis-1/3", lg: "lg:basis-1/3" },
+        4: { sm: "basis-1/4", md: "md:basis-1/4", lg: "lg:basis-1/4" },
+        5: { sm: "basis-1/5", md: "md:basis-1/5", lg: "lg:basis-1/5" },
+        6: { sm: "basis-1/6", md: "md:basis-1/6", lg: "lg:basis-1/6" },
+    };
+
+    return (
+        <div className="relative px-4">
+            <Carousel
+                opts={{
+                    align: "start",
+                    loop: true,
+                }}
+                plugins={autoplay ? [plugin.current] : []}
+                className="w-full"
+            >
+                <CarouselContent className="-ml-4">
+                    {members.map((member) => (
+                        <CarouselItem
+                            key={member._id}
+                            className={cn(
+                                "pl-4",
+                                basis[mobileVisible].sm,
+                                desktopVisible > mobileVisible && basis[Math.min(desktopVisible, mobileVisible + 1)].md,
+                                basis[desktopVisible].lg
+                            )}
+                        >
+                            <TeamCard member={member} size={size} />
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+                <div className="hidden md:block absolute -left-4 md:-left-8 top-1/2 -translate-y-1/2 z-10">
+                    <CarouselPrevious className="relative left-0 translate-y-0 h-8 w-8 md:h-10 md:w-10 bg-background/80 backdrop-blur shadow-md hover:bg-primary hover:text-white transition-all" />
+                </div>
+                <div className="hidden md:block absolute -right-4 md:-right-8 top-1/2 -translate-y-1/2 z-10">
+                    <CarouselNext className="relative right-0 translate-y-0 h-8 w-8 md:h-10 md:w-10 bg-background/80 backdrop-blur shadow-md hover:bg-primary hover:text-white transition-all" />
+                </div>
+            </Carousel>
+        </div>
     );
 }

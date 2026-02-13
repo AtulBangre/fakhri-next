@@ -230,22 +230,23 @@ export default function WebsiteTab() {
 }
 
 // Helper for Array Inputs (Tags, Features, etc.)
-function ArrayInput({ values, onChange, label, placeholder }) {
-    const handleAdd = () => onChange([...values, ""]);
+function ArrayInput({ values = [], onChange, label, placeholder }) {
+    const safeValues = Array.isArray(values) ? values : [];
+    const handleAdd = () => onChange([...safeValues, ""]);
     const handleChange = (index, value) => {
-        const newValues = [...values];
+        const newValues = [...safeValues];
         newValues[index] = value;
         onChange(newValues);
     };
     const handleRemove = (index) => {
-        const newValues = values.filter((_, i) => i !== index);
+        const newValues = safeValues.filter((_, i) => i !== index);
         onChange(newValues);
     };
 
     return (
         <div className="space-y-2">
             <Label>{label}</Label>
-            {values.map((val, index) => (
+            {safeValues.map((val, index) => (
                 <div key={index} className="flex gap-2">
                     <Input value={val} onChange={(e) => handleChange(index, e.target.value)} placeholder={placeholder} />
                     <Button type="button" variant="ghost" size="icon" onClick={() => handleRemove(index)}><X className="h-4 w-4" /></Button>
@@ -256,17 +257,99 @@ function ArrayInput({ values, onChange, label, placeholder }) {
     );
 }
 
-// 1. Company Manager
+// Helper for Object Array Inputs (Stats, Badges, etc.)
+function ObjectArrayInput({ values = [], onChange, label, fields }) {
+    const safeValues = Array.isArray(values) ? values : [];
+    const handleAdd = () => {
+        const newItem = fields.reduce((acc, field) => ({ ...acc, [field.name]: "" }), {});
+        onChange([...safeValues, newItem]);
+    };
+
+    const handleChange = (index, fieldName, value) => {
+        const newValues = [...safeValues];
+        newValues[index] = { ...newValues[index], [fieldName]: value };
+        onChange(newValues);
+    };
+
+    const handleRemove = (index) => {
+        const newValues = safeValues.filter((_, i) => i !== index);
+        onChange(newValues);
+    };
+
+    return (
+        <div className="space-y-4 border p-4 rounded-lg bg-muted/20">
+            <div className="flex items-center justify-between mb-2">
+                <Label className="text-base font-semibold">{label}</Label>
+                <Button type="button" variant="outline" size="sm" onClick={handleAdd}>
+                    <Plus className="h-4 w-4 mr-2" /> Add {label.replace(/s$/i, '')}
+                </Button>
+            </div>
+            {safeValues.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4 bg-background/50 rounded-md border border-dashed">
+                    No {label.toLowerCase()} added yet.
+                </p>
+            )}
+            <div className="grid gap-4">
+                {safeValues.map((val, index) => (
+                    <div key={index} className="space-y-3 p-4 border rounded-md bg-background relative shadow-sm">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemove(index)}
+                            className="absolute right-2 top-2 text-destructive hover:text-destructive hover:bg-destructive/10 h-7 w-7"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                            {fields.map((field) => (
+                                <div key={field.name} className={`${field.fullWidth ? 'md:col-span-2' : ''} space-y-1`}>
+                                    <Label className="text-xs font-medium text-muted-foreground">{field.label}</Label>
+                                    {field.type === 'textarea' ? (
+                                        <Textarea
+                                            value={val[field.name] || ""}
+                                            onChange={(e) => handleChange(index, field.name, e.target.value)}
+                                            placeholder={field.placeholder}
+                                            rows={2}
+                                            className="text-sm"
+                                        />
+                                    ) : (
+                                        <Input
+                                            value={val[field.name] || ""}
+                                            onChange={(e) => handleChange(index, field.name, e.target.value)}
+                                            placeholder={field.placeholder}
+                                            className="text-sm"
+                                        />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 // 1. Company Manager
 function CompanyManager({ data, onUpdate, refreshData }) {
     const [formData, setFormData] = useState(data || {
         name: "", tagline: "", established: "", description: "", logo: "",
         contact: { phone: { primary: "", secondary: "" }, email: { info: "", support: "" }, address: { full: "" }, social: { linkedin: "", instagram: "" } },
-        mission: "", vision: "", story: { title: "", content: "" }
+        mission: "", vision: "", story: { title: "", content: "", highlights: [] },
+        badges: [], stats: [], culture: { title: "", values: [] }
     });
 
     useEffect(() => {
-        if (data && Object.keys(data).length > 0) setFormData(data);
+        if (data && Object.keys(data).length > 0) {
+            setFormData({
+                ...data,
+                story: data.story || { title: "", content: "", highlights: [] },
+                badges: data.badges || [],
+                stats: data.stats || [],
+                culture: data.culture || { title: "", values: [] }
+            });
+        }
     }, [data]);
 
     const [isSaving, setIsSaving] = useState(false);
@@ -298,17 +381,24 @@ function CompanyManager({ data, onUpdate, refreshData }) {
 
     return (
         <div className="space-y-6 animate-in fade-in">
-            <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => refreshData()} title="Refresh Data">
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh
-                </Button>
-                <Button onClick={handleSave} disabled={isSaving}>
-                    {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Changes
-                </Button>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-lg border shadow-sm sticky top-16 z-30">
+                <div>
+                    <h3 className="text-lg font-semibold">Company Profile</h3>
+                    <p className="text-sm text-muted-foreground">Manage your brand identity, contact info, and core messaging.</p>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => refreshData()} title="Refresh Data">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Refresh
+                    </Button>
+                    <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Changes
+                    </Button>
+                </div>
             </div>
+
             <div className="grid md:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader><CardTitle>General Info</CardTitle></CardHeader>
@@ -327,6 +417,7 @@ function CompanyManager({ data, onUpdate, refreshData }) {
                         <div className="grid gap-2"><Label>Description</Label><Textarea value={formData.description} onChange={(e) => handleChange(null, 'description', e.target.value)} rows={4} /></div>
                     </CardContent>
                 </Card>
+
                 <Card>
                     <CardHeader><CardTitle>Contact Details</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
@@ -339,8 +430,38 @@ function CompanyManager({ data, onUpdate, refreshData }) {
                             <div className="grid gap-2"><Label>Support Email</Label><Input value={formData.contact?.email?.support} onChange={(e) => handleChange('contact', 'email', { ...formData.contact.email, support: e.target.value })} /></div>
                         </div>
                         <div className="grid gap-2"><Label>Full Address</Label><Textarea value={formData.contact?.address?.full} onChange={(e) => handleChange('contact', 'address', { ...formData.contact.address, full: e.target.value })} /></div>
+                        <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+                            <div className="grid gap-2"><Label>LinkedIn</Label><Input value={formData.contact?.social?.linkedin} onChange={(e) => handleChange('contact', 'social', { ...formData.contact.social, linkedin: e.target.value })} /></div>
+                            <div className="grid gap-2"><Label>Instagram</Label><Input value={formData.contact?.social?.instagram} onChange={(e) => handleChange('contact', 'social', { ...formData.contact.social, instagram: e.target.value })} /></div>
+                        </div>
                     </CardContent>
                 </Card>
+
+                <Card className="md:col-span-2">
+                    <CardHeader><CardTitle>Trust & Authority (Badges & Stats)</CardTitle></CardHeader>
+                    <CardContent className="grid md:grid-cols-2 gap-6">
+                        <ObjectArrayInput
+                            label="Trust Badges"
+                            values={formData.badges}
+                            onChange={(val) => handleChange(null, 'badges', val)}
+                            fields={[
+                                { name: 'title', label: 'Badge Title', placeholder: 'e.g. Amazon Gold Partner' },
+                                { name: 'subtitle', label: 'Subtitle/Detail', placeholder: 'e.g. Strategic Provider Network' },
+                            ]}
+                        />
+                        <ObjectArrayInput
+                            label="Company Stats"
+                            values={formData.stats}
+                            onChange={(val) => handleChange(null, 'stats', val)}
+                            fields={[
+                                { name: 'value', label: 'Value', placeholder: 'e.g. 500+' },
+                                { name: 'label', label: 'Label', placeholder: 'e.g. Happy Clients' },
+                                { name: 'description', label: 'Description', placeholder: 'e.g. Trusted by leading brands', fullWidth: true },
+                            ]}
+                        />
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader><CardTitle>Mission & Vision</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
@@ -348,15 +469,34 @@ function CompanyManager({ data, onUpdate, refreshData }) {
                         <div className="grid gap-2"><Label>Vision</Label><Textarea value={formData.vision} onChange={(e) => handleChange(null, 'vision', e.target.value)} rows={3} /></div>
                     </CardContent>
                 </Card>
+
                 <Card>
-                    <CardHeader><CardTitle>Social Media & Story</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>Our Story</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2"><Label>LinkedIn</Label><Input value={formData.contact?.social?.linkedin} onChange={(e) => handleChange('contact', 'social', { ...formData.contact.social, linkedin: e.target.value })} /></div>
-                            <div className="grid gap-2"><Label>Instagram</Label><Input value={formData.contact?.social?.instagram} onChange={(e) => handleChange('contact', 'social', { ...formData.contact.social, instagram: e.target.value })} /></div>
-                        </div>
                         <div className="grid gap-2"><Label>Story Title</Label><Input value={formData.story?.title} onChange={(e) => handleChange('story', 'title', e.target.value)} /></div>
-                        <div className="grid gap-2"><Label>Story Content</Label><Textarea value={formData.story?.content} onChange={(e) => handleChange('story', 'content', e.target.value)} rows={3} /></div>
+                        <div className="grid gap-2"><Label>Story Content</Label><Textarea value={formData.story?.content} onChange={(e) => handleChange('story', 'content', e.target.value)} rows={4} /></div>
+                        <ArrayInput
+                            label="Story Highlights"
+                            values={formData.story?.highlights || []}
+                            onChange={(val) => handleChange('story', 'highlights', val)}
+                            placeholder="Add a key highlight..."
+                        />
+                    </CardContent>
+                </Card>
+
+                <Card className="md:col-span-2">
+                    <CardHeader><CardTitle>Culture & Values</CardTitle></CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="grid gap-2"><Label>Section Title</Label><Input value={formData.culture?.title} onChange={(e) => handleChange('culture', 'title', e.target.value)} placeholder="e.g. Our Core Values" className="max-w-md" /></div>
+                        <ObjectArrayInput
+                            label="Core Values"
+                            values={formData.culture?.values}
+                            onChange={(val) => handleChange('culture', 'values', val)}
+                            fields={[
+                                { name: 'title', label: 'Value Name', placeholder: 'e.g. Excellence' },
+                                { name: 'description', label: 'Description', placeholder: 'e.g. We strive for perfection...', fullWidth: true },
+                            ]}
+                        />
                     </CardContent>
                 </Card>
             </div>

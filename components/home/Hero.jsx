@@ -23,7 +23,7 @@ export default function Hero({ company }) {
     ];
 
     return (
-        <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-background">
+        <section className="relative min-h-[75vh] flex items-center overflow-hidden bg-background">
             {/* Background Elements */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
             <div className="absolute inset-0 bg-gradient-to-b from-secondary/30 via-transparent to-background" />
@@ -111,20 +111,7 @@ export default function Hero({ company }) {
                             </Link>
                         </motion.div>
 
-                        {/* Quick Stats */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.4 }}
-                            className="flex flex-wrap gap-8 mt-12 pt-8 border-t border-border"
-                        >
-                            {stats.slice(0, 3).map((stat, index) => (
-                                <div key={index}>
-                                    <p className="text-3xl font-poppins font-bold text-primary">{stat.value}</p>
-                                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                                </div>
-                            ))}
-                        </motion.div>
+
                     </div>
 
                     {/* Visual */}
