@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { LayoutDashboard, CreditCard, CheckSquare, FileText, Receipt, User, Menu, X, LogOut, HelpCircle, Loader2 } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
 import WhatsAppButton from "@/components/client/WhatsAppButton";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
-import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, clearAllNotifications } from "@/lib/actions/notification";
-import { getUsers, getUserByEmail } from "@/lib/actions/user";
+import { markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, clearAllNotifications } from "@/lib/actions/notification";
+import { getUsers, getUserByEmail, updateUser } from "@/lib/actions/user";
+import useNotificationPolling from "@/hooks/useNotificationPolling";
 
 // Tabs
 import ClientDashboardTab from "@/components/client/tabs/DashboardTab";
@@ -54,9 +55,6 @@ export default function ClientDashboardPage() {
 
         if (currentUser) {
           setUser(currentUser);
-
-          const { notifications: notifs } = await getNotifications({ recipientId: currentUser._id, limit: 10 });
-          setNotifications(notifs || []);
         }
       } catch (error) {
         console.error("Error loading dashboard data:", error);
@@ -68,10 +66,23 @@ export default function ClientDashboardPage() {
     loadInitialData();
   }, []);
 
+  // Real-time notification polling
+  const handleNotificationsUpdate = useCallback((data) => {
+    setNotifications(data);
+  }, []);
+
+  useNotificationPolling({
+    recipientId: user?._id,
+    limit: 20,
+    interval: 10_000,
+    onUpdate: handleNotificationsUpdate,
+    enabled: !!user,
+  });
+
   const handleMarkAsRead = async (id) => {
     try {
       await markNotificationAsRead(id);
-      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true, isRead: true } : n));
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -81,7 +92,7 @@ export default function ClientDashboardPage() {
     if (!user) return;
     try {
       await markAllNotificationsAsRead(user._id);
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, read: true, isRead: true })));
     } catch (error) {
       console.error("Error marking all as read:", error);
     }
@@ -103,6 +114,45 @@ export default function ClientDashboardPage() {
       setNotifications([]);
     } catch (error) {
       console.error("Error clearing all notifications:", error);
+    }
+  };
+
+  const handleSettingsChange = async (newSettings) => {
+    if (!user) return;
+    try {
+      setUser(prev => ({ ...prev, notificationSettings: newSettings }));
+      await updateUser(user._id, { notificationSettings: newSettings });
+    } catch (error) {
+      console.error("Error updating notification settings:", error);
+    }
+  };
+
+  // Navigate to the relevant tab when a notification is clicked
+  const handleNotificationClick = (notification) => {
+    let targetTab = null;
+
+    // Parse link hash (e.g., #Tasks -> Tasks)
+    if (notification.link && notification.link.startsWith('#')) {
+      targetTab = notification.link.substring(1);
+    }
+
+    // Fallback: map notification type to tab
+    if (!targetTab) {
+      const typeToTab = {
+        task: 'Tasks',
+        invoice: 'Billing',
+        info: 'Dashboard',
+        success: 'Dashboard',
+        warning: 'Dashboard',
+        error: 'Dashboard',
+      };
+      targetTab = typeToTab[notification.type] || 'Dashboard';
+    }
+
+    // Validate the tab exists in navigation
+    const validTab = navigation.find(n => n.id === targetTab);
+    if (validTab) {
+      setActiveTab(validTab.id);
     }
   };
 
@@ -200,6 +250,9 @@ export default function ClientDashboardPage() {
               onMarkAllAsRead={handleMarkAllAsRead}
               onDelete={handleDeleteNotification}
               onClearAll={handleClearAll}
+              settings={user?.notificationSettings}
+              onSettingsChange={handleSettingsChange}
+              onNotificationClick={handleNotificationClick}
             />
           </div>
         </header>

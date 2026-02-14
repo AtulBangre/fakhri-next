@@ -39,6 +39,15 @@ const UserSchema = new mongoose.Schema({
     listingManager: { type: String },
     location: { type: String },
     joinedDate: { type: Date, default: Date.now },
+    notificationSettings: {
+        soundEnabled: { type: Boolean, default: true },
+        emailNotifications: { type: Boolean, default: true },
+        pushNotifications: { type: Boolean, default: true },
+        taskUpdates: { type: Boolean, default: true },
+        paymentAlerts: { type: Boolean, default: true },
+        marketingNews: { type: Boolean, default: false },
+        weeklyDigest: { type: Boolean, default: true }
+    }
 }, { timestamps: true });
 
 export default mongoose.models.User || mongoose.model('User', UserSchema);

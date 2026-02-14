@@ -4,9 +4,12 @@ import { useState, useEffect } from "react";
 import { LayoutDashboard, CheckSquare, Clock, CheckCircle2, Bell, Mail, Headphones, Loader2 } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import StatusBadge from "@/components/dashboard/StatusBadge";
-import { getTasks } from "@/lib/actions/task";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getTasks, updateTaskStatus } from "@/lib/actions/task";
 import { getUserById, getUsers } from "@/lib/actions/user";
 import { getNotifications } from "@/lib/actions/notification";
+import TaskDetailsDialog from "@/components/dashboard/TaskDetailsDialog";
+import { toast } from "sonner";
 
 const ClientDashboardTab = ({ setActiveTab, currentUser }) => {
     const [loading, setLoading] = useState(true);
@@ -14,6 +17,7 @@ const ClientDashboardTab = ({ setActiveTab, currentUser }) => {
     const [manager, setManager] = useState(null);
     const [tasks, setTasks] = useState([]);
     const [notifications, setNotifications] = useState([]);
+    const [showViewTask, setShowViewTask] = useState(null);
 
     useEffect(() => {
         const loadDashboardData = async () => {
@@ -143,7 +147,11 @@ const ClientDashboardTab = ({ setActiveTab, currentUser }) => {
                     <div className="space-y-3">
                         {recentTasks.length > 0 ? (
                             recentTasks.map((task) => (
-                                <div key={task._id} className="flex items-center justify-between py-2 border-b last:border-0">
+                                <div
+                                    key={task._id}
+                                    className="flex items-center justify-between py-2 border-b last:border-0 cursor-pointer hover:bg-muted/50 transition-colors px-2 rounded-lg -mx-2"
+                                    onClick={() => setShowViewTask(task)}
+                                >
                                     <div className="flex items-center gap-3">
                                         <CheckSquare className="h-4 w-4 text-muted-foreground" />
                                         <span className="text-sm">{task.title}</span>
@@ -186,7 +194,14 @@ const ClientDashboardTab = ({ setActiveTab, currentUser }) => {
                     )}
                 </div>
             </div>
-        </div>
+
+
+            <TaskDetailsDialog
+                open={!!showViewTask}
+                onOpenChange={(open) => !open && setShowViewTask(null)}
+                task={showViewTask}
+            />
+        </div >
     );
 };
 

@@ -9,6 +9,7 @@ const NotificationSchema = new mongoose.Schema({
         enum: ['info', 'success', 'warning', 'error', 'task', 'invoice'],
         default: 'info'
     },
+    icon: { type: String },
     read: { type: Boolean, default: false },
     link: { type: String }
 }, { timestamps: true });

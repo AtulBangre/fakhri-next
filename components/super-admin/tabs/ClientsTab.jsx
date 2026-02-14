@@ -838,14 +838,29 @@ const SuperAdminClientsTab = () => {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Select defaultValue={task.status}>
+                                                    <Select
+                                                        defaultValue={task.status}
+                                                        onValueChange={async (v) => {
+                                                            try {
+                                                                await upsertTask({ id: task._id || task.id, status: v });
+                                                                setTasks(prev => prev.map(t => (t._id === task._id || t.id === task.id) ? { ...t, status: v } : t));
+                                                                toast.success("Status updated");
+                                                            } catch (error) {
+                                                                console.error("Failed to update status", error);
+                                                                toast.error("Failed to update status");
+                                                            }
+                                                        }}
+                                                    >
                                                         <SelectTrigger className="w-[130px] h-8">
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
                                                             <SelectItem value="pending">Pending</SelectItem>
+                                                            <SelectItem value="To Do">To Do</SelectItem>
                                                             <SelectItem value="in-progress">In Progress</SelectItem>
+                                                            <SelectItem value="In Review">In Review</SelectItem>
                                                             <SelectItem value="completed">Completed</SelectItem>
+                                                            <SelectItem value="On Hold">On Hold</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                 </TableCell>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard, Users, UsersRound, UserCog, CheckSquare,
@@ -10,8 +10,9 @@ import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
-import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, clearAllNotifications } from "@/lib/actions/notification";
-import { getUsers } from "@/lib/actions/user";
+import { markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, clearAllNotifications } from "@/lib/actions/notification";
+import { getUsers, updateUser } from "@/lib/actions/user";
+import useNotificationPolling from "@/hooks/useNotificationPolling";
 
 // Import Tabs
 import SuperAdminDashboardTab from "@/components/super-admin/tabs/DashboardTab";
@@ -50,9 +51,6 @@ export default function SuperAdminDashboardPage() {
         if (users && users.length > 0) {
           const sa = users[0];
           setCurrentUser(sa);
-
-          const { notifications: notifs } = await getNotifications({ recipientId: sa._id, limit: 10 });
-          setNotifications(notifs || []);
         }
       } catch (error) {
         console.error("Error loading super admin dashboard data:", error);
@@ -64,10 +62,23 @@ export default function SuperAdminDashboardPage() {
     loadInitialData();
   }, []);
 
+  // Real-time notification polling
+  const handleNotificationsUpdate = useCallback((data) => {
+    setNotifications(data);
+  }, []);
+
+  useNotificationPolling({
+    recipientId: currentUser?._id,
+    limit: 20,
+    interval: 10_000,
+    onUpdate: handleNotificationsUpdate,
+    enabled: !!currentUser,
+  });
+
   const handleMarkAsRead = async (id) => {
     try {
       await markNotificationAsRead(id);
-      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true, isRead: true } : n));
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -77,7 +88,7 @@ export default function SuperAdminDashboardPage() {
     if (!currentUser) return;
     try {
       await markAllNotificationsAsRead(currentUser._id);
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, read: true, isRead: true })));
     } catch (error) {
       console.error("Error marking all as read:", error);
     }
@@ -99,6 +110,45 @@ export default function SuperAdminDashboardPage() {
       setNotifications([]);
     } catch (error) {
       console.error("Error clearing all notifications:", error);
+    }
+  };
+
+  const handleSettingsChange = async (newSettings) => {
+    if (!currentUser) return;
+    try {
+      setCurrentUser(prev => ({ ...prev, notificationSettings: newSettings }));
+      await updateUser(currentUser._id, { notificationSettings: newSettings });
+    } catch (error) {
+      console.error("Error updating notification settings:", error);
+    }
+  };
+
+  // Navigate to the relevant tab when a notification is clicked
+  const handleNotificationClick = (notification) => {
+    let targetTab = null;
+
+    // Parse link hash (e.g., #Tasks -> Tasks)
+    if (notification.link && notification.link.startsWith('#')) {
+      targetTab = notification.link.substring(1);
+    }
+
+    // Fallback: map notification type to tab
+    if (!targetTab) {
+      const typeToTab = {
+        task: 'Tasks',
+        invoice: 'Sales',
+        info: 'Dashboard',
+        success: 'Dashboard',
+        warning: 'Dashboard',
+        error: 'Dashboard',
+      };
+      targetTab = typeToTab[notification.type] || 'Dashboard';
+    }
+
+    // Validate the tab exists in navigation
+    const validTab = navigation.find(n => n.id === targetTab);
+    if (validTab) {
+      setActiveTab(validTab.id);
     }
   };
 
@@ -202,6 +252,9 @@ export default function SuperAdminDashboardPage() {
               onMarkAllAsRead={handleMarkAllAsRead}
               onDelete={handleDeleteNotification}
               onClearAll={handleClearAll}
+              settings={currentUser?.notificationSettings}
+              onSettingsChange={handleSettingsChange}
+              onNotificationClick={handleNotificationClick}
             />
           </div>
         </header>

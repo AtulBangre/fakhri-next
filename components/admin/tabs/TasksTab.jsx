@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getClients, getTasks, upsertTask, deleteTask, getAdmins } from "@/lib/actions/admin";
+import TaskDetailsDialog from "@/components/dashboard/TaskDetailsDialog";
+import { getClients, getTasks, upsertTask, deleteTask } from "@/lib/actions/admin";
 import { toast } from "sonner";
 import {
     AlertDialog,
@@ -32,11 +33,11 @@ const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
 const AdminTasksTab = ({ currentUser }) => {
     const [clients, setClients] = useState([]);
     const [tasks, setTasks] = useState([]);
-    const [admins, setAdmins] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [showCreateTask, setShowCreateTask] = useState(false);
     const [showEditTask, setShowEditTask] = useState(null);
+    const [showViewTask, setShowViewTask] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [taskToDelete, setTaskToDelete] = useState(null);
 
@@ -54,9 +55,8 @@ const AdminTasksTab = ({ currentUser }) => {
 
             setLoading(true);
             try {
-                const [c, a] = await Promise.all([
-                    getClients(currentUser.role === 'super-admin' ? {} : { managerId: currentUser._id }),
-                    getAdmins()
+                const [c] = await Promise.all([
+                    getClients(currentUser.role === 'super-admin' ? {} : { managerId: currentUser._id })
                 ]);
 
                 const clientIds = c.map(client => client._id);
@@ -75,13 +75,11 @@ const AdminTasksTab = ({ currentUser }) => {
 
                 // Deduplicate data to avoid key errors
                 const uniqueClients = Array.from(new Map(c.map(item => [String(item._id), item])).values());
-                const uniqueAdmins = Array.from(new Map(a.map(item => [String(item._id), item])).values());
                 const uniqueTasks = Array.from(new Map(t.map(item => [String(item._id || item.id), item])).values());
 
                 // Ensure clients have id property for consistency
                 setClients(uniqueClients.map(client => ({ ...client, id: client._id })));
                 setTasks(uniqueTasks);
-                setAdmins(uniqueAdmins);
             } catch (error) {
                 console.error("Failed to load data", error);
                 toast.error("Failed to load tasks");
@@ -126,7 +124,7 @@ const AdminTasksTab = ({ currentUser }) => {
     const resetNewTaskForm = () => {
         setNewTask({
             title: "",
-            owner: "Sarah Mitchell",
+            owner: currentUser?.name || "Admin",
             dueDate: "",
             planForWeek: getCurrentWeek(),
             relatedTo: "",
@@ -134,6 +132,20 @@ const AdminTasksTab = ({ currentUser }) => {
             isHighPriority: false,
             isCompleted: false
         });
+    };
+
+    // Auto-select manager when client is selected
+    const handleClientChange = (clientId) => {
+        const client = clients.find(c => c.id.toString() === clientId);
+        let updates = { relatedTo: clientId, owner: currentUser.name };
+        setNewTask(prev => ({ ...prev, ...updates }));
+    };
+
+    // Auto-select manager when client is selected in Edit Task
+    const handleEditClientChange = (clientId) => {
+        const client = clients.find(c => c.id.toString() === clientId);
+        let updates = { relatedTo: clientId, owner: currentUser.name };
+        setShowEditTask(prev => ({ ...prev, ...updates }));
     };
 
     const handleCreateTask = async () => {
@@ -305,16 +317,7 @@ const AdminTasksTab = ({ currentUser }) => {
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
                                 <span className="text-sm text-muted-foreground">Owner</span>
-                                <Select value={newTask.owner} onValueChange={(v) => setNewTask({ ...newTask, owner: v })}>
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {admins.map(admin => (
-                                            <SelectItem key={admin._id} value={admin.name}>{admin.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Input value={currentUser?.name} disabled className="bg-muted" />
                             </div>
                             <Button variant="ghost" size="sm" onClick={() => { setShowCreateTask(false); resetNewTaskForm(); }}>
                                 <X className="h-4 w-4" />
@@ -363,7 +366,7 @@ const AdminTasksTab = ({ currentUser }) => {
                         {/* Related To - Dropdown to select client */}
                         <div className="flex items-center gap-4">
                             <label className="text-sm font-medium w-32 text-right">Related To</label>
-                            <Select value={newTask.relatedTo} onValueChange={(v) => setNewTask({ ...newTask, relatedTo: v })}>
+                            <Select value={newTask.relatedTo} onValueChange={handleClientChange}>
                                 <SelectTrigger className="flex-1">
                                     <SelectValue placeholder="Select client" />
                                 </SelectTrigger>
@@ -460,21 +463,35 @@ const AdminTasksTab = ({ currentUser }) => {
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <Select defaultValue={task.status} disabled >
+                                    <Select
+                                        defaultValue={task.status}
+                                        onValueChange={async (v) => {
+                                            try {
+                                                await upsertTask({ id: task._id || task.id, status: v });
+                                                setTasks(prev => prev.map(t => (t._id === task._id || t.id === task.id) ? { ...t, status: v } : t));
+                                                toast.success("Status updated");
+                                            } catch (error) {
+                                                console.error(error);
+                                                toast.error("Failed to update status");
+                                            }
+                                        }}
+                                    >
                                         <SelectTrigger className="w-[130px] h-8">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="To Do">To Do</SelectItem>
                                             <SelectItem value="In Progress">In Progress</SelectItem>
+                                            <SelectItem value="In Review">In Review</SelectItem>
                                             <SelectItem value="Completed">Completed</SelectItem>
+                                            <SelectItem value="On Hold">On Hold</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">{task.dueDate}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-1">
-                                        <Button variant="ghost" size="sm">
+                                        <Button variant="ghost" size="sm" onClick={() => setShowViewTask(task)}>
                                             <Eye className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="sm" onClick={() => {
@@ -508,16 +525,7 @@ const AdminTasksTab = ({ currentUser }) => {
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-muted-foreground">Owner</span>
-                                    <Select value={showEditTask.owner} onValueChange={(v) => setShowEditTask({ ...showEditTask, owner: v })}>
-                                        <SelectTrigger className="w-[180px]">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {admins.map(admin => (
-                                                <SelectItem key={admin._id} value={admin.name}>{admin.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Input value={currentUser?.name} disabled className="bg-muted" />
                                 </div>
                                 <Button variant="ghost" size="sm" onClick={() => setShowEditTask(null)}>
                                     <X className="h-4 w-4" />
@@ -566,7 +574,7 @@ const AdminTasksTab = ({ currentUser }) => {
                                 <label className="text-sm font-medium w-32 text-right">Related To</label>
                                 <Select
                                     value={showEditTask.relatedTo}
-                                    onValueChange={(v) => setShowEditTask({ ...showEditTask, relatedTo: v })}
+                                    onValueChange={handleEditClientChange}
                                 >
                                     <SelectTrigger className="flex-1">
                                         <SelectValue />
@@ -661,7 +669,13 @@ const AdminTasksTab = ({ currentUser }) => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+
+            <TaskDetailsDialog
+                open={!!showViewTask}
+                onOpenChange={(open) => !open && setShowViewTask(null)}
+                task={showViewTask}
+            />
+        </div >
     );
 };
 

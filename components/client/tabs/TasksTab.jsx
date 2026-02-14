@@ -6,12 +6,16 @@ import StatusBadge from "@/components/dashboard/StatusBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getTasks } from "@/lib/actions/task";
 import { getUsers } from "@/lib/actions/user";
+import { toast } from "sonner";
+import TaskDetailsDialog from "@/components/dashboard/TaskDetailsDialog";
 
 const ClientTasksTab = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
     const [tasks, setTasks] = useState([]);
+    const [showViewTask, setShowViewTask] = useState(null);
     const [showFilters, setShowFilters] = useState(false);
     const [statusFilter, setStatusFilter] = useState("all");
     const [managerFilter, setManagerFilter] = useState("all");
@@ -258,7 +262,7 @@ const ClientTasksTab = ({ currentUser }) => {
                                         {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm">
+                                        <Button variant="ghost" size="sm" onClick={() => setShowViewTask(task)}>
                                             <Eye className="h-4 w-4 mr-1" />
                                             View
                                         </Button>
@@ -280,6 +284,12 @@ const ClientTasksTab = ({ currentUser }) => {
             <div className="bg-accent/50 rounded-lg p-4 text-center text-sm text-muted-foreground">
                 <p>Tasks are managed by your account manager. Contact them for any task-related requests.</p>
             </div>
+
+            <TaskDetailsDialog
+                open={!!showViewTask}
+                onOpenChange={(open) => !open && setShowViewTask(null)}
+                task={showViewTask}
+            />
         </div>
     );
 };

@@ -4,12 +4,16 @@ import { Users, CheckSquare, Clock, CheckCircle2, AlertCircle, Loader2 } from "l
 import StatCard from "@/components/dashboard/StatCard";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import { Badge } from "@/components/ui/badge";
-import { getClients, getTasks } from "@/lib/actions/admin";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getClients, getTasks, upsertTask } from "@/lib/actions/admin";
+import TaskDetailsDialog from "@/components/dashboard/TaskDetailsDialog";
+import { toast } from "sonner";
 
 const AdminDashboardTab = ({ setActiveTab, currentUser }) => {
     const [clients, setClients] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showViewTask, setShowViewTask] = useState(null);
 
     useEffect(() => {
         async function loadData() {
@@ -96,7 +100,11 @@ const AdminDashboardTab = ({ setActiveTab, currentUser }) => {
                     <div className="space-y-3">
                         {recentTasks.length > 0 ? (
                             recentTasks.map((task) => (
-                                <div key={task._id || task.id} className="flex items-center justify-between py-3 border-b last:border-0">
+                                <div
+                                    key={task._id || task.id}
+                                    className="flex items-center justify-between py-3 border-b last:border-0 cursor-pointer hover:bg-muted/50 transition-colors px-2 rounded-lg -mx-2"
+                                    onClick={() => setShowViewTask(task)}
+                                >
                                     <div>
                                         <p className="font-medium text-sm">{task.title}</p>
                                         <p className="text-xs text-muted-foreground">{task.client?.name || task.client || 'General'}</p>
@@ -105,7 +113,32 @@ const AdminDashboardTab = ({ setActiveTab, currentUser }) => {
                                         <Badge variant={task.priority === "High" ? "destructive" : task.priority === "Medium" ? "secondary" : "outline"} className="text-xs">
                                             {task.priority || "Medium"}
                                         </Badge>
-                                        <StatusBadge status={task.status} />
+                                        <div onClick={(e) => e.stopPropagation()}>
+                                            <Select
+                                                defaultValue={task.status}
+                                                onValueChange={async (v) => {
+                                                    try {
+                                                        await upsertTask({ id: task._id || task.id, status: v });
+                                                        setTasks(prev => prev.map(t => (t._id === task._id || t.id === task.id) ? { ...t, status: v } : t));
+                                                        toast.success("Status updated");
+                                                    } catch (error) {
+                                                        console.error(error);
+                                                        toast.error("Failed to update status");
+                                                    }
+                                                }}
+                                            >
+                                                <SelectTrigger className="w-[110px] h-7 text-xs">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="To Do">To Do</SelectItem>
+                                                    <SelectItem value="In Progress">In Progress</SelectItem>
+                                                    <SelectItem value="In Review">In Review</SelectItem>
+                                                    <SelectItem value="Completed">Completed</SelectItem>
+                                                    <SelectItem value="On Hold">On Hold</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                 </div>
                             ))
@@ -155,7 +188,14 @@ const AdminDashboardTab = ({ setActiveTab, currentUser }) => {
                     </div>
                 </div>
             </div>
-        </div>
+
+
+            <TaskDetailsDialog
+                open={!!showViewTask}
+                onOpenChange={(open) => !open && setShowViewTask(null)}
+                task={showViewTask}
+            />
+        </div >
     );
 };
 

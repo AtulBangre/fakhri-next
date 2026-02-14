@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Bell,
@@ -26,8 +26,6 @@ import {
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 const iconMap = {
@@ -43,28 +41,80 @@ const iconMap = {
     CreditCard,
 };
 
-const typeStyles = {
-    alert: {
-        bg: "bg-orange-500/10",
-        text: "text-orange-500",
-        border: "border-orange-500/20",
-    },
-    success: {
-        bg: "bg-emerald-500/10",
-        text: "text-emerald-500",
-        border: "border-emerald-500/20",
-    },
-    warning: {
-        bg: "bg-amber-500/10",
-        text: "text-amber-500",
-        border: "border-amber-500/20",
-    },
-    info: {
-        bg: "bg-blue-500/10",
-        text: "text-blue-500",
-        border: "border-blue-500/20",
-    },
-};
+// Custom scrollable container that works with touch, mouse wheel, arrow keys, and scrollbar
+function ScrollableContainer({ children, className = "" }) {
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+
+        // Handle wheel events to prevent parent scroll when scrolling inside
+        const handleWheel = (e) => {
+            const { scrollTop, scrollHeight, clientHeight } = el;
+            const maxScroll = scrollHeight - clientHeight;
+
+            if (maxScroll <= 0) return; // nothing to scroll
+
+            // If we're at the top and scrolling up, or at the bottom and scrolling down, let parent handle it
+            if (scrollTop <= 0 && e.deltaY < 0) return;
+            if (scrollTop >= maxScroll && e.deltaY > 0) return;
+
+            // Otherwise prevent parent from scrolling
+            e.stopPropagation();
+        };
+
+        // Handle touch events for mobile scroll
+        let touchStartY = 0;
+        const handleTouchStart = (e) => {
+            touchStartY = e.touches[0].clientY;
+        };
+
+        const handleTouchMove = (e) => {
+            const { scrollTop, scrollHeight, clientHeight } = el;
+            const maxScroll = scrollHeight - clientHeight;
+            if (maxScroll <= 0) return;
+
+            const touchY = e.touches[0].clientY;
+            const deltaY = touchStartY - touchY;
+
+            // Prevent parent scroll when we still have room to scroll
+            if ((deltaY > 0 && scrollTop < maxScroll) || (deltaY < 0 && scrollTop > 0)) {
+                e.stopPropagation();
+            }
+        };
+
+        el.addEventListener("wheel", handleWheel, { passive: false });
+        el.addEventListener("touchstart", handleTouchStart, { passive: true });
+        el.addEventListener("touchmove", handleTouchMove, { passive: false });
+
+        return () => {
+            el.removeEventListener("wheel", handleWheel);
+            el.removeEventListener("touchstart", handleTouchStart);
+            el.removeEventListener("touchmove", handleTouchMove);
+        };
+    }, []);
+
+    return (
+        <div
+            ref={containerRef}
+            className={className}
+            tabIndex={0}
+            role="list"
+            style={{
+                maxHeight: "360px",
+                overflowY: "auto",
+                overscrollBehavior: "contain",
+                WebkitOverflowScrolling: "touch",
+                touchAction: "pan-y",
+                scrollbarWidth: "thin",
+                scrollbarColor: "var(--scroll-thumb, #888) transparent",
+            }}
+        >
+            {children}
+        </div>
+    );
+}
 
 export default function NotificationDropdown({
     notifications = [],
@@ -74,9 +124,10 @@ export default function NotificationDropdown({
     onMarkAllAsRead,
     onDelete,
     onClearAll,
+    onNotificationClick,
 }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState("notifications");
+    const [activeTab, setActiveTab] = useState("all");
     const [localSettings, setLocalSettings] = useState({
         soundEnabled: true,
         emailNotifications: true,
@@ -89,7 +140,7 @@ export default function NotificationDropdown({
     });
     const dropdownRef = useRef(null);
 
-    const unreadCount = notifications.filter((n) => !n.isRead).length;
+    const unreadCount = notifications.filter((n) => !(n.read || n.isRead)).length;
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -103,19 +154,57 @@ export default function NotificationDropdown({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Close on Escape key
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === "Escape") setIsOpen(false);
+        };
+        if (isOpen) {
+            document.addEventListener("keydown", handleEscape);
+            return () => document.removeEventListener("keydown", handleEscape);
+        }
+    }, [isOpen]);
+
     const handleSettingChange = (key, value) => {
         const newSettings = { ...localSettings, [key]: value };
         setLocalSettings(newSettings);
         onSettingsChange?.(newSettings);
     };
 
-    const handleMarkAsRead = (id) => {
-        onMarkAsRead?.(id);
-    };
+    // Auto-delete read notifications after 10 seconds
+    useEffect(() => {
+        const readNotifications = notifications.filter(n => n.read || n.isRead);
+        if (readNotifications.length === 0) return;
 
-    const handleDelete = (id) => {
+        const timers = readNotifications.map(notification => {
+            return setTimeout(() => {
+                onDelete?.(notification._id);
+            }, 10000);
+        });
+
+        return () => {
+            timers.forEach(timer => clearTimeout(timer));
+        };
+    }, [notifications, onDelete]);
+
+    const handleMarkAsRead = useCallback((id) => {
+        onMarkAsRead?.(id);
+    }, [onMarkAsRead]);
+
+    const handleDelete = useCallback((id) => {
         onDelete?.(id);
-    };
+    }, [onDelete]);
+
+    const handleNotificationClick = useCallback((notification) => {
+        // Mark as read first
+        if (!(notification.read || notification.isRead)) {
+            onMarkAsRead?.(notification._id);
+        }
+        // Call the click handler with the notification
+        onNotificationClick?.(notification);
+        // Close dropdown
+        setIsOpen(false);
+    }, [onMarkAsRead, onNotificationClick]);
 
     return (
         <div className="relative" ref={dropdownRef}>
@@ -147,7 +236,7 @@ export default function NotificationDropdown({
                     )}
                 </AnimatePresence>
 
-                {/* Pulse Animation for New Notifications */}
+                {/* Pulse Animation */}
                 {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full animate-ping opacity-75" />
                 )}
@@ -161,10 +250,11 @@ export default function NotificationDropdown({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="absolute right-0 mt-2 w-[380px] max-w-[calc(100vw-2rem)] bg-card rounded-2xl border border-border shadow-2xl overflow-hidden z-50"
+                        className="absolute right-0 mt-2 w-[380px] max-w-[calc(100vw-2rem)] bg-card rounded-2xl border border-border shadow-2xl z-50 flex flex-col"
+                        style={{ maxHeight: "520px" }}
                     >
-                        {/* Header */}
-                        <div className="px-4 py-3 bg-muted/30 border-b border-border">
+                        {/* Header — fixed, never scrolls */}
+                        <div className="px-4 py-3 bg-muted/30 border-b border-border rounded-t-2xl flex-shrink-0">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Bell className="h-5 w-5 text-primary" />
@@ -184,34 +274,39 @@ export default function NotificationDropdown({
                             </div>
                         </div>
 
-                        {/* Tabs */}
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <div className="px-4 pt-2 border-b border-border">
-                                <TabsList className="w-full bg-transparent p-0 h-auto gap-4">
-                                    <TabsTrigger
-                                        value="notifications"
-                                        className="px-0 pb-2 pt-1 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none text-sm font-medium text-muted-foreground data-[state=active]:text-foreground"
-                                    >
-                                        All
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="unread"
-                                        className="px-0 pb-2 pt-1 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none text-sm font-medium text-muted-foreground data-[state=active]:text-foreground"
-                                    >
-                                        Unread
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="settings"
-                                        className="px-0 pb-2 pt-1 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none text-sm font-medium text-muted-foreground data-[state=active]:text-foreground"
-                                    >
-                                        <Settings className="h-4 w-4" />
-                                    </TabsTrigger>
-                                </TabsList>
+                        {/* Tabs — fixed, never scrolls */}
+                        <div className="px-4 pt-2 border-b border-border flex-shrink-0">
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setActiveTab("all")}
+                                    className={cn(
+                                        "px-0 pb-2 pt-1 border-b-2 text-sm font-medium transition-colors",
+                                        activeTab === "all"
+                                            ? "border-primary text-foreground"
+                                            : "border-transparent text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    All
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab("settings")}
+                                    className={cn(
+                                        "px-0 pb-2 pt-1 border-b-2 text-sm font-medium transition-colors flex items-center gap-1",
+                                        activeTab === "settings"
+                                            ? "border-primary text-foreground"
+                                            : "border-transparent text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    <Settings className="h-4 w-4" />
+                                    Settings
+                                </button>
                             </div>
+                        </div>
 
-                            {/* Notifications Tab */}
-                            <TabsContent value="notifications" className="m-0">
-                                <ScrollArea className="h-[360px]">
+                        {/* Scrollable content area */}
+                        {activeTab === "all" && (
+                            <>
+                                <ScrollableContainer>
                                     {notifications.length > 0 ? (
                                         <div className="divide-y divide-border">
                                             {notifications.map((notification, index) => (
@@ -220,6 +315,7 @@ export default function NotificationDropdown({
                                                     notification={notification}
                                                     onMarkAsRead={handleMarkAsRead}
                                                     onDelete={handleDelete}
+                                                    onClick={handleNotificationClick}
                                                     index={index}
                                                 />
                                             ))}
@@ -227,11 +323,11 @@ export default function NotificationDropdown({
                                     ) : (
                                         <EmptyState />
                                     )}
-                                </ScrollArea>
+                                </ScrollableContainer>
 
-                                {/* Footer Actions */}
+                                {/* Footer — fixed at bottom */}
                                 {notifications.length > 0 && (
-                                    <div className="p-3 border-t border-border bg-muted/20 flex items-center justify-between">
+                                    <div className="p-3 border-t border-border bg-muted/20 flex items-center justify-between flex-shrink-0 rounded-b-2xl">
                                         <Button
                                             variant="ghost"
                                             size="sm"
@@ -252,105 +348,81 @@ export default function NotificationDropdown({
                                         </Button>
                                     </div>
                                 )}
-                            </TabsContent>
+                            </>
+                        )}
 
-                            {/* Unread Tab */}
-                            <TabsContent value="unread" className="m-0">
-                                <ScrollArea className="h-[360px]">
-                                    {notifications.filter((n) => !n.isRead).length > 0 ? (
-                                        <div className="divide-y divide-border">
-                                            {notifications
-                                                .filter((n) => !n.isRead)
-                                                .map((notification, index) => (
-                                                    <NotificationItem
-                                                        key={notification._id}
-                                                        notification={notification}
-                                                        onMarkAsRead={handleMarkAsRead}
-                                                        onDelete={handleDelete}
-                                                        index={index}
-                                                    />
-                                                ))}
-                                        </div>
-                                    ) : (
-                                        <EmptyState message="All caught up! No unread notifications." />
-                                    )}
-                                </ScrollArea>
-                            </TabsContent>
+                        {activeTab === "settings" && (
+                            <ScrollableContainer className="rounded-b-2xl">
+                                <div className="p-4 space-y-4">
+                                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                                        Preferences
+                                    </h4>
 
-                            {/* Settings Tab */}
-                            <TabsContent value="settings" className="m-0">
-                                <ScrollArea className="h-[360px]">
-                                    <div className="p-4 space-y-4">
-                                        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                                            Preferences
+                                    <SettingItem
+                                        icon={Volume2}
+                                        iconOff={VolumeX}
+                                        label="Sound alerts"
+                                        description="Play sound for new notifications"
+                                        checked={localSettings.soundEnabled}
+                                        onCheckedChange={(v) => handleSettingChange("soundEnabled", v)}
+                                    />
+
+                                    <SettingItem
+                                        icon={Mail}
+                                        label="Email notifications"
+                                        description="Receive updates via email"
+                                        checked={localSettings.emailNotifications}
+                                        onCheckedChange={(v) => handleSettingChange("emailNotifications", v)}
+                                    />
+
+                                    <SettingItem
+                                        icon={Smartphone}
+                                        label="Push notifications"
+                                        description="Browser push notifications"
+                                        checked={localSettings.pushNotifications}
+                                        onCheckedChange={(v) => handleSettingChange("pushNotifications", v)}
+                                    />
+
+                                    <div className="pt-4 border-t border-border">
+                                        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+                                            Notification Types
                                         </h4>
 
                                         <SettingItem
-                                            icon={Volume2}
-                                            iconOff={VolumeX}
-                                            label="Sound alerts"
-                                            description="Play sound for new notifications"
-                                            checked={localSettings.soundEnabled}
-                                            onCheckedChange={(v) => handleSettingChange("soundEnabled", v)}
+                                            icon={ClipboardList}
+                                            label="Task updates"
+                                            description="New tasks and status changes"
+                                            checked={localSettings.taskUpdates}
+                                            onCheckedChange={(v) => handleSettingChange("taskUpdates", v)}
                                         />
 
                                         <SettingItem
-                                            icon={Mail}
-                                            label="Email notifications"
-                                            description="Receive updates via email"
-                                            checked={localSettings.emailNotifications}
-                                            onCheckedChange={(v) => handleSettingChange("emailNotifications", v)}
+                                            icon={DollarSign}
+                                            label="Payment alerts"
+                                            description="Invoice and payment updates"
+                                            checked={localSettings.paymentAlerts}
+                                            onCheckedChange={(v) => handleSettingChange("paymentAlerts", v)}
                                         />
 
                                         <SettingItem
-                                            icon={Smartphone}
-                                            label="Push notifications"
-                                            description="Browser push notifications"
-                                            checked={localSettings.pushNotifications}
-                                            onCheckedChange={(v) => handleSettingChange("pushNotifications", v)}
+                                            icon={FileText}
+                                            label="Weekly digest"
+                                            description="Summary of weekly activity"
+                                            checked={localSettings.weeklyDigest}
+                                            onCheckedChange={(v) => handleSettingChange("weeklyDigest", v)}
                                         />
 
-                                        <div className="pt-4 border-t border-border">
-                                            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
-                                                Notification Types
-                                            </h4>
-
-                                            <SettingItem
-                                                icon={ClipboardList}
-                                                label="Task updates"
-                                                description="New tasks and status changes"
-                                                checked={localSettings.taskUpdates}
-                                                onCheckedChange={(v) => handleSettingChange("taskUpdates", v)}
-                                            />
-
-                                            <SettingItem
-                                                icon={DollarSign}
-                                                label="Payment alerts"
-                                                description="Invoice and payment updates"
-                                                checked={localSettings.paymentAlerts}
-                                                onCheckedChange={(v) => handleSettingChange("paymentAlerts", v)}
-                                            />
-
-                                            <SettingItem
-                                                icon={FileText}
-                                                label="Weekly digest"
-                                                description="Summary of weekly activity"
-                                                checked={localSettings.weeklyDigest}
-                                                onCheckedChange={(v) => handleSettingChange("weeklyDigest", v)}
-                                            />
-
-                                            <SettingItem
-                                                icon={MessageSquare}
-                                                label="Marketing & news"
-                                                description="Product updates and offers"
-                                                checked={localSettings.marketingNews}
-                                                onCheckedChange={(v) => handleSettingChange("marketingNews", v)}
-                                            />
-                                        </div>
+                                        <SettingItem
+                                            icon={MessageSquare}
+                                            label="Marketing & news"
+                                            description="Product updates and offers"
+                                            checked={localSettings.marketingNews}
+                                            onCheckedChange={(v) => handleSettingChange("marketingNews", v)}
+                                        />
                                     </div>
-                                </ScrollArea>
-                            </TabsContent>
-                        </Tabs>
+                                </div>
+                            </ScrollableContainer>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -359,18 +431,19 @@ export default function NotificationDropdown({
 }
 
 // Notification Item Component
-function NotificationItem({ notification, onMarkAsRead, onDelete, index }) {
+function NotificationItem({ notification, onMarkAsRead, onDelete, onClick, index }) {
     const Icon = iconMap[notification.icon] || Bell;
-    const styles = typeStyles[notification.type] || typeStyles.info;
+    const isRead = notification.read || notification.isRead;
 
     return (
         <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
+            onClick={() => onClick?.(notification)}
             className={cn(
                 "group relative p-4 hover:bg-muted/50 transition-colors cursor-pointer",
-                !notification.isRead && "bg-primary/5"
+                !isRead && "bg-primary/5"
             )}
         >
             <div className="flex gap-3">
@@ -378,10 +451,15 @@ function NotificationItem({ notification, onMarkAsRead, onDelete, index }) {
                 <div
                     className={cn(
                         "flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
-                        styles.bg
+                        notification.type === 'success' ? "bg-emerald-500/10 text-emerald-500" :
+                            notification.type === 'warning' ? "bg-amber-500/10 text-amber-500" :
+                                notification.type === 'error' ? "bg-red-500/10 text-red-500" :
+                                    notification.type === 'task' ? "bg-violet-500/10 text-violet-500" :
+                                        notification.type === 'invoice' ? "bg-cyan-500/10 text-cyan-500" :
+                                            "bg-blue-500/10 text-blue-500"
                     )}
                 >
-                    <Icon className={cn("h-5 w-5", styles.text)} />
+                    <Icon className="h-5 w-5" />
                 </div>
 
                 {/* Content */}
@@ -389,12 +467,12 @@ function NotificationItem({ notification, onMarkAsRead, onDelete, index }) {
                     <div className="flex items-start justify-between gap-2">
                         <p className={cn(
                             "text-sm font-medium leading-tight",
-                            !notification.isRead && "text-foreground",
-                            notification.isRead && "text-muted-foreground"
+                            !isRead && "text-foreground",
+                            isRead && "text-muted-foreground"
                         )}>
                             {notification.title}
                         </p>
-                        {!notification.isRead && (
+                        {!isRead && (
                             <span className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-1.5" />
                         )}
                     </div>
@@ -402,20 +480,22 @@ function NotificationItem({ notification, onMarkAsRead, onDelete, index }) {
                         {notification.message}
                     </p>
                     <p className="text-xs text-muted-foreground/70 mt-1.5">
-                        {notification.time}
+                        {notification.createdAt
+                            ? new Date(notification.createdAt).toLocaleString()
+                            : notification.time || ""}
                     </p>
                 </div>
             </div>
 
             {/* Hover Actions */}
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                {!notification.isRead && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-card shadow-sm rounded-lg p-1 border border-border">
+                {!isRead && (
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
                             onMarkAsRead(notification._id);
                         }}
-                        className="p-1.5 rounded-lg bg-card border border-border hover:bg-primary hover:text-primary-foreground transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-primary hover:text-primary-foreground transition-colors"
                         title="Mark as read"
                     >
                         <Check className="h-3.5 w-3.5" />
@@ -426,7 +506,7 @@ function NotificationItem({ notification, onMarkAsRead, onDelete, index }) {
                         e.stopPropagation();
                         onDelete(notification._id);
                     }}
-                    className="p-1.5 rounded-lg bg-card border border-border hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-destructive hover:text-destructive-foreground transition-colors"
                     title="Delete"
                 >
                     <Trash2 className="h-3.5 w-3.5" />

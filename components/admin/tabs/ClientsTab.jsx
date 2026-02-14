@@ -648,8 +648,8 @@ const AdminClientsTab = ({ currentUser }) => {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {clientTasks.length > 0 ? clientTasks.map((task) => (
-                                            <TableRow key={task._id || task.id}>
+                                        {clientTasks.length > 0 ? clientTasks.map((task, index) => (
+                                            <TableRow key={`${task._id || task.id}-${index}`}>
                                                 <TableCell>
                                                     <div>
                                                         <p className="font-medium">{task.title}</p>
@@ -663,14 +663,28 @@ const AdminClientsTab = ({ currentUser }) => {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Select defaultValue={task.status}>
+                                                    <Select
+                                                        defaultValue={task.status}
+                                                        onValueChange={async (v) => {
+                                                            try {
+                                                                await upsertTask({ id: task._id || task.id, status: v });
+                                                                setTasks(prev => prev.map(t => (t._id === task._id || t.id === task.id) ? { ...t, status: v } : t));
+                                                                toast.success("Status updated");
+                                                            } catch (error) {
+                                                                console.error("Failed to update status", error);
+                                                                toast.error("Failed to update status");
+                                                            }
+                                                        }}
+                                                    >
                                                         <SelectTrigger className="w-[130px] h-8">
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
                                                             <SelectItem value="To Do">To Do</SelectItem>
                                                             <SelectItem value="In Progress">In Progress</SelectItem>
+                                                            <SelectItem value="In Review">In Review</SelectItem>
                                                             <SelectItem value="Completed">Completed</SelectItem>
+                                                            <SelectItem value="On Hold">On Hold</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                 </TableCell>
