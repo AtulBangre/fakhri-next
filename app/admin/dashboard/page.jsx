@@ -54,7 +54,7 @@ export default function AdminDashboardPage() {
           console.log("Logged in as:", admin.name);
           setCurrentUser(admin);
 
-          const { notifications: notifs } = await getNotifications({ recipientId: admin._id, limit: 10 });
+          const notifs = await getNotifications({ recipientId: admin._id, limit: 10 });
           setNotifications(notifs || []);
         }
       } catch (error) {

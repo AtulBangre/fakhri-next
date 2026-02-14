@@ -24,8 +24,13 @@ const AdminDashboardTab = ({ setActiveTab, currentUser }) => {
                     getClients({ managerId: currentUser._id }),
                     getTasks({ 'assignee.id': currentUser._id })
                 ]);
-                setClients(c);
-                setTasks(t);
+
+                // Deduplicate to avoid React key errors
+                const uniqueClients = Array.from(new Map(c.map(item => [String(item._id), item])).values());
+                const uniqueTasks = Array.from(new Map(t.map(item => [String(item._id || item.id), item])).values());
+
+                setClients(uniqueClients);
+                setTasks(uniqueTasks);
             } catch (error) {
                 console.error("Failed to load dashboard data", error);
             } finally {

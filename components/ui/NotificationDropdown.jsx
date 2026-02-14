@@ -216,7 +216,7 @@ export default function NotificationDropdown({
                                         <div className="divide-y divide-border">
                                             {notifications.map((notification, index) => (
                                                 <NotificationItem
-                                                    key={notification.id}
+                                                    key={notification._id}
                                                     notification={notification}
                                                     onMarkAsRead={handleMarkAsRead}
                                                     onDelete={handleDelete}
@@ -263,7 +263,7 @@ export default function NotificationDropdown({
                                                 .filter((n) => !n.isRead)
                                                 .map((notification, index) => (
                                                     <NotificationItem
-                                                        key={notification.id}
+                                                        key={notification._id}
                                                         notification={notification}
                                                         onMarkAsRead={handleMarkAsRead}
                                                         onDelete={handleDelete}
@@ -413,7 +413,7 @@ function NotificationItem({ notification, onMarkAsRead, onDelete, index }) {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            onMarkAsRead(notification.id);
+                            onMarkAsRead(notification._id);
                         }}
                         className="p-1.5 rounded-lg bg-card border border-border hover:bg-primary hover:text-primary-foreground transition-colors"
                         title="Mark as read"
@@ -424,7 +424,7 @@ function NotificationItem({ notification, onMarkAsRead, onDelete, index }) {
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        onDelete(notification.id);
+                        onDelete(notification._id);
                     }}
                     className="p-1.5 rounded-lg bg-card border border-border hover:bg-destructive hover:text-destructive-foreground transition-colors"
                     title="Delete"

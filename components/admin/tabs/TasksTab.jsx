@@ -6,8 +6,20 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getClients, getTasks, upsertTask } from "@/lib/actions/admin";
+import { getClients, getTasks, upsertTask, deleteTask, getAdmins } from "@/lib/actions/admin";
 import { toast } from "sonner";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 
 // Generate week numbers 1-52
 const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
@@ -15,15 +27,18 @@ const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
     label: `Week ${i + 1}`
 }));
 
-const managers = ["Sarah Mitchell", "John Anderson", "Emma Wilson"];
+
 
 const AdminTasksTab = ({ currentUser }) => {
     const [clients, setClients] = useState([]);
     const [tasks, setTasks] = useState([]);
+    const [admins, setAdmins] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [showCreateTask, setShowCreateTask] = useState(false);
     const [showEditTask, setShowEditTask] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [taskToDelete, setTaskToDelete] = useState(null);
 
     // Filters
     const [statusFilter, setStatusFilter] = useState("all");
@@ -39,13 +54,34 @@ const AdminTasksTab = ({ currentUser }) => {
 
             setLoading(true);
             try {
-                const [c, t] = await Promise.all([
-                    getClients({ managerId: currentUser._id }),
-                    getTasks({ 'assignee.id': currentUser._id })
+                const [c, a] = await Promise.all([
+                    getClients(currentUser.role === 'super-admin' ? {} : { managerId: currentUser._id }),
+                    getAdmins()
                 ]);
+
+                const clientIds = c.map(client => client._id);
+
+                // Fetch tasks assigned to me OR tasks for my clients
+                const taskFilter = currentUser.role === 'super-admin'
+                    ? {}
+                    : {
+                        $or: [
+                            { 'assignee.id': currentUser._id },
+                            { clientId: { $in: clientIds } }
+                        ]
+                    };
+
+                const t = await getTasks(taskFilter);
+
+                // Deduplicate data to avoid key errors
+                const uniqueClients = Array.from(new Map(c.map(item => [String(item._id), item])).values());
+                const uniqueAdmins = Array.from(new Map(a.map(item => [String(item._id), item])).values());
+                const uniqueTasks = Array.from(new Map(t.map(item => [String(item._id || item.id), item])).values());
+
                 // Ensure clients have id property for consistency
-                setClients(c.map(client => ({ ...client, id: client._id })));
-                setTasks(t);
+                setClients(uniqueClients.map(client => ({ ...client, id: client._id })));
+                setTasks(uniqueTasks);
+                setAdmins(uniqueAdmins);
             } catch (error) {
                 console.error("Failed to load data", error);
                 toast.error("Failed to load tasks");
@@ -107,6 +143,7 @@ const AdminTasksTab = ({ currentUser }) => {
         }
 
         const selectedClient = clients.find(c => c.id.toString() === newTask.relatedTo);
+        setIsSubmitting(true);
 
         try {
             const taskPayload = {
@@ -121,12 +158,12 @@ const AdminTasksTab = ({ currentUser }) => {
                 },
                 clientId: selectedClient?.id,
                 assignee: {
-                    name: newTask.owner
+                    name: newTask.owner,
+                    id: currentUser._id // Assign to current admin by default if they are the owner
                 },
                 owner: newTask.owner,
                 dueDate: newTask.dueDate,
                 planForWeek: newTask.planForWeek,
-                taskId: `TSK-${Date.now().toString().slice(-6)}`
             };
 
             const savedTask = await upsertTask(taskPayload);
@@ -139,6 +176,65 @@ const AdminTasksTab = ({ currentUser }) => {
         } catch (error) {
             console.error(error);
             toast.error("Failed to create task");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleUpdateTask = async () => {
+        if (!showEditTask.title || !showEditTask.relatedTo) {
+            toast.error("Task title and client are required");
+            return;
+        }
+
+        const selectedClient = clients.find(c => c.id.toString() === showEditTask.relatedTo);
+        setIsSubmitting(true);
+
+        try {
+            const taskPayload = {
+                ...showEditTask,
+                id: showEditTask._id || showEditTask.id,
+                title: showEditTask.title,
+                description: showEditTask.description,
+                status: showEditTask.status,
+                priority: showEditTask.priority,
+                client: {
+                    id: selectedClient?.id,
+                    name: selectedClient?.name,
+                    company: selectedClient?.company
+                },
+                clientId: selectedClient?.id,
+                owner: showEditTask.owner,
+                dueDate: showEditTask.dueDate,
+                planForWeek: showEditTask.planForWeek,
+            };
+
+            const updatedTask = await upsertTask(taskPayload);
+            if (updatedTask) {
+                setTasks(prev => prev.map(t => (t._id === updatedTask._id || t.id === updatedTask.id) ? updatedTask : t));
+                setShowEditTask(null);
+                toast.success("Task updated");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to update task");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteTask = async (id) => {
+        try {
+            const res = await deleteTask(id);
+            if (res.success) {
+                setTasks(prev => prev.filter(t => (t._id || t.id) !== id));
+                toast.success("Task deleted");
+            } else {
+                toast.error("Failed to delete task");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Error deleting task");
         }
     };
 
@@ -214,8 +310,8 @@ const AdminTasksTab = ({ currentUser }) => {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {managers.map(m => (
-                                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                                        {admins.map(admin => (
+                                            <SelectItem key={admin._id} value={admin.name}>{admin.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -319,8 +415,8 @@ const AdminTasksTab = ({ currentUser }) => {
 
                     <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
                         <Button variant="outline" onClick={() => { setShowCreateTask(false); resetNewTaskForm(); }}>Cancel</Button>
-                        <Button onClick={handleCreateTask}>
-                            <Save className="h-4 w-4 mr-1" />
+                        <Button onClick={handleCreateTask} disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
                             Create Task
                         </Button>
                     </div>
@@ -381,8 +477,19 @@ const AdminTasksTab = ({ currentUser }) => {
                                         <Button variant="ghost" size="sm">
                                             <Eye className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="sm" onClick={() => setShowEditTask(task)}>
+                                        <Button variant="ghost" size="sm" onClick={() => {
+                                            const normalizedTask = {
+                                                ...task,
+                                                relatedTo: (task.clientId || task.client?.id)?.toString(),
+                                                isHighPriority: task.priority === 'High',
+                                                isCompleted: task.status === 'Completed'
+                                            };
+                                            setShowEditTask(normalizedTask);
+                                        }}>
                                             <Edit className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setTaskToDelete(task._id || task.id)}>
+                                            <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </div>
                                 </TableCell>
@@ -401,13 +508,13 @@ const AdminTasksTab = ({ currentUser }) => {
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-muted-foreground">Owner</span>
-                                    <Select defaultValue={showEditTask.owner}>
+                                    <Select value={showEditTask.owner} onValueChange={(v) => setShowEditTask({ ...showEditTask, owner: v })}>
                                         <SelectTrigger className="w-[180px]">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {managers.map(m => (
-                                                <SelectItem key={m} value={m}>{m}</SelectItem>
+                                            {admins.map(admin => (
+                                                <SelectItem key={admin._id} value={admin.name}>{admin.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -421,17 +528,29 @@ const AdminTasksTab = ({ currentUser }) => {
                         <div className="space-y-5">
                             <div className="flex items-center gap-4">
                                 <label className="text-sm font-medium w-32 text-right">Task Name</label>
-                                <Input className="flex-1" defaultValue={showEditTask.title} />
+                                <Input
+                                    className="flex-1"
+                                    value={showEditTask.title}
+                                    onChange={(e) => setShowEditTask({ ...showEditTask, title: e.target.value })}
+                                />
                             </div>
 
                             <div className="flex items-center gap-4">
                                 <label className="text-sm font-medium w-32 text-right">Due Date</label>
-                                <Input type="date" className="flex-1" defaultValue="" />
+                                <Input
+                                    type="date"
+                                    className="flex-1"
+                                    value={showEditTask.dueDate || ""}
+                                    onChange={(e) => setShowEditTask({ ...showEditTask, dueDate: e.target.value })}
+                                />
                             </div>
 
                             <div className="flex items-center gap-4">
                                 <label className="text-sm font-medium w-32 text-right">Plan for the week</label>
-                                <Select defaultValue={showEditTask.planForWeek || getCurrentWeek()}>
+                                <Select
+                                    value={showEditTask.planForWeek || getCurrentWeek()}
+                                    onValueChange={(v) => setShowEditTask({ ...showEditTask, planForWeek: v })}
+                                >
                                     <SelectTrigger className="flex-1">
                                         <SelectValue placeholder="Select week" />
                                     </SelectTrigger>
@@ -445,7 +564,10 @@ const AdminTasksTab = ({ currentUser }) => {
 
                             <div className="flex items-center gap-4">
                                 <label className="text-sm font-medium w-32 text-right">Related To</label>
-                                <Select defaultValue={showEditTask.clientId?.toString()}>
+                                <Select
+                                    value={showEditTask.relatedTo}
+                                    onValueChange={(v) => setShowEditTask({ ...showEditTask, relatedTo: v })}
+                                >
                                     <SelectTrigger className="flex-1">
                                         <SelectValue />
                                     </SelectTrigger>
@@ -462,43 +584,83 @@ const AdminTasksTab = ({ currentUser }) => {
                                 <textarea
                                     className="flex-1 px-3 py-2 border rounded-lg bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
                                     rows={3}
-                                    defaultValue={showEditTask.description}
+                                    value={showEditTask.description || ""}
+                                    onChange={(e) => setShowEditTask({ ...showEditTask, description: e.target.value })}
                                 />
                             </div>
 
                             <div className="flex items-center gap-4">
                                 <label className="text-sm font-medium w-32 text-right"></label>
                                 <div className="flex-1 space-y-3">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            className="w-4 h-4 rounded border-gray-300"
-                                            defaultChecked={showEditTask.isHighPriority}
-                                        />
-                                        <span className="text-sm">Mark as High Priority</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            className="w-4 h-4 rounded border-gray-300"
-                                            defaultChecked={showEditTask.isCompleted}
-                                        />
-                                        <span className="text-sm">Mark as completed</span>
-                                    </label>
+                                    <div className="flex items-center gap-6">
+                                        <div className="flex-1">
+                                            <label className="text-sm font-medium mb-1 block">Priority</label>
+                                            <Select
+                                                value={showEditTask.priority}
+                                                onValueChange={(v) => setShowEditTask({ ...showEditTask, priority: v, isHighPriority: v === 'High' })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="High">High</SelectItem>
+                                                    <SelectItem value="Medium">Medium</SelectItem>
+                                                    <SelectItem value="Low">Low</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="text-sm font-medium mb-1 block">Status</label>
+                                            <Select
+                                                value={showEditTask.status}
+                                                onValueChange={(v) => setShowEditTask({ ...showEditTask, status: v, isCompleted: v === 'Completed' })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="To Do">To Do</SelectItem>
+                                                    <SelectItem value="In Progress">In Progress</SelectItem>
+                                                    <SelectItem value="Completed">Completed</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
                             <Button variant="outline" onClick={() => setShowEditTask(null)}>Cancel</Button>
-                            <Button onClick={() => setShowEditTask(null)}>
-                                <Save className="h-4 w-4 mr-1" />
+                            <Button onClick={handleUpdateTask} disabled={isSubmitting}>
+                                {isSubmitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
                                 Save Changes
                             </Button>
                         </div>
                     </div>
                 </div>
             )}
+
+            {/* Delete Confirmation */}
+            <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete this task.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => handleDeleteTask(taskToDelete)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete Task
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };
