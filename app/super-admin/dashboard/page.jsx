@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard, Users, UsersRound, UserCog, CheckSquare,
-  IndianRupee, Settings, Menu, X, LogOut, Shield, Globe, Loader2
+  IndianRupee, Settings, Menu, X, LogOut, Shield, Globe, Loader2, MessageSquare
 } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
@@ -23,9 +23,11 @@ import SuperAdminTasksTab from "@/components/super-admin/tabs/TasksTab";
 import SuperAdminSalesTab from "@/components/super-admin/tabs/SalesTab";
 import SuperAdminWebsiteTab from "@/components/super-admin/tabs/WebsiteTab";
 import SuperAdminSettingsTab from "@/components/super-admin/tabs/SettingsTab";
+import SuperAdminResponsesTab from "@/components/super-admin/tabs/ResponsesTab";
 
 const navigation = [
   { name: "Dashboard", id: "Dashboard", icon: LayoutDashboard },
+  { name: "Responses", id: "Responses", icon: MessageSquare }, // Added Responses
   { name: "Clients", id: "Clients", icon: Users },
   { name: "Teams", id: "Teams", icon: UsersRound },
   { name: "Admin Users", id: "Admins", icon: UserCog },
@@ -128,8 +130,20 @@ export default function SuperAdminDashboardPage() {
     let targetTab = null;
 
     // Parse link hash (e.g., #Tasks -> Tasks)
-    if (notification.link && notification.link.startsWith('#')) {
-      targetTab = notification.link.substring(1);
+    if (notification.link) {
+      if (notification.link.startsWith('#')) {
+        targetTab = notification.link.substring(1);
+      } else if (notification.link.includes('tab=')) {
+        try {
+          const url = new URL(notification.link, 'http://localhost');
+          const tab = url.searchParams.get('tab');
+          if (tab) {
+            targetTab = tab.charAt(0).toUpperCase() + tab.slice(1);
+          }
+        } catch (e) {
+          console.error("Error parsing link:", e);
+        }
+      }
     }
 
     // Fallback: map notification type to tab
@@ -141,6 +155,9 @@ export default function SuperAdminDashboardPage() {
         success: 'Dashboard',
         warning: 'Dashboard',
         error: 'Dashboard',
+        feedback: 'Responses',
+        contact: 'Responses',
+        career: 'Responses'
       };
       targetTab = typeToTab[notification.type] || 'Dashboard';
     }
@@ -262,6 +279,7 @@ export default function SuperAdminDashboardPage() {
         {/* Page Content */}
         <main className="flex-1 p-4 lg:p-6">
           {activeTab === "Dashboard" && <SuperAdminDashboardTab setActiveTab={setActiveTab} />}
+          {activeTab === "Responses" && <SuperAdminResponsesTab />}
           {activeTab === "Clients" && <SuperAdminClientsTab />}
           {activeTab === "Teams" && <SuperAdminTeamsTab />}
           {activeTab === "Admins" && <SuperAdminAdminsTab />}
@@ -274,4 +292,3 @@ export default function SuperAdminDashboardPage() {
     </div>
   );
 }
-

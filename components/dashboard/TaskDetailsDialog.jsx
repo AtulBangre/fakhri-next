@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, User, Building2, Clock, AlertCircle } from "lucide-react";
 import StatusBadge from "@/components/dashboard/StatusBadge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollableContainer } from "@/components/ui/scrollable-container";
 import { Separator } from "@/components/ui/separator";
 
 const TaskDetailsDialog = ({ open, onOpenChange, task }) => {
@@ -67,7 +67,7 @@ const TaskDetailsDialog = ({ open, onOpenChange, task }) => {
                     </div>
                 </DialogHeader>
 
-                <ScrollArea className="flex-1 px-6 py-2">
+                <ScrollableContainer className="flex-1 px-6 py-2">
                     <div className="space-y-6">
                         {/* Description */}
                         <div className="space-y-2">
@@ -142,7 +142,7 @@ const TaskDetailsDialog = ({ open, onOpenChange, task }) => {
                             )}
                         </div>
                     </div>
-                </ScrollArea>
+                </ScrollableContainer>
 
                 <DialogFooter className="p-6 pt-4 border-t mt-auto">
                     <Button variant="outline" onClick={() => onOpenChange(false)}>

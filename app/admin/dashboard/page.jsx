@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Users, CheckSquare, FileText, User, Menu, X, LogOut, Loader2 } from "lucide-react";
+import { LayoutDashboard, Users, CheckSquare, FileText, User, Menu, X, LogOut, Loader2, MessageSquare } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,14 +11,12 @@ import { markNotificationAsRead, markAllNotificationsAsRead, deleteNotification,
 import { getUsers, getUserByEmail, updateUser } from "@/lib/actions/user";
 import useNotificationPolling from "@/hooks/useNotificationPolling";
 
-
 // Tabs
 import AdminDashboardTab from "@/components/admin/tabs/DashboardTab";
 import AdminClientsTab from "@/components/admin/tabs/ClientsTab";
 import AdminTasksTab from "@/components/admin/tabs/TasksTab";
 import AdminFilesTab from "@/components/admin/tabs/FilesTab";
 import AdminProfileTab from "@/components/admin/tabs/ProfileTab";
-
 
 const navigation = [
   { name: "Dashboard", id: "Dashboard", icon: LayoutDashboard },
@@ -42,7 +40,7 @@ export default function AdminDashboardPage() {
         // Fetch specific admin: Sarah Mitchell
         let admin = await getUserByEmail('sarah@fakhriit.com');
 
-        // Fallback or create if not exists (though user implied she exists)
+        // Fallback or create if not exists
         if (!admin) {
           console.log("Sarah Mitchell not found, falling back to first admin");
           const { users } = await getUsers({ role: 'admin', limit: 1 });
@@ -130,12 +128,22 @@ export default function AdminDashboardPage() {
   const handleNotificationClick = (notification) => {
     let targetTab = null;
 
-    // Parse link hash (e.g., #Tasks -> Tasks)
-    if (notification.link && notification.link.startsWith('#')) {
-      targetTab = notification.link.substring(1);
+    if (notification.link) {
+      if (notification.link.startsWith('#')) {
+        targetTab = notification.link.substring(1);
+      } else if (notification.link.includes('tab=')) {
+        try {
+          const url = new URL(notification.link, 'http://localhost');
+          const tab = url.searchParams.get('tab');
+          if (tab) {
+            targetTab = tab.charAt(0).toUpperCase() + tab.slice(1);
+          }
+        } catch (e) {
+          console.error("Error parsing link:", e);
+        }
+      }
     }
 
-    // Fallback: map notification type to tab
     if (!targetTab) {
       const typeToTab = {
         task: 'Tasks',
@@ -144,12 +152,14 @@ export default function AdminDashboardPage() {
         success: 'Dashboard',
         warning: 'Dashboard',
         error: 'Dashboard',
+        feedback: 'Responses',
+        contact: 'Responses',
+        career: 'Responses'
       };
       targetTab = typeToTab[notification.type] || 'Dashboard';
     }
 
-    // Validate the tab exists in navigation
-    const validTab = navigation.find(n => n.id === targetTab);
+    const validTab = navigation.find(n => n.id === targetTab || n.id.toLowerCase() === targetTab?.toLowerCase());
     if (validTab) {
       setActiveTab(validTab.id);
     }
@@ -272,4 +282,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-

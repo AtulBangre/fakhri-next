@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollableContainer } from "@/components/ui/scrollable-container";
 
 const SuperAdminTeamsTab = () => {
     const [teams, setTeams] = useState([]);
@@ -289,7 +290,7 @@ const SuperAdminTeamsTab = () => {
                         </div>
 
                         {/* Modal Content */}
-                        <div className="p-6 overflow-y-auto max-h-[50vh]">
+                        <ScrollableContainer className="p-6" maxHeight="50vh">
                             <h3 className="font-heading font-semibold mb-4">Team Members</h3>
                             <div className="space-y-3">
                                 {viewingTeam.members.length > 0 ? viewingTeam.members.map((member, idx) => (
@@ -326,7 +327,7 @@ const SuperAdminTeamsTab = () => {
                                     <p className="text-muted-foreground text-center py-10 italic">No members found in this team.</p>
                                 )}
                             </div>
-                        </div>
+                        </ScrollableContainer>
 
                         {/* Modal Footer */}
                         <div className="p-4 border-t flex justify-end gap-2">
@@ -348,99 +349,101 @@ const SuperAdminTeamsTab = () => {
 
             {/* Create/Edit Team Modal */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
+                <DialogContent className="sm:max-w-[500px] max-h-[85vh] flex flex-col p-0 gap-0">
+                    <DialogHeader className="p-6 pb-2">
                         <DialogTitle>{editingTeam ? "Edit Team" : "Create New Team"}</DialogTitle>
                         <DialogDescription>
                             Organize your managers into a team for better management.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Team Name</Label>
-                            <Input
-                                id="name"
-                                placeholder="Sales East, Support Team, etc."
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="description">Description (Optional)</Label>
-                            <Textarea
-                                id="description"
-                                placeholder="Brief description of the team's purpose..."
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Team Lead</Label>
-                            <Select
-                                value={formData.leadId}
-                                onValueChange={(value) => setFormData({ ...formData, leadId: value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a team lead" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {admins.map((admin) => (
-                                        <SelectItem key={admin._id} value={admin._id}>
-                                            {admin.name} ({admin.email})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Team Members</Label>
-                            <div className="grid grid-cols-1 gap-2 border rounded-lg p-3 max-h-48 overflow-y-auto bg-accent/10">
-                                {admins.map((admin) => (
-                                    <div key={admin._id} className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id={`member-${admin._id}`}
-                                            checked={formData.memberIds.includes(admin._id)}
-                                            onCheckedChange={() => toggleMember(admin._id)}
-                                        />
-                                        <label
-                                            htmlFor={`member-${admin._id}`}
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                        >
-                                            {admin.name}
-                                        </label>
-                                    </div>
-                                ))}
+                    <ScrollableContainer className="flex-1 p-6 pt-2">
+                        <form id="team-form" onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Team Name</Label>
+                                <Input
+                                    id="name"
+                                    placeholder="Sales East, Support Team, etc."
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    required
+                                />
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                {formData.memberIds.length} members selected
-                            </p>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Status</Label>
-                            <Select
-                                value={formData.status}
-                                onValueChange={(value) => setFormData({ ...formData, status: value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="inactive">Inactive</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <DialogFooter className="pt-4">
-                            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {editingTeam ? "Save Changes" : "Create Team"}
-                            </Button>
-                        </DialogFooter>
-                    </form>
+                            <div className="space-y-2">
+                                <Label htmlFor="description">Description (Optional)</Label>
+                                <Textarea
+                                    id="description"
+                                    placeholder="Brief description of the team's purpose..."
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Team Lead</Label>
+                                <Select
+                                    value={formData.leadId}
+                                    onValueChange={(value) => setFormData({ ...formData, leadId: value })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a team lead" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {admins.map((admin) => (
+                                            <SelectItem key={admin._id} value={admin._id}>
+                                                {admin.name} ({admin.email})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Team Members</Label>
+                                <div className="grid grid-cols-1 gap-2 border rounded-lg p-3 max-h-48 overflow-y-auto bg-accent/10">
+                                    {admins.map((admin) => (
+                                        <div key={admin._id} className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`member-${admin._id}`}
+                                                checked={formData.memberIds.includes(admin._id)}
+                                                onCheckedChange={() => toggleMember(admin._id)}
+                                            />
+                                            <label
+                                                htmlFor={`member-${admin._id}`}
+                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            >
+                                                {admin.name}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    {formData.memberIds.length} members selected
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Status</Label>
+                                <Select
+                                    value={formData.status}
+                                    onValueChange={(value) => setFormData({ ...formData, status: value })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="active">Active</SelectItem>
+                                        <SelectItem value="inactive">Inactive</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </form>
+                    </ScrollableContainer>
+                    <DialogFooter className="p-6 pt-2 border-t">
+                        <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" form="team-form" disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {editingTeam ? "Save Changes" : "Create Team"}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>
@@ -448,4 +451,5 @@ const SuperAdminTeamsTab = () => {
 };
 
 export default SuperAdminTeamsTab;
+
 

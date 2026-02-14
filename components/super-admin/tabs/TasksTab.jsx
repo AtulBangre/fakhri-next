@@ -24,6 +24,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
+import { ScrollableContainer } from "@/components/ui/scrollable-container";
 
 // Generate week numbers 1-52
 const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
@@ -379,127 +380,129 @@ const SuperAdminTasksTab = () => {
 
             {/* Create Task Form */}
             {showCreateTask && (
-                <div className="bg-card rounded-xl border p-6 animate-in slide-in-from-top-2">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-heading font-semibold text-lg">Task Information</h3>
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted-foreground">Assigned To</span>
-                                <Select value={newTask.owner} onValueChange={(v) => setNewTask({ ...newTask, owner: v })}>
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Select Manager" />
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden" onClick={() => setShowCreateTask(false)}>
+                    <ScrollableContainer className="bg-card rounded-xl border p-6 animate-in slide-in-from-top-2 w-full max-w-2xl" maxHeight="90vh" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="font-heading font-semibold text-lg">Task Information</h3>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-muted-foreground">Assigned To</span>
+                                    <Select value={newTask.owner} onValueChange={(v) => setNewTask({ ...newTask, owner: v })}>
+                                        <SelectTrigger className="w-[180px]">
+                                            <SelectValue placeholder="Select Manager" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {managers.map(admin => (
+                                                <SelectItem key={admin.id} value={admin.name}>{admin.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <Button variant="ghost" size="sm" onClick={() => { setShowCreateTask(false); resetNewTaskForm(); }}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-5">
+                            {/* Task Name */}
+                            <div className="flex items-center gap-4">
+                                <label className="text-sm font-medium w-32 text-right">Task Name</label>
+                                <Input
+                                    className="flex-1"
+                                    placeholder="Enter task name"
+                                    value={newTask.title}
+                                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                                />
+                            </div>
+
+                            {/* Due Date */}
+                            <div className="flex items-center gap-4">
+                                <label className="text-sm font-medium w-32 text-right">Due Date</label>
+                                <Input
+                                    type="date"
+                                    className="flex-1"
+                                    value={newTask.dueDate}
+                                    onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                                />
+                            </div>
+
+                            {/* Plan for the week */}
+                            <div className="flex items-center gap-4">
+                                <label className="text-sm font-medium w-32 text-right">Plan for the week</label>
+                                <Select value={newTask.planForWeek} onValueChange={(v) => setNewTask({ ...newTask, planForWeek: v })}>
+                                    <SelectTrigger className="flex-1">
+                                        <SelectValue placeholder="Select week" />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        {managers.map(admin => (
-                                            <SelectItem key={admin.id} value={admin.name}>{admin.name}</SelectItem>
+                                    <SelectContent className="max-h-[300px]">
+                                        {weekNumbers.map(week => (
+                                            <SelectItem key={week.value} value={week.value}>{week.label}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button variant="ghost" size="sm" onClick={() => { setShowCreateTask(false); resetNewTaskForm(); }}>
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
 
-                    <div className="space-y-5">
-                        {/* Task Name */}
-                        <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium w-32 text-right">Task Name</label>
-                            <Input
-                                className="flex-1"
-                                placeholder="Enter task name"
-                                value={newTask.title}
-                                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                            />
-                        </div>
+                            {/* Related To - Dropdown to select client */}
+                            <div className="flex items-center gap-4">
+                                <label className="text-sm font-medium w-32 text-right">Related To</label>
+                                <Select value={newTask.relatedTo} onValueChange={handleClientChange}>
+                                    <SelectTrigger className="flex-1">
+                                        <SelectValue placeholder="Select client" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableClients.map(c => (
+                                            <SelectItem key={c.id} value={c.id.toString()}>{c.company || c.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                        {/* Due Date */}
-                        <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium w-32 text-right">Due Date</label>
-                            <Input
-                                type="date"
-                                className="flex-1"
-                                value={newTask.dueDate}
-                                onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-                            />
-                        </div>
+                            {/* Description */}
+                            <div className="flex items-start gap-4">
+                                <label className="text-sm font-medium w-32 text-right pt-2">Description</label>
+                                <textarea
+                                    className="flex-1 px-3 py-2 border rounded-lg bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    rows={3}
+                                    placeholder="A few words about this task"
+                                    value={newTask.description}
+                                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                                />
+                            </div>
 
-                        {/* Plan for the week */}
-                        <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium w-32 text-right">Plan for the week</label>
-                            <Select value={newTask.planForWeek} onValueChange={(v) => setNewTask({ ...newTask, planForWeek: v })}>
-                                <SelectTrigger className="flex-1">
-                                    <SelectValue placeholder="Select week" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[300px]">
-                                    {weekNumbers.map(week => (
-                                        <SelectItem key={week.value} value={week.value}>{week.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Related To - Dropdown to select client */}
-                        <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium w-32 text-right">Related To</label>
-                            <Select value={newTask.relatedTo} onValueChange={handleClientChange}>
-                                <SelectTrigger className="flex-1">
-                                    <SelectValue placeholder="Select client" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {availableClients.map(c => (
-                                        <SelectItem key={c.id} value={c.id.toString()}>{c.company || c.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Description */}
-                        <div className="flex items-start gap-4">
-                            <label className="text-sm font-medium w-32 text-right pt-2">Description</label>
-                            <textarea
-                                className="flex-1 px-3 py-2 border rounded-lg bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                rows={3}
-                                placeholder="A few words about this task"
-                                value={newTask.description}
-                                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                            />
-                        </div>
-
-                        {/* Checkboxes */}
-                        <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium w-32 text-right"></label>
-                            <div className="flex-1 space-y-3">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        className="w-4 h-4 rounded border-gray-300"
-                                        checked={newTask.isHighPriority}
-                                        onChange={(e) => setNewTask({ ...newTask, isHighPriority: e.target.checked })}
-                                    />
-                                    <span className="text-sm">Mark as High Priority</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        className="w-4 h-4 rounded border-gray-300"
-                                        checked={newTask.isCompleted}
-                                        onChange={(e) => setNewTask({ ...newTask, isCompleted: e.target.checked })}
-                                    />
-                                    <span className="text-sm">Mark as completed</span>
-                                </label>
+                            {/* Checkboxes */}
+                            <div className="flex items-center gap-4">
+                                <label className="text-sm font-medium w-32 text-right"></label>
+                                <div className="flex-1 space-y-3">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 rounded border-gray-300"
+                                            checked={newTask.isHighPriority}
+                                            onChange={(e) => setNewTask({ ...newTask, isHighPriority: e.target.checked })}
+                                        />
+                                        <span className="text-sm">Mark as High Priority</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 rounded border-gray-300"
+                                            checked={newTask.isCompleted}
+                                            onChange={(e) => setNewTask({ ...newTask, isCompleted: e.target.checked })}
+                                        />
+                                        <span className="text-sm">Mark as completed</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
-                        <Button variant="outline" onClick={() => { setShowCreateTask(false); resetNewTaskForm(); }}>Cancel</Button>
-                        <Button onClick={handleCreateTask} disabled={isSubmitting}>
-                            {isSubmitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
-                            Create Task
-                        </Button>
-                    </div>
+                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+                            <Button variant="outline" onClick={() => { setShowCreateTask(false); resetNewTaskForm(); }}>Cancel</Button>
+                            <Button onClick={handleCreateTask} disabled={isSubmitting}>
+                                {isSubmitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+                                Create Task
+                            </Button>
+                        </div>
+                    </ScrollableContainer>
                 </div>
             )}
 
@@ -605,7 +608,7 @@ const SuperAdminTasksTab = () => {
             {/* Edit Task Modal */}
             {showEditTask && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowEditTask(null)}>
-                    <div className="bg-card rounded-xl border p-6 w-full max-w-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                    <ScrollableContainer className="bg-card rounded-xl border p-6 w-full max-w-2xl animate-in zoom-in-95" maxHeight="90vh" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="font-heading font-semibold text-lg">Edit Task</h3>
                             <div className="flex items-center gap-4">
@@ -741,7 +744,7 @@ const SuperAdminTasksTab = () => {
                                 Save Changes
                             </Button>
                         </div>
-                    </div>
+                    </ScrollableContainer>
                 </div>
             )}
 

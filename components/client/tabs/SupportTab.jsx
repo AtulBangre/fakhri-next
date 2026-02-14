@@ -10,6 +10,8 @@ import {
 import { HelpCircle, MessageSquarePlus, CheckCircle2, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getFAQs } from "@/lib/actions/content";
+import { submitClientFeedback } from "@/lib/actions/responses";
+import { toast } from "sonner";
 
 const feedbackCategories = [
     { value: "general", label: "General Feedback" },
@@ -60,22 +62,47 @@ const SupportTab = ({ currentUser }) => {
         setFormData(prev => ({ ...prev, rating }));
     };
 
-    const handleSubmit = (e) => {
+    // ... (early imports)
+
+    // ...
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Here you would typically send the feedback to your backend
-        console.log("Feedback submitted:", formData);
-        setFeedbackSubmitted(true);
-        // Reset form after 3 seconds
-        setTimeout(() => {
-            setFeedbackSubmitted(false);
-            setShowFeedbackForm(false);
-            setFormData({
-                category: "general",
-                subject: "",
-                message: "",
-                rating: 0
-            });
-        }, 3000);
+
+        try {
+            const feedbackData = {
+                client: currentUser._id,
+                clientName: currentUser.name || "Unknown Client",
+                rating: formData.rating,
+                message: `Subject: ${formData.subject}\nCategory: ${formData.category}\n\n${formData.message}`,
+                category: formData.category, // Assuming model supports it or we pack it in message
+                subject: formData.subject
+            };
+
+            const result = await submitClientFeedback(feedbackData);
+
+            if (result.success) {
+                setFeedbackSubmitted(true);
+                toast.success("Feedback submitted successfully");
+
+                // Reset form after 3 seconds
+                setTimeout(() => {
+                    setFeedbackSubmitted(false);
+                    setShowFeedbackForm(false);
+                    setFormData({
+                        category: "general",
+                        subject: "",
+                        message: "",
+                        rating: 0
+                    });
+                }, 3000);
+            } else {
+                toast.error("Failed to submit feedback: " + result.error);
+            }
+        } catch (error) {
+            console.error("Feedback error:", error);
+            toast.error("An error occurred. Please try again.");
+        }
     };
 
     return (

@@ -19,6 +19,7 @@ import {
     Facebook,
     Instagram
 } from 'lucide-react';
+import { submitContactForm } from '@/lib/actions/responses';
 
 const contactSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -30,7 +31,6 @@ const contactSchema = z.object({
 });
 
 export default function ContactContent({ company = null }) {
-
 
     const {
         register,
@@ -49,15 +49,27 @@ export default function ContactContent({ company = null }) {
         },
     });
 
-    const onSubmit = (data) => {
-        console.log('Form submitted:', data);
-        // Simulate API call
-        setTimeout(() => {
-            toast.success("Message sent successfully!", {
-                description: "We'll get back to you soon.",
-            });
-            reset();
-        }, 1500);
+    const onSubmit = async (data) => {
+        try {
+            const formData = {
+                ...data,
+                service: data.service || 'General Inquiry'
+            };
+
+            const result = await submitContactForm(formData);
+
+            if (result.success) {
+                toast.success("Message sent successfully!", {
+                    description: "We'll get back to you soon.",
+                });
+                reset();
+            } else {
+                toast.error("Failed to send message: " + (result.error || "Unknown error"));
+            }
+        } catch (error) {
+            console.error("Submission error:", error);
+            toast.error("An error occurred while sending the message.");
+        }
     };
 
     const socialIcons = [

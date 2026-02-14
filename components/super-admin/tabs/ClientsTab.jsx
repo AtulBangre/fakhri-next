@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollableContainer } from "@/components/ui/scrollable-container";
 
 import { getUsers } from "@/lib/actions/user";
 import { getTasks } from "@/lib/actions/task";
@@ -487,98 +488,102 @@ const SuperAdminClientsTab = () => {
                 {
                     showAddClient && (
                         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowAddClient(false)}>
-                            <div className="bg-card rounded-xl border p-6 w-full max-w-4xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                                <div className="flex items-center justify-between mb-6">
+                            <div className="bg-card rounded-xl border w-full max-w-4xl animate-in zoom-in-95 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center justify-between p-6 pb-2">
                                     <h3 className="font-heading font-semibold text-lg">Add New Client</h3>
                                     <Button variant="ghost" size="sm" onClick={() => setShowAddClient(false)}>
                                         <X className="h-4 w-4" />
                                     </Button>
                                 </div>
+                                <ScrollableContainer className="px-6 flex-1">
+                                    <div className="py-2">
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Core Info */}
-                                    <div className="space-y-4">
-                                        <h4 className="font-medium border-b pb-2">Core Information</h4>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">Contact Name</label>
-                                            <Input value={newClientData.name} onChange={(e) => setNewClientData({ ...newClientData, name: e.target.value })} placeholder="e.g. John Doe" />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* Core Info */}
+                                            <div className="space-y-4">
+                                                <h4 className="font-medium border-b pb-2">Core Information</h4>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">Contact Name</label>
+                                                    <Input value={newClientData.name} onChange={(e) => setNewClientData({ ...newClientData, name: e.target.value })} placeholder="e.g. John Doe" />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">Company Name</label>
+                                                    <Input value={newClientData.company} onChange={(e) => setNewClientData({ ...newClientData, company: e.target.value })} placeholder="e.g. Tech Corp" />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">Email Address</label>
+                                                    <Input type="email" value={newClientData.email} onChange={(e) => setNewClientData({ ...newClientData, email: e.target.value })} placeholder="john@example.com" />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">Phone Number</label>
+                                                    <Input value={newClientData.phone} onChange={(e) => setNewClientData({ ...newClientData, phone: e.target.value })} placeholder="+1 (555) 000-0000" />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">Plan</label>
+                                                    <Select value={newClientData.plan} onValueChange={(v) => setNewClientData({ ...newClientData, plan: v })}>
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="Platinum">Platinum</SelectItem>
+                                                            <SelectItem value="Premium">Premium</SelectItem>
+                                                            <SelectItem value="Elite">Elite</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">Assigned Manager</label>
+                                                    <Select value={newClientData.manager} onValueChange={(v) => setNewClientData({ ...newClientData, manager: v })}>
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="Unassigned">Unassigned</SelectItem>
+                                                            {managers.map(m => (
+                                                                <SelectItem key={m} value={m}>{m}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
+
+                                            {/* Additional Details */}
+                                            <div className="space-y-4">
+                                                <h4 className="font-medium border-b pb-2">Additional Details</h4>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">Sales Manager</label>
+                                                    <Input value={newClientData.salesManager} onChange={(e) => setNewClientData({ ...newClientData, salesManager: e.target.value })} />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">SP Central Request ID</label>
+                                                    <Input value={newClientData.spCentralRequestId} onChange={(e) => setNewClientData({ ...newClientData, spCentralRequestId: e.target.value })} />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">Marketplace</label>
+                                                    <Input value={newClientData.marketplace} onChange={(e) => setNewClientData({ ...newClientData, marketplace: e.target.value })} placeholder="e.g. Amazon US" />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">User Permission</label>
+                                                    <Input value={newClientData.userPermission} onChange={(e) => setNewClientData({ ...newClientData, userPermission: e.target.value })} />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">Account Access URL</label>
+                                                    <Input value={newClientData.accountAccessUrl} onChange={(e) => setNewClientData({ ...newClientData, accountAccessUrl: e.target.value })} placeholder="https://..." />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">Lead Source</label>
+                                                    <Input value={newClientData.leadSource} onChange={(e) => setNewClientData({ ...newClientData, leadSource: e.target.value })} />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <label className="text-sm font-medium">Listing Manager</label>
+                                                    <Input value={newClientData.listingManager} onChange={(e) => setNewClientData({ ...newClientData, listingManager: e.target.value })} />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">Company Name</label>
-                                            <Input value={newClientData.company} onChange={(e) => setNewClientData({ ...newClientData, company: e.target.value })} placeholder="e.g. Tech Corp" />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">Email Address</label>
-                                            <Input type="email" value={newClientData.email} onChange={(e) => setNewClientData({ ...newClientData, email: e.target.value })} placeholder="john@example.com" />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">Phone Number</label>
-                                            <Input value={newClientData.phone} onChange={(e) => setNewClientData({ ...newClientData, phone: e.target.value })} placeholder="+1 (555) 000-0000" />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">Plan</label>
-                                            <Select value={newClientData.plan} onValueChange={(v) => setNewClientData({ ...newClientData, plan: v })}>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Platinum">Platinum</SelectItem>
-                                                    <SelectItem value="Premium">Premium</SelectItem>
-                                                    <SelectItem value="Elite">Elite</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">Assigned Manager</label>
-                                            <Select value={newClientData.manager} onValueChange={(v) => setNewClientData({ ...newClientData, manager: v })}>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Unassigned">Unassigned</SelectItem>
-                                                    {managers.map(m => (
-                                                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+
                                     </div>
-
-                                    {/* Additional Details */}
-                                    <div className="space-y-4">
-                                        <h4 className="font-medium border-b pb-2">Additional Details</h4>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">Sales Manager</label>
-                                            <Input value={newClientData.salesManager} onChange={(e) => setNewClientData({ ...newClientData, salesManager: e.target.value })} />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">SP Central Request ID</label>
-                                            <Input value={newClientData.spCentralRequestId} onChange={(e) => setNewClientData({ ...newClientData, spCentralRequestId: e.target.value })} />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">Marketplace</label>
-                                            <Input value={newClientData.marketplace} onChange={(e) => setNewClientData({ ...newClientData, marketplace: e.target.value })} placeholder="e.g. Amazon US" />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">User Permission</label>
-                                            <Input value={newClientData.userPermission} onChange={(e) => setNewClientData({ ...newClientData, userPermission: e.target.value })} />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">Account Access URL</label>
-                                            <Input value={newClientData.accountAccessUrl} onChange={(e) => setNewClientData({ ...newClientData, accountAccessUrl: e.target.value })} placeholder="https://..." />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">Lead Source</label>
-                                            <Input value={newClientData.leadSource} onChange={(e) => setNewClientData({ ...newClientData, leadSource: e.target.value })} />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <label className="text-sm font-medium">Listing Manager</label>
-                                            <Input value={newClientData.listingManager} onChange={(e) => setNewClientData({ ...newClientData, listingManager: e.target.value })} />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+                                </ScrollableContainer>
+                                <div className="flex justify-end gap-2 p-6 pt-2 border-t">
                                     <Button variant="outline" onClick={() => setShowAddClient(false)}>Cancel</Button>
                                     <Button onClick={handleAddClient}>
                                         <Plus className="h-4 w-4 mr-1" />
@@ -1059,43 +1064,47 @@ const SuperAdminClientsTab = () => {
             {/* Mail Modal */}
             {showMailForm && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowMailForm(false)}>
-                    <div className="bg-card rounded-xl border p-6 w-full max-w-lg animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6">
+                    <div className="bg-card rounded-xl border w-full max-w-lg animate-in zoom-in-95 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-6 pb-2">
                             <h3 className="font-heading font-semibold text-lg">Send Email to Client</h3>
                             <Button variant="ghost" size="sm" onClick={() => setShowMailForm(false)}>
                                 <X className="h-4 w-4" />
                             </Button>
                         </div>
+                        <ScrollableContainer className="px-6 flex-1">
+                            <div className="py-2">
 
-                        <div className="space-y-4">
-                            <div className="grid gap-2">
-                                <label className="text-sm font-medium">To:</label>
-                                <Input value={selectedClient.email} disabled className="bg-muted" />
-                            </div>
-                            <div className="grid gap-2">
-                                <label className="text-sm font-medium">From:</label>
-                                <Input value="Super Admin (admin@company.com)" disabled className="bg-muted" />
-                            </div>
-                            <div className="grid gap-2">
-                                <label className="text-sm font-medium">Subject:</label>
-                                <Input
-                                    placeholder="Enter subject"
-                                    value={mailSubject}
-                                    onChange={(e) => setMailSubject(e.target.value)}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <label className="text-sm font-medium">Message:</label>
-                                <textarea
-                                    className="px-3 py-2 border rounded-lg bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[150px]"
-                                    placeholder="Type your message here..."
-                                    value={mailBody}
-                                    onChange={(e) => setMailBody(e.target.value)}
-                                />
-                            </div>
-                        </div>
+                                <div className="space-y-4">
+                                    <div className="grid gap-2">
+                                        <label className="text-sm font-medium">To:</label>
+                                        <Input value={selectedClient.email} disabled className="bg-muted" />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <label className="text-sm font-medium">From:</label>
+                                        <Input value="Super Admin (admin@company.com)" disabled className="bg-muted" />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <label className="text-sm font-medium">Subject:</label>
+                                        <Input
+                                            placeholder="Enter subject"
+                                            value={mailSubject}
+                                            onChange={(e) => setMailSubject(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <label className="text-sm font-medium">Message:</label>
+                                        <textarea
+                                            className="px-3 py-2 border rounded-lg bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[150px]"
+                                            placeholder="Type your message here..."
+                                            value={mailBody}
+                                            onChange={(e) => setMailBody(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
 
-                        <div className="flex justify-end gap-2 mt-6">
+                            </div>
+                        </ScrollableContainer>
+                        <div className="flex justify-end gap-2 p-6 pt-4">
                             <Button variant="outline" onClick={() => setShowMailForm(false)}>Cancel</Button>
                             <Button onClick={handleSendMail}>
                                 <Mail className="h-4 w-4 mr-2" />
@@ -1107,212 +1116,224 @@ const SuperAdminClientsTab = () => {
             )}
 
             {/* Edit Task Modal */}
-            {showEditTask && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowEditTask(null)}>
-                    <div className="bg-card rounded-xl border p-6 w-full max-w-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="font-heading font-semibold text-lg">Edit Task</h3>
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm text-muted-foreground">Owner</span>
-                                    <Select defaultValue={showEditTask.owner}>
-                                        <SelectTrigger className="w-[180px]">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {managers.map(m => (
-                                                <SelectItem key={m} value={m}>{m}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+            {
+                showEditTask && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowEditTask(null)}>
+                        <div className="bg-card rounded-xl border w-full max-w-2xl animate-in zoom-in-95 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-between p-6 pb-2">
+                                <h3 className="font-heading font-semibold text-lg">Edit Task</h3>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-muted-foreground">Owner</span>
+                                        <Select defaultValue={showEditTask.owner}>
+                                            <SelectTrigger className="w-[180px]">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {managers.map(m => (
+                                                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <Button variant="ghost" size="sm" onClick={() => setShowEditTask(null)}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
                                 </div>
-                                <Button variant="ghost" size="sm" onClick={() => setShowEditTask(null)}>
-                                    <X className="h-4 w-4" />
+                            </div>
+                            <ScrollableContainer className="px-6 flex-1">
+                                <div className="py-2">
+
+                                    <div className="space-y-5">
+                                        <div className="flex items-center gap-4">
+                                            <label className="text-sm font-medium w-32 text-right">Task Name</label>
+                                            <Input className="flex-1" defaultValue={showEditTask.title} />
+                                        </div>
+
+                                        <div className="flex items-center gap-4">
+                                            <label className="text-sm font-medium w-32 text-right">Due Date</label>
+                                            <Input type="date" className="flex-1" defaultValue="" />
+                                        </div>
+
+                                        <div className="flex items-center gap-4">
+                                            <label className="text-sm font-medium w-32 text-right">Plan for the week</label>
+                                            <Select defaultValue={showEditTask.planForWeek || getCurrentWeek()}>
+                                                <SelectTrigger className="flex-1">
+                                                    <SelectValue placeholder="Select week" />
+                                                </SelectTrigger>
+                                                <SelectContent className="max-h-[300px]">
+                                                    {weekNumbers.map(week => (
+                                                        <SelectItem key={week.value} value={week.value}>{week.label}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="flex items-center gap-4">
+                                            <label className="text-sm font-medium w-32 text-right">Related To</label>
+                                            <div className="flex-1 px-3 py-2 bg-muted/50 rounded-lg border text-sm">
+                                                {selectedClient.company}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-start gap-4">
+                                            <label className="text-sm font-medium w-32 text-right pt-2">Description</label>
+                                            <textarea
+                                                className="flex-1 px-3 py-2 border rounded-lg bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                                rows={3}
+                                                defaultValue={showEditTask.description}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center gap-4">
+                                            <label className="text-sm font-medium w-32 text-right"></label>
+                                            <div className="flex-1 space-y-3">
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="w-4 h-4 rounded border-gray-300"
+                                                        defaultChecked={showEditTask.isHighPriority}
+                                                    />
+                                                    <span className="text-sm">Mark as High Priority</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="w-4 h-4 rounded border-gray-300"
+                                                        defaultChecked={showEditTask.isCompleted}
+                                                    />
+                                                    <span className="text-sm">Mark as completed</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </ScrollableContainer>
+                            <div className="flex justify-end gap-2 p-6 pt-2 border-t">
+                                <Button variant="outline" onClick={() => setShowEditTask(null)}>Cancel</Button>
+                                <Button onClick={() => setShowEditTask(null)}>
+                                    <Save className="h-4 w-4 mr-1" />
+                                    Save Changes
                                 </Button>
                             </div>
                         </div>
-
-                        <div className="space-y-5">
-                            <div className="flex items-center gap-4">
-                                <label className="text-sm font-medium w-32 text-right">Task Name</label>
-                                <Input className="flex-1" defaultValue={showEditTask.title} />
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                <label className="text-sm font-medium w-32 text-right">Due Date</label>
-                                <Input type="date" className="flex-1" defaultValue="" />
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                <label className="text-sm font-medium w-32 text-right">Plan for the week</label>
-                                <Select defaultValue={showEditTask.planForWeek || getCurrentWeek()}>
-                                    <SelectTrigger className="flex-1">
-                                        <SelectValue placeholder="Select week" />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-[300px]">
-                                        {weekNumbers.map(week => (
-                                            <SelectItem key={week.value} value={week.value}>{week.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                <label className="text-sm font-medium w-32 text-right">Related To</label>
-                                <div className="flex-1 px-3 py-2 bg-muted/50 rounded-lg border text-sm">
-                                    {selectedClient.company}
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-4">
-                                <label className="text-sm font-medium w-32 text-right pt-2">Description</label>
-                                <textarea
-                                    className="flex-1 px-3 py-2 border rounded-lg bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                    rows={3}
-                                    defaultValue={showEditTask.description}
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                <label className="text-sm font-medium w-32 text-right"></label>
-                                <div className="flex-1 space-y-3">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            className="w-4 h-4 rounded border-gray-300"
-                                            defaultChecked={showEditTask.isHighPriority}
-                                        />
-                                        <span className="text-sm">Mark as High Priority</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            className="w-4 h-4 rounded border-gray-300"
-                                            defaultChecked={showEditTask.isCompleted}
-                                        />
-                                        <span className="text-sm">Mark as completed</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
-                            <Button variant="outline" onClick={() => setShowEditTask(null)}>Cancel</Button>
-                            <Button onClick={() => setShowEditTask(null)}>
-                                <Save className="h-4 w-4 mr-1" />
-                                Save Changes
-                            </Button>
-                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
 
             {/* Edit Client Modal */}
-            {showEditClient && editClientData && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowEditClient(false)}>
-                    <div className="bg-card rounded-xl border p-6 w-full max-w-4xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="font-heading font-semibold text-lg">Edit Client: {editClientData.name}</h3>
-                            <Button variant="ghost" size="sm" onClick={() => setShowEditClient(false)}>
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Core Info */}
-                            <div className="space-y-4">
-                                <h4 className="font-medium border-b pb-2">Core Information</h4>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Contact Name</label>
-                                    <Input value={editClientData.name} onChange={(e) => setEditClientData({ ...editClientData, name: e.target.value })} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Company Name</label>
-                                    <Input value={editClientData.company} onChange={(e) => setEditClientData({ ...editClientData, company: e.target.value })} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Email Address</label>
-                                    <Input type="email" value={editClientData.email} onChange={(e) => setEditClientData({ ...editClientData, email: e.target.value })} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Phone Number</label>
-                                    <Input value={editClientData.phone} onChange={(e) => setEditClientData({ ...editClientData, phone: e.target.value })} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Plan</label>
-                                    <Select value={editClientData.plan} onValueChange={(v) => setEditClientData({ ...editClientData, plan: v })}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Platinum">Platinum</SelectItem>
-                                            <SelectItem value="Premium">Premium</SelectItem>
-                                            <SelectItem value="Elite">Elite</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Assigned Manager</label>
-                                    <Select value={editClientData.manager || "Unassigned"} onValueChange={(v) => setEditClientData({ ...editClientData, manager: v })}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Unassigned">Unassigned</SelectItem>
-                                            {managers.map(m => (
-                                                <SelectItem key={m} value={m}>{m}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+            {
+                showEditClient && editClientData && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowEditClient(false)}>
+                        <div className="bg-card rounded-xl border w-full max-w-4xl animate-in zoom-in-95 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-between p-6 pb-2">
+                                <h3 className="font-heading font-semibold text-lg">Edit Client: {editClientData.name}</h3>
+                                <Button variant="ghost" size="sm" onClick={() => setShowEditClient(false)}>
+                                    <X className="h-4 w-4" />
+                                </Button>
                             </div>
+                            <ScrollableContainer className="px-6 flex-1">
+                                <div className="py-2">
 
-                            {/* Additional Details */}
-                            <div className="space-y-4">
-                                <h4 className="font-medium border-b pb-2">Additional Details</h4>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Sales Manager</label>
-                                    <Input value={editClientData.salesManager || ""} onChange={(e) => setEditClientData({ ...editClientData, salesManager: e.target.value })} />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Core Info */}
+                                        <div className="space-y-4">
+                                            <h4 className="font-medium border-b pb-2">Core Information</h4>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Contact Name</label>
+                                                <Input value={editClientData.name} onChange={(e) => setEditClientData({ ...editClientData, name: e.target.value })} />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Company Name</label>
+                                                <Input value={editClientData.company} onChange={(e) => setEditClientData({ ...editClientData, company: e.target.value })} />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Email Address</label>
+                                                <Input type="email" value={editClientData.email} onChange={(e) => setEditClientData({ ...editClientData, email: e.target.value })} />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Phone Number</label>
+                                                <Input value={editClientData.phone} onChange={(e) => setEditClientData({ ...editClientData, phone: e.target.value })} />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Plan</label>
+                                                <Select value={editClientData.plan} onValueChange={(v) => setEditClientData({ ...editClientData, plan: v })}>
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Platinum">Platinum</SelectItem>
+                                                        <SelectItem value="Premium">Premium</SelectItem>
+                                                        <SelectItem value="Elite">Elite</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Assigned Manager</label>
+                                                <Select value={editClientData.manager || "Unassigned"} onValueChange={(v) => setEditClientData({ ...editClientData, manager: v })}>
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Unassigned">Unassigned</SelectItem>
+                                                        {managers.map(m => (
+                                                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        {/* Additional Details */}
+                                        <div className="space-y-4">
+                                            <h4 className="font-medium border-b pb-2">Additional Details</h4>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Sales Manager</label>
+                                                <Input value={editClientData.salesManager || ""} onChange={(e) => setEditClientData({ ...editClientData, salesManager: e.target.value })} />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">SP Central Request ID</label>
+                                                <Input value={editClientData.spCentralRequestId || ""} onChange={(e) => setEditClientData({ ...editClientData, spCentralRequestId: e.target.value })} />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Marketplace</label>
+                                                <Input value={editClientData.marketplace || ""} onChange={(e) => setEditClientData({ ...editClientData, marketplace: e.target.value })} />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">User Permission</label>
+                                                <Input value={editClientData.userPermission || ""} onChange={(e) => setEditClientData({ ...editClientData, userPermission: e.target.value })} />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Account Access URL</label>
+                                                <Input value={editClientData.accountAccessUrl || ""} onChange={(e) => setEditClientData({ ...editClientData, accountAccessUrl: e.target.value })} />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Lead Source</label>
+                                                <Input value={editClientData.leadSource || ""} onChange={(e) => setEditClientData({ ...editClientData, leadSource: e.target.value })} />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Listing Manager</label>
+                                                <Input value={editClientData.listingManager || ""} onChange={(e) => setEditClientData({ ...editClientData, listingManager: e.target.value })} />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">SP Central Request ID</label>
-                                    <Input value={editClientData.spCentralRequestId || ""} onChange={(e) => setEditClientData({ ...editClientData, spCentralRequestId: e.target.value })} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Marketplace</label>
-                                    <Input value={editClientData.marketplace || ""} onChange={(e) => setEditClientData({ ...editClientData, marketplace: e.target.value })} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">User Permission</label>
-                                    <Input value={editClientData.userPermission || ""} onChange={(e) => setEditClientData({ ...editClientData, userPermission: e.target.value })} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Account Access URL</label>
-                                    <Input value={editClientData.accountAccessUrl || ""} onChange={(e) => setEditClientData({ ...editClientData, accountAccessUrl: e.target.value })} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Lead Source</label>
-                                    <Input value={editClientData.leadSource || ""} onChange={(e) => setEditClientData({ ...editClientData, leadSource: e.target.value })} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Listing Manager</label>
-                                    <Input value={editClientData.listingManager || ""} onChange={(e) => setEditClientData({ ...editClientData, listingManager: e.target.value })} />
-                                </div>
+                            </ScrollableContainer>
+                            <div className="flex justify-end gap-2 p-6 pt-2 border-t">
+                                <Button variant="outline" onClick={() => setShowEditClient(false)}>Cancel</Button>
+                                <Button onClick={handleSaveClient}>
+                                    <Save className="h-4 w-4 mr-1" />
+                                    Save Changes
+                                </Button>
                             </div>
                         </div>
-
-                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
-                            <Button variant="outline" onClick={() => setShowEditClient(false)}>Cancel</Button>
-                            <Button onClick={handleSaveClient}>
-                                <Save className="h-4 w-4 mr-1" />
-                                Save Changes
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+                    </div >
+                )
+            }
+        </div >
     );
 };
 

@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
+import { ScrollableContainer } from "@/components/ui/scrollable-container";
+
 const SuperAdminAdminsTab = () => {
     const [admins, setAdmins] = useState([]);
     const [teams, setTeams] = useState([]);
@@ -264,104 +266,106 @@ const SuperAdminAdminsTab = () => {
 
             {/* Add/Edit Admin Modal */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-[450px]">
-                    <DialogHeader>
+                <DialogContent className="sm:max-w-[450px] max-h-[85vh] flex flex-col p-0 gap-0">
+                    <DialogHeader className="p-6 pb-2">
                         <DialogTitle>{editingAdmin ? "Edit Admin" : "Add New Admin"}</DialogTitle>
                         <DialogDescription>
                             Enter the details for the admin account manager.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Full Name</Label>
-                            <Input
-                                id="name"
-                                placeholder="John Doe"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email Address</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="john@example.com"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                required
-                                disabled={!!editingAdmin}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="password">{editingAdmin ? "New Password (Optional)" : "Password"}</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                placeholder="••••••••"
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                required={!editingAdmin}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input
-                                id="phone"
-                                placeholder="+1 234 567 890"
-                                value={formData.phone}
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+                    <ScrollableContainer className="flex-1 p-6 pt-2">
+                        <form id="admin-form" onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Role</Label>
-                                <Select
-                                    value={formData.adminRole}
-                                    onValueChange={(value) => setFormData({ ...formData, adminRole: value })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Role" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Account Manager">Account Manager</SelectItem>
-                                        <SelectItem value="Senior Manager">Senior Manager</SelectItem>
-                                        <SelectItem value="Team Lead">Team Lead</SelectItem>
-                                        <SelectItem value="Sales Head">Sales Head</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Label htmlFor="name">Full Name</Label>
+                                <Input
+                                    id="name"
+                                    placeholder="John Doe"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    required
+                                />
                             </div>
                             <div className="space-y-2">
-                                <Label>Team</Label>
-                                <Select
-                                    value={formData.team}
-                                    onValueChange={(value) => setFormData({ ...formData, team: value })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Team" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">No Team</SelectItem>
-                                        {teams.map((team) => (
-                                            <SelectItem key={team._id} value={team.name}>
-                                                {team.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Label htmlFor="email">Email Address</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="john@example.com"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    required
+                                    disabled={!!editingAdmin}
+                                />
                             </div>
-                        </div>
-                        <DialogFooter className="pt-4">
-                            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {editingAdmin ? "Save Changes" : "Create Admin"}
-                            </Button>
-                        </DialogFooter>
-                    </form>
+                            <div className="space-y-2">
+                                <Label htmlFor="password">{editingAdmin ? "New Password (Optional)" : "Password"}</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    required={!editingAdmin}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone Number</Label>
+                                <Input
+                                    id="phone"
+                                    placeholder="+1 234 567 890"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Role</Label>
+                                    <Select
+                                        value={formData.adminRole}
+                                        onValueChange={(value) => setFormData({ ...formData, adminRole: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Role" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Account Manager">Account Manager</SelectItem>
+                                            <SelectItem value="Senior Manager">Senior Manager</SelectItem>
+                                            <SelectItem value="Team Lead">Team Lead</SelectItem>
+                                            <SelectItem value="Sales Head">Sales Head</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Team</Label>
+                                    <Select
+                                        value={formData.team}
+                                        onValueChange={(value) => setFormData({ ...formData, team: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Team" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">No Team</SelectItem>
+                                            {teams.map((team) => (
+                                                <SelectItem key={team._id} value={team.name}>
+                                                    {team.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </form>
+                    </ScrollableContainer>
+                    <DialogFooter className="p-6 pt-2 border-t">
+                        <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" form="admin-form" disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {editingAdmin ? "Save Changes" : "Create Admin"}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

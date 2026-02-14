@@ -19,6 +19,7 @@ import dynamic from 'next/dynamic';
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 import 'react-quill-new/dist/quill.snow.css';
 import { ImagePicker } from "@/components/ui/image-picker";
+import { ScrollableContainer } from "@/components/ui/scrollable-container";
 
 // Import Server Actions
 import {
@@ -610,37 +611,41 @@ function TeamManager({ data, onUpdate, refreshData }) {
                 </Table>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-h-[85vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>{isViewMode ? "View Member" : currentMember ? "Edit Member" : "Add Member"}</DialogTitle></DialogHeader>
-                    {isViewMode ? (
-                        <div className="space-y-4">
-                            <div className="flex justify-center"><img src={currentMember?.image || undefined} className="w-24 h-24 rounded-full object-cover" /></div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div><Label>Name</Label><p>{currentMember?.name}</p></div><div><Label>Role</Label><p>{currentMember?.role}</p></div>
-                                <div><Label>Category</Label><Badge>{currentMember?.category}</Badge></div><div><Label>Email</Label><p>{currentMember?.email}</p></div>
-                                <div className="col-span-2"><Label>Description</Label><p className="text-sm text-muted-foreground">{currentMember?.description}</p></div>
+                <DialogContent className="max-h-[85vh] flex flex-col p-0 gap-0">
+                    <DialogHeader className="p-6 pb-2"><DialogTitle>{isViewMode ? "View Member" : currentMember ? "Edit Member" : "Add Member"}</DialogTitle></DialogHeader>
+                    <ScrollableContainer className="flex-1 p-6 pt-2">
+                        {isViewMode ? (
+                            <div className="space-y-4">
+                                <div className="flex justify-center"><img src={currentMember?.image || undefined} className="w-24 h-24 rounded-full object-cover" /></div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div><Label>Name</Label><p>{currentMember?.name}</p></div><div><Label>Role</Label><p>{currentMember?.role}</p></div>
+                                    <div><Label>Category</Label><Badge>{currentMember?.category}</Badge></div><div><Label>Email</Label><p>{currentMember?.email}</p></div>
+                                    <div className="col-span-2"><Label>Description</Label><p className="text-sm text-muted-foreground">{currentMember?.description}</p></div>
+                                </div>
                             </div>
-                        </div>
-                    ) : (
-                        <form onSubmit={handleSave} className="space-y-4">
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="grid gap-2"><Label>Name</Label><Input name="name" defaultValue={currentMember?.name} required /></div>
-                                <div className="grid gap-2"><Label>Role</Label><Input name="role" defaultValue={currentMember?.role} required /></div>
-                            </div>
-                            <div className="grid gap-2"><Label>Category</Label><Select name="category" defaultValue={currentMember?.category || "Core Leadership"}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Core Leadership">Core Leadership</SelectItem><SelectItem value="Senior Management">Senior Management</SelectItem><SelectItem value="Rising Stars">Rising Stars</SelectItem></SelectContent></Select></div>
-                            <div className="grid gap-2"><Label>Email</Label><Input name="email" defaultValue={currentMember?.email} /></div>
-                            <div className="grid gap-2">
-                                <ImagePicker name="image" label="Profile Image" value={currentMember?.image} />
-                            </div>
-                            <div className="grid gap-2"><Label>Description</Label><Textarea name="description" defaultValue={currentMember?.description} /></div>
-                            <div className="grid gap-2"><Label>Order</Label><Input type="number" name="order" defaultValue={currentMember?.order} /></div>
-                            <DialogFooter>
-                                <Button type="submit" disabled={isLoading}>
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save
-                                </Button>
-                            </DialogFooter>
-                        </form>
+                        ) : (
+                            <form id="team-manager-form" onSubmit={handleSave} className="space-y-4">
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="grid gap-2"><Label>Name</Label><Input name="name" defaultValue={currentMember?.name} required /></div>
+                                    <div className="grid gap-2"><Label>Role</Label><Input name="role" defaultValue={currentMember?.role} required /></div>
+                                </div>
+                                <div className="grid gap-2"><Label>Category</Label><Select name="category" defaultValue={currentMember?.category || "Core Leadership"}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Core Leadership">Core Leadership</SelectItem><SelectItem value="Senior Management">Senior Management</SelectItem><SelectItem value="Rising Stars">Rising Stars</SelectItem></SelectContent></Select></div>
+                                <div className="grid gap-2"><Label>Email</Label><Input name="email" defaultValue={currentMember?.email} /></div>
+                                <div className="grid gap-2">
+                                    <ImagePicker name="image" label="Profile Image" value={currentMember?.image} />
+                                </div>
+                                <div className="grid gap-2"><Label>Description</Label><Textarea name="description" defaultValue={currentMember?.description} /></div>
+                                <div className="grid gap-2"><Label>Order</Label><Input type="number" name="order" defaultValue={currentMember?.order} /></div>
+                            </form>
+                        )}
+                    </ScrollableContainer>
+                    {!isViewMode && (
+                        <DialogFooter className="p-6 pt-2 border-t">
+                            <Button type="submit" form="team-manager-form" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save
+                            </Button>
+                        </DialogFooter>
                     )}
                 </DialogContent>
             </Dialog>
@@ -730,28 +735,32 @@ function PricingManager({ data, onUpdate, refreshData }) {
                 ))}
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-h-[85vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>{isViewMode ? "View Plan" : "Edit Plan"}</DialogTitle></DialogHeader>
-                    {isViewMode ? (
-                        <div className="space-y-4">
-                            <div className="flex justify-between"><div><h3 className="text-lg font-bold">{currentPlan?.name}</h3><p className="text-muted-foreground">{currentPlan?.subtitle}</p></div>{currentPlan?.highlighted && <Badge>Popular</Badge>}</div>
-                            <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg"><div><Label>Monthly Price</Label><p className="font-mono">{currentPlan?.prices?.monthly}</p></div></div>
-                            <div><Label>Description</Label><p>{currentPlan?.description}</p></div><div><Label>CTA Text</Label><p>{currentPlan?.cta}</p></div>
-                        </div>
-                    ) : (
-                        <form onSubmit={handleSave} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>Name</Label><Input name="name" defaultValue={currentPlan?.name} required /></div><div className="grid gap-2"><Label>Subtitle</Label><Input name="subtitle" defaultValue={currentPlan?.subtitle} /></div></div>
-                            <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>Monthly Price (e.g. ₹20,000)</Label><Input name="monthly" defaultValue={currentPlan?.prices?.monthly} required /></div></div>
-                            <div className="grid gap-2"><Label>Description</Label><Textarea name="description" defaultValue={currentPlan?.description} /></div>
-                            <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>CTA Text</Label><Input name="cta" defaultValue={currentPlan?.cta} /></div><div className="grid gap-2"><Label>Period</Label><Input name="period" defaultValue={currentPlan?.period} /></div></div>
-                            <div className="flex items-center space-x-2"><Checkbox id="highlighted" name="highlighted" defaultChecked={currentPlan?.highlighted} /><Label htmlFor="highlighted">Highlight as Popular</Label></div>
-                            <DialogFooter>
-                                <Button type="submit" disabled={isLoading}>
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save
-                                </Button>
-                            </DialogFooter>
-                        </form>
+                <DialogContent className="max-h-[85vh] flex flex-col p-0 gap-0">
+                    <DialogHeader className="p-6 pb-2"><DialogTitle>{isViewMode ? "View Plan" : "Edit Plan"}</DialogTitle></DialogHeader>
+                    <ScrollableContainer className="flex-1 p-6 pt-2">
+                        {isViewMode ? (
+                            <div className="space-y-4">
+                                <div className="flex justify-between"><div><h3 className="text-lg font-bold">{currentPlan?.name}</h3><p className="text-muted-foreground">{currentPlan?.subtitle}</p></div>{currentPlan?.highlighted && <Badge>Popular</Badge>}</div>
+                                <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg"><div><Label>Monthly Price</Label><p className="font-mono">{currentPlan?.prices?.monthly}</p></div></div>
+                                <div><Label>Description</Label><p>{currentPlan?.description}</p></div><div><Label>CTA Text</Label><p>{currentPlan?.cta}</p></div>
+                            </div>
+                        ) : (
+                            <form id="pricing-form" onSubmit={handleSave} className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>Name</Label><Input name="name" defaultValue={currentPlan?.name} required /></div><div className="grid gap-2"><Label>Subtitle</Label><Input name="subtitle" defaultValue={currentPlan?.subtitle} /></div></div>
+                                <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>Monthly Price (e.g. ₹20,000)</Label><Input name="monthly" defaultValue={currentPlan?.prices?.monthly} required /></div></div>
+                                <div className="grid gap-2"><Label>Description</Label><Textarea name="description" defaultValue={currentPlan?.description} /></div>
+                                <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>CTA Text</Label><Input name="cta" defaultValue={currentPlan?.cta} /></div><div className="grid gap-2"><Label>Period</Label><Input name="period" defaultValue={currentPlan?.period} /></div></div>
+                                <div className="flex items-center space-x-2"><Checkbox id="highlighted" name="highlighted" defaultChecked={currentPlan?.highlighted} /><Label htmlFor="highlighted">Highlight as Popular</Label></div>
+                            </form>
+                        )}
+                    </ScrollableContainer>
+                    {!isViewMode && (
+                        <DialogFooter className="p-6 pt-2 border-t">
+                            <Button type="submit" form="pricing-form" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save
+                            </Button>
+                        </DialogFooter>
                     )}
                 </DialogContent>
             </Dialog>
@@ -866,31 +875,35 @@ function CatalogManager({ data, onUpdate, refreshData }) {
                 </Table>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-h-[85vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>{isViewMode ? "View Item" : "Edit/Add Item"}</DialogTitle></DialogHeader>
-                    {isViewMode ? (
-                        <div className="space-y-4">
-                            <div><Label>Name</Label><p>{currentService?.name}</p></div><div><Label>Category</Label><Badge>{currentService?.category}</Badge></div>
-                            <div className="grid grid-cols-2 gap-4 border p-4 rounded text-center">
-                                <div><Label>Standard</Label><p className="text-xl font-bold">{currentService?.pricing?.standard ? `₹${currentService?.pricing.standard.price}` : "N/A"}</p><p className="text-xs text-muted-foreground">{currentService?.pricing?.standard?.label}</p></div>
-                                <div><Label>Priority</Label><p className="text-xl font-bold text-amber-600">{currentService?.pricing?.priority ? `₹${currentService?.pricing.priority.price}` : "N/A"}</p><p className="text-xs text-muted-foreground">{currentService?.pricing?.priority?.label}</p></div>
+                <DialogContent className="max-h-[85vh] flex flex-col p-0 gap-0">
+                    <DialogHeader className="p-6 pb-2"><DialogTitle>{isViewMode ? "View Item" : "Edit/Add Item"}</DialogTitle></DialogHeader>
+                    <ScrollableContainer className="flex-1 p-6 pt-2">
+                        {isViewMode ? (
+                            <div className="space-y-4">
+                                <div><Label>Name</Label><p>{currentService?.name}</p></div><div><Label>Category</Label><Badge>{currentService?.category}</Badge></div>
+                                <div className="grid grid-cols-2 gap-4 border p-4 rounded text-center">
+                                    <div><Label>Standard</Label><p className="text-xl font-bold">{currentService?.pricing?.standard ? `₹${currentService?.pricing.standard.price}` : "N/A"}</p><p className="text-xs text-muted-foreground">{currentService?.pricing?.standard?.label}</p></div>
+                                    <div><Label>Priority</Label><p className="text-xl font-bold text-amber-600">{currentService?.pricing?.priority ? `₹${currentService?.pricing.priority.price}` : "N/A"}</p><p className="text-xs text-muted-foreground">{currentService?.pricing?.priority?.label}</p></div>
+                                </div>
                             </div>
-                        </div>
-                    ) : (
-                        <form onSubmit={handleSave} className="space-y-4">
-                            <div className="grid gap-2"><Label>Name</Label><Input name="name" defaultValue={currentService?.name} required /></div>
-                            <div className="grid gap-2"><Label>Category</Label><Input name="category" defaultValue={currentService?.category} required /></div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2"><Label>Standard Price</Label><Input type="number" name="stdPrice" defaultValue={currentService?.pricing?.standard?.price} /><Input name="stdLabel" defaultValue={currentService?.pricing?.standard?.label || "Detailed"} placeholder="Label" /></div>
-                                <div className="space-y-2"><Label>Priority Price</Label><Input type="number" name="prioPrice" defaultValue={currentService?.pricing?.priority?.price} /><Input name="prioLabel" defaultValue={currentService?.pricing?.priority?.label || "Within 2 Hours"} placeholder="Label" /></div>
-                            </div>
-                            <DialogFooter>
-                                <Button type="submit" disabled={isLoading}>
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save
-                                </Button>
-                            </DialogFooter>
-                        </form>
+                        ) : (
+                            <form id="catalog-form" onSubmit={handleSave} className="space-y-4">
+                                <div className="grid gap-2"><Label>Name</Label><Input name="name" defaultValue={currentService?.name} required /></div>
+                                <div className="grid gap-2"><Label>Category</Label><Input name="category" defaultValue={currentService?.category} required /></div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2"><Label>Standard Price</Label><Input type="number" name="stdPrice" defaultValue={currentService?.pricing?.standard?.price} /><Input name="stdLabel" defaultValue={currentService?.pricing?.standard?.label || "Detailed"} placeholder="Label" /></div>
+                                    <div className="space-y-2"><Label>Priority Price</Label><Input type="number" name="prioPrice" defaultValue={currentService?.pricing?.priority?.price} /><Input name="prioLabel" defaultValue={currentService?.pricing?.priority?.label || "Within 2 Hours"} placeholder="Label" /></div>
+                                </div>
+                            </form>
+                        )}
+                    </ScrollableContainer>
+                    {!isViewMode && (
+                        <DialogFooter className="p-6 pt-2 border-t">
+                            <Button type="submit" form="catalog-form" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save
+                            </Button>
+                        </DialogFooter>
                     )}
                 </DialogContent>
             </Dialog>
@@ -1061,107 +1074,111 @@ function BlogManager({ data, onUpdate, refreshData }) {
                 </Table>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>{isViewMode ? "View Post" : "Edit Post"}</DialogTitle></DialogHeader>
-                    {isViewMode ? (
-                        <div className="space-y-4">
-                            <img src={currentPost?.thumbnail || undefined} alt="cover" className="w-full h-40 object-cover rounded-md" />
-                            <h2 className="text-xl font-bold">{currentPost?.title}</h2>
-                            <div className="flex gap-2 text-sm text-muted-foreground"><span>{currentPost?.date}</span><span>•</span><span>{currentPost?.readTime}</span><span>•</span><span>{currentPost?.author?.name}</span></div>
-                            <div className="flex gap-2">{currentPost?.tags?.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}</div>
-                            <p className="italic border-l-4 border-primary pl-4">{currentPost?.excerpt}</p>
-                            <div className="space-y-2"><h4 className="font-semibold">Content</h4><div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: currentPost?.content }} /></div>
-                        </div>
-                    ) : (
-                        <form onSubmit={handleSave} className="space-y-6">
-                            <div className="grid lg:grid-cols-3 gap-6">
-                                {/* Main Content Application */}
-                                <div className="lg:col-span-2 space-y-6">
-                                    <div className="space-y-4">
-                                        <div className="space-y-2"><Label>Title</Label><Input name="title" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Enter post title" className="text-lg font-medium" /></div>
-                                        <div className="space-y-2"><Label>Slug</Label><Input name="slug" value={slug} onChange={(e) => setSlug(e.target.value)} className="bg-muted" readOnly /></div>
-                                    </div>
+                <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+                    <DialogHeader className="p-6 pb-2"><DialogTitle>{isViewMode ? "View Post" : "Edit Post"}</DialogTitle></DialogHeader>
+                    <ScrollableContainer className="flex-1 p-6 pt-2">
+                        {isViewMode ? (
+                            <div className="space-y-4">
+                                <img src={currentPost?.thumbnail || undefined} alt="cover" className="w-full h-40 object-cover rounded-md" />
+                                <h2 className="text-xl font-bold">{currentPost?.title}</h2>
+                                <div className="flex gap-2 text-sm text-muted-foreground"><span>{currentPost?.date}</span><span>•</span><span>{currentPost?.readTime}</span><span>•</span><span>{currentPost?.author?.name}</span></div>
+                                <div className="flex gap-2">{currentPost?.tags?.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}</div>
+                                <p className="italic border-l-4 border-primary pl-4">{currentPost?.excerpt}</p>
+                                <div className="space-y-2"><h4 className="font-semibold">Content</h4><div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: currentPost?.content }} /></div>
+                            </div>
+                        ) : (
+                            <form id="blog-form" onSubmit={handleSave} className="space-y-6">
+                                <div className="grid lg:grid-cols-3 gap-6">
+                                    {/* Main Content Application */}
+                                    <div className="lg:col-span-2 space-y-6">
+                                        <div className="space-y-4">
+                                            <div className="space-y-2"><Label>Title</Label><Input name="title" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Enter post title" className="text-lg font-medium" /></div>
+                                            <div className="space-y-2"><Label>Slug</Label><Input name="slug" value={slug} onChange={(e) => setSlug(e.target.value)} className="bg-muted" readOnly /></div>
+                                        </div>
 
-                                    <div className="space-y-2">
-                                        <Label>Content</Label>
-                                        <div className="h-[500px] mb-12">
-                                            <ReactQuill
-                                                theme="snow"
-                                                value={content}
-                                                onChange={setContent}
-                                                className="h-full flex flex-col"
-                                                modules={quillModules}
-                                            />
+                                        <div className="space-y-2">
+                                            <Label>Content</Label>
+                                            <div className="h-[500px] mb-12">
+                                                <ReactQuill
+                                                    theme="snow"
+                                                    value={content}
+                                                    onChange={setContent}
+                                                    className="h-full flex flex-col"
+                                                    modules={quillModules}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2 pt-6">
+                                            <Label>Excerpt</Label>
+                                            <Textarea name="excerpt" defaultValue={currentPost?.excerpt} placeholder="Brief summary of the post..." rows={3} />
                                         </div>
                                     </div>
 
-                                    <div className="space-y-2 pt-6">
-                                        <Label>Excerpt</Label>
-                                        <Textarea name="excerpt" defaultValue={currentPost?.excerpt} placeholder="Brief summary of the post..." rows={3} />
+                                    {/* Sidebar Settings */}
+                                    <div className="space-y-6">
+                                        {/* Publishing Settings */}
+                                        <Card>
+                                            <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-base">Publishing</CardTitle></CardHeader>
+                                            <CardContent className="p-4 space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label>Category</Label>
+                                                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                                        <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
+                                                        <SelectContent>
+                                                            {availableCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                                            <SelectItem value="Other">Other (Add New)</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    {selectedCategory === "Other" && (
+                                                        <Input
+                                                            placeholder="Enter new category"
+                                                            value={customCategory}
+                                                            onChange={(e) => setCustomCategory(e.target.value)}
+                                                            className="mt-2 animate-in fade-in"
+                                                        />
+                                                    )}
+                                                </div>
+                                                <div className="space-y-2"><Label>Read Time</Label><Input name="readTime" defaultValue={currentPost?.readTime} placeholder="e.g. 5 min read" /></div>
+                                                <ArrayInput values={tags} onChange={setTags} label="Tags" placeholder="Add tag..." />
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Author Settings */}
+                                        <Card>
+                                            <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-base">Author Details</CardTitle></CardHeader>
+                                            <CardContent className="p-4 space-y-4">
+                                                <div className="space-y-2"><Label>Name</Label><Input name="authorName" defaultValue={currentPost?.author?.name} /></div>
+                                                <div className="space-y-2"><Label>Role</Label><Input name="authorRole" defaultValue={currentPost?.author?.role} /></div>
+                                                <div className="space-y-2"><Label>Profile Image</Label><ImagePicker name="authorImage" label="Author Image" value={currentPost?.author?.image} /></div>
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Thumbnail Settings */}
+                                        <Card>
+                                            <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-base">Featured Image</CardTitle></CardHeader>
+                                            <CardContent className="p-4">
+                                                <ImagePicker
+                                                    name="thumbnail"
+                                                    label="Thumbnail"
+                                                    value={thumbnailUrl}
+                                                    onChange={setThumbnailUrl}
+                                                />
+                                            </CardContent>
+                                        </Card>
                                     </div>
                                 </div>
-
-                                {/* Sidebar Settings */}
-                                <div className="space-y-6">
-                                    {/* Publishing Settings */}
-                                    <Card>
-                                        <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-base">Publishing</CardTitle></CardHeader>
-                                        <CardContent className="p-4 space-y-4">
-                                            <div className="space-y-2">
-                                                <Label>Category</Label>
-                                                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                                                    <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
-                                                    <SelectContent>
-                                                        {availableCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                                                        <SelectItem value="Other">Other (Add New)</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                {selectedCategory === "Other" && (
-                                                    <Input
-                                                        placeholder="Enter new category"
-                                                        value={customCategory}
-                                                        onChange={(e) => setCustomCategory(e.target.value)}
-                                                        className="mt-2 animate-in fade-in"
-                                                    />
-                                                )}
-                                            </div>
-                                            <div className="space-y-2"><Label>Read Time</Label><Input name="readTime" defaultValue={currentPost?.readTime} placeholder="e.g. 5 min read" /></div>
-                                            <ArrayInput values={tags} onChange={setTags} label="Tags" placeholder="Add tag..." />
-                                        </CardContent>
-                                    </Card>
-
-                                    {/* Author Settings */}
-                                    <Card>
-                                        <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-base">Author Details</CardTitle></CardHeader>
-                                        <CardContent className="p-4 space-y-4">
-                                            <div className="space-y-2"><Label>Name</Label><Input name="authorName" defaultValue={currentPost?.author?.name} /></div>
-                                            <div className="space-y-2"><Label>Role</Label><Input name="authorRole" defaultValue={currentPost?.author?.role} /></div>
-                                            <div className="space-y-2"><Label>Profile Image</Label><ImagePicker name="authorImage" label="Author Image" value={currentPost?.author?.image} /></div>
-                                        </CardContent>
-                                    </Card>
-
-                                    {/* Thumbnail Settings */}
-                                    <Card>
-                                        <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-base">Featured Image</CardTitle></CardHeader>
-                                        <CardContent className="p-4">
-                                            <ImagePicker
-                                                name="thumbnail"
-                                                label="Thumbnail"
-                                                value={thumbnailUrl}
-                                                onChange={setThumbnailUrl}
-                                            />
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            </div>
-                            <DialogFooter className="sticky bottom-0 bg-background py-2 border-t mt-4">
-                                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                                <Button type="submit" disabled={isLoading}>
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save Changes
-                                </Button>
-                            </DialogFooter>
-                        </form>
+                            </form>
+                        )}
+                    </ScrollableContainer>
+                    {!isViewMode && (
+                        <DialogFooter className="sticky bottom-0 bg-background p-6 pt-2 border-t">
+                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                            <Button type="submit" form="blog-form" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Changes
+                            </Button>
+                        </DialogFooter>
                     )}
                 </DialogContent>
             </Dialog>
@@ -1287,42 +1304,46 @@ function ServiceManager({ data, onUpdate, refreshData }) {
                 </Table>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>{isViewMode ? "View Service" : "Edit Service"}</DialogTitle></DialogHeader>
-                    {isViewMode ? (
-                        <div className="space-y-4">
-                            <div className="flex justify-between">
-                                <div><h3 className="text-xl font-bold">{currentService?.title}</h3><Badge variant="secondary" className="mt-1">{currentService?.category}</Badge></div>
-                                <div className="p-2 bg-muted rounded-full"><Shield className="w-6 h-6" /></div>
+                <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 gap-0">
+                    <DialogHeader className="p-6 pb-2"><DialogTitle>{isViewMode ? "View Service" : "Edit Service"}</DialogTitle></DialogHeader>
+                    <ScrollableContainer className="flex-1 p-6 pt-2">
+                        {isViewMode ? (
+                            <div className="space-y-4">
+                                <div className="flex justify-between">
+                                    <div><h3 className="text-xl font-bold">{currentService?.title}</h3><Badge variant="secondary" className="mt-1">{currentService?.category}</Badge></div>
+                                    <div className="p-2 bg-muted rounded-full"><Shield className="w-6 h-6" /></div>
+                                </div>
+                                <p className="text-muted-foreground">{currentService?.shortDescription}</p>
+                                <div className="prose prose-sm max-w-none"><h4 className="font-semibold">Full Description</h4><p>{currentService?.fullDescription}</p></div>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div><h4 className="font-semibold mb-2">Features</h4><ul className="list-disc pl-5 text-sm space-y-1">{currentService?.features?.map((f, i) => <li key={i}>{f}</li>)}</ul></div>
+                                    <div><h4 className="font-semibold mb-2">Benefits</h4><ul className="list-disc pl-5 text-sm space-y-1">{currentService?.benefits?.map((b, i) => <li key={i}>{b}</li>)}</ul></div>
+                                </div>
                             </div>
-                            <p className="text-muted-foreground">{currentService?.shortDescription}</p>
-                            <div className="prose prose-sm max-w-none"><h4 className="font-semibold">Full Description</h4><p>{currentService?.fullDescription}</p></div>
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <div><h4 className="font-semibold mb-2">Features</h4><ul className="list-disc pl-5 text-sm space-y-1">{currentService?.features?.map((f, i) => <li key={i}>{f}</li>)}</ul></div>
-                                <div><h4 className="font-semibold mb-2">Benefits</h4><ul className="list-disc pl-5 text-sm space-y-1">{currentService?.benefits?.map((b, i) => <li key={i}>{b}</li>)}</ul></div>
-                            </div>
-                        </div>
-                    ) : (
-                        <form onSubmit={handleSave} className="space-y-6">
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="grid gap-2"><Label>Title</Label><Input name="title" defaultValue={currentService?.title} required /></div>
-                                <div className="grid gap-2"><Label>Icon Name (Lucide)</Label><Input name="icon" defaultValue={currentService?.icon} placeholder="e.g. Shield" /></div>
-                            </div>
-                            <div className="grid gap-2"><Label>Category</Label><Select name="category" defaultValue={currentService?.category}><SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger><SelectContent><SelectItem value="Account Services">Account Services</SelectItem><SelectItem value="Listing & Content">Listing & Content</SelectItem><SelectItem value="Operations">Operations</SelectItem><SelectItem value="Growth">Growth</SelectItem></SelectContent></Select></div>
-                            <div className="grid gap-2"><Label>Short Description</Label><Textarea name="shortDescription" defaultValue={currentService?.shortDescription} rows={2} /></div>
-                            <div className="grid gap-2"><Label>Full Description</Label><Textarea name="fullDescription" defaultValue={currentService?.fullDescription} rows={4} /></div>
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <ArrayInput values={features} onChange={setFeatures} label="Features" placeholder="Add feature..." />
-                                <ArrayInput values={benefits} onChange={setBenefits} label="Benefits" placeholder="Add benefit..." />
-                            </div>
-                            <div className="grid gap-2"><Label>Order</Label><Input type="number" name="order" defaultValue={currentService?.order} /></div>
-                            <DialogFooter>
-                                <Button type="submit" disabled={isLoading}>
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save
-                                </Button>
-                            </DialogFooter>
-                        </form>
+                        ) : (
+                            <form id="service-form" onSubmit={handleSave} className="space-y-6">
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="grid gap-2"><Label>Title</Label><Input name="title" defaultValue={currentService?.title} required /></div>
+                                    <div className="grid gap-2"><Label>Icon Name (Lucide)</Label><Input name="icon" defaultValue={currentService?.icon} placeholder="e.g. Shield" /></div>
+                                </div>
+                                <div className="grid gap-2"><Label>Category</Label><Select name="category" defaultValue={currentService?.category}><SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger><SelectContent><SelectItem value="Account Services">Account Services</SelectItem><SelectItem value="Listing & Content">Listing & Content</SelectItem><SelectItem value="Operations">Operations</SelectItem><SelectItem value="Growth">Growth</SelectItem></SelectContent></Select></div>
+                                <div className="grid gap-2"><Label>Short Description</Label><Textarea name="shortDescription" defaultValue={currentService?.shortDescription} rows={2} /></div>
+                                <div className="grid gap-2"><Label>Full Description</Label><Textarea name="fullDescription" defaultValue={currentService?.fullDescription} rows={4} /></div>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <ArrayInput values={features} onChange={setFeatures} label="Features" placeholder="Add feature..." />
+                                    <ArrayInput values={benefits} onChange={setBenefits} label="Benefits" placeholder="Add benefit..." />
+                                </div>
+                                <div className="grid gap-2"><Label>Order</Label><Input type="number" name="order" defaultValue={currentService?.order} /></div>
+                            </form>
+                        )}
+                    </ScrollableContainer>
+                    {!isViewMode && (
+                        <DialogFooter className="p-6 pt-2 border-t">
+                            <Button type="submit" form="service-form" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save
+                            </Button>
+                        </DialogFooter>
                     )}
                 </DialogContent>
             </Dialog>
@@ -1498,64 +1519,68 @@ function TestimonialManager({ data, onUpdate, refreshData }) {
                 </Table>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-h-[85vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>{isViewMode ? "View Testimonial" : "Edit Testimonial"}</DialogTitle></DialogHeader>
-                    {isViewMode ? (
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-4"><img src={currentTestimonial?.author?.image || undefined} className="w-16 h-16 rounded-full" /><div><h4 className="text-lg font-bold">{currentTestimonial?.author?.name}</h4><p>{currentTestimonial?.author?.role}, {currentTestimonial?.author?.company}</p></div></div>
-                            <p className="text-xl italic font-serif">"{currentTestimonial?.content}"</p>
-                            <div className="flex gap-4"><div><Label>Rating</Label><div className="flex text-yellow-500">{[...Array(currentTestimonial?.rating || 5)].map((_, i) => <span key={i}>★</span>)}</div></div>{currentTestimonial?.metric?.value && <div><Label>Metric</Label><Badge>{currentTestimonial?.metric.value} {currentTestimonial?.metric.label}</Badge></div>}</div>
-                        </div>
-                    ) : (
-                        <form onSubmit={handleSave} className="space-y-4">
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Type</Label>
-                                    <Select name="type" defaultValue={currentTestimonial?.type || "social"}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="social">Social Proof (Home Page)</SelectItem>
-                                            <SelectItem value="detailed">Detailed Case Study</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                <DialogContent className="max-h-[85vh] flex flex-col p-0 gap-0">
+                    <DialogHeader className="p-6 pb-2"><DialogTitle>{isViewMode ? "View Testimonial" : "Edit Testimonial"}</DialogTitle></DialogHeader>
+                    <ScrollableContainer className="flex-1 p-6 pt-2">
+                        {isViewMode ? (
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-4"><img src={currentTestimonial?.author?.image || undefined} className="w-16 h-16 rounded-full" /><div><h4 className="text-lg font-bold">{currentTestimonial?.author?.name}</h4><p>{currentTestimonial?.author?.role}, {currentTestimonial?.author?.company}</p></div></div>
+                                <p className="text-xl italic font-serif">"{currentTestimonial?.content}"</p>
+                                <div className="flex gap-4"><div><Label>Rating</Label><div className="flex text-yellow-500">{[...Array(currentTestimonial?.rating || 5)].map((_, i) => <span key={i}>★</span>)}</div></div>{currentTestimonial?.metric?.value && <div><Label>Metric</Label><Badge>{currentTestimonial?.metric.value} {currentTestimonial?.metric.label}</Badge></div>}</div>
+                            </div>
+                        ) : (
+                            <form id="testimonial-form" onSubmit={handleSave} className="space-y-4">
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Type</Label>
+                                        <Select name="type" defaultValue={currentTestimonial?.type || "social"}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="social">Social Proof (Home Page)</SelectItem>
+                                                <SelectItem value="detailed">Detailed Case Study</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Category</Label>
+                                        <Input name="category" defaultValue={currentTestimonial?.category || "General"} placeholder="General" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2"><Label>Content / Quote</Label><Textarea name="content" defaultValue={currentTestimonial?.content} required /></div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="space-y-2"><Label>Author Name</Label><Input name="authorName" defaultValue={currentTestimonial?.author?.name} required /></div>
+                                    <div className="space-y-2"><Label>Role</Label><Input name="authorRole" defaultValue={currentTestimonial?.author?.role} /></div>
+                                    <div className="space-y-2"><Label>Company</Label><Input name="authorCompany" defaultValue={currentTestimonial?.author?.company} /></div>
+                                    <div className="space-y-2"><Label>Handle (Twitter/Li)</Label><Input name="authorHandle" defaultValue={currentTestimonial?.author?.handle} /></div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Category</Label>
-                                    <Input name="category" defaultValue={currentTestimonial?.category || "General"} placeholder="General" />
+                                    <ImagePicker
+                                        name="authorImage"
+                                        label="Author Image"
+                                        value={currentTestimonial?.author?.image}
+                                    />
                                 </div>
-                            </div>
-                            <div className="space-y-2"><Label>Content / Quote</Label><Textarea name="content" defaultValue={currentTestimonial?.content} required /></div>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="space-y-2"><Label>Author Name</Label><Input name="authorName" defaultValue={currentTestimonial?.author?.name} required /></div>
-                                <div className="space-y-2"><Label>Role</Label><Input name="authorRole" defaultValue={currentTestimonial?.author?.role} /></div>
-                                <div className="space-y-2"><Label>Company</Label><Input name="authorCompany" defaultValue={currentTestimonial?.author?.company} /></div>
-                                <div className="space-y-2"><Label>Handle (Twitter/Li)</Label><Input name="authorHandle" defaultValue={currentTestimonial?.author?.handle} /></div>
-                            </div>
-                            <div className="space-y-2">
-                                <ImagePicker
-                                    name="authorImage"
-                                    label="Author Image"
-                                    value={currentTestimonial?.author?.image}
-                                />
-                            </div>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="space-y-2"><Label>Metric Value</Label><Input name="metricValue" defaultValue={currentTestimonial?.metric?.value} placeholder="e.g. +200%" /></div>
-                                <div className="space-y-2"><Label>Metric Label</Label><Input name="metricLabel" defaultValue={currentTestimonial?.metric?.label} placeholder="e.g. Growth" /></div>
-                            </div>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="space-y-2"><Label>Rating (1-5)</Label><Input type="number" name="rating" min="1" max="5" defaultValue={currentTestimonial?.rating || 5} /></div>
-                                <div className="space-y-2"><Label>Order</Label><Input type="number" name="order" defaultValue={currentTestimonial?.order} /></div>
-                            </div>
-                            <div className="flex items-center space-x-2"><Checkbox id="featured" name="featured" defaultChecked={currentTestimonial?.featured} /><Label htmlFor="featured">Feature on Home Page</Label></div>
-                            <DialogFooter>
-                                <Button type="submit" disabled={isLoading}>
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save
-                                </Button>
-                            </DialogFooter>
-                        </form>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="space-y-2"><Label>Metric Value</Label><Input name="metricValue" defaultValue={currentTestimonial?.metric?.value} placeholder="e.g. +200%" /></div>
+                                    <div className="space-y-2"><Label>Metric Label</Label><Input name="metricLabel" defaultValue={currentTestimonial?.metric?.label} placeholder="e.g. Growth" /></div>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="space-y-2"><Label>Rating (1-5)</Label><Input type="number" name="rating" min="1" max="5" defaultValue={currentTestimonial?.rating || 5} /></div>
+                                    <div className="space-y-2"><Label>Order</Label><Input type="number" name="order" defaultValue={currentTestimonial?.order} /></div>
+                                </div>
+                                <div className="flex items-center space-x-2"><Checkbox id="featured" name="featured" defaultChecked={currentTestimonial?.featured} /><Label htmlFor="featured">Feature on Home Page</Label></div>
+                            </form>
+                        )}
+                    </ScrollableContainer>
+                    {!isViewMode && (
+                        <DialogFooter className="p-6 pt-2 border-t">
+                            <Button type="submit" form="testimonial-form" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save
+                            </Button>
+                        </DialogFooter>
                     )}
                 </DialogContent>
             </Dialog>
@@ -1693,38 +1718,42 @@ function FAQManager({ data, onUpdate, refreshData }) {
                 ))}
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-h-[85vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>{isViewMode ? "View FAQ" : "Edit FAQ"}</DialogTitle></DialogHeader>
-                    {isViewMode ? (
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-bold">{currentFaq?.question}</h3>
-                            <p className="text-muted-foreground">{currentFaq?.answer}</p>
-                            <div className="flex gap-2">
-                                {currentFaq?.categories?.home && <Badge>Home</Badge>}
-                                {currentFaq?.categories?.pricing && <Badge>Pricing</Badge>}
-                                {currentFaq?.categories?.dashboard && <Badge>Dashboard</Badge>}
-                            </div>
-                        </div>
-                    ) : (
-                        <form onSubmit={handleSave} className="space-y-4">
-                            <div className="space-y-2"><Label>Question</Label><Input name="question" defaultValue={currentFaq?.question} required /></div>
-                            <div className="space-y-2"><Label>Answer</Label><Textarea name="answer" defaultValue={currentFaq?.answer} required /></div>
-                            <div className="space-y-2">
-                                <Label>Show On:</Label>
-                                <div className="flex gap-4">
-                                    <div className="flex items-center space-x-2"><Checkbox id="cat_home" name="cat_home" defaultChecked={currentFaq?.categories?.home} /><Label htmlFor="cat_home">Home</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="cat_pricing" name="cat_pricing" defaultChecked={currentFaq?.categories?.pricing} /><Label htmlFor="cat_pricing">Pricing</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="cat_dashboard" name="cat_dashboard" defaultChecked={currentFaq?.categories?.dashboard} /><Label htmlFor="cat_dashboard">Dashboard</Label></div>
+                <DialogContent className="max-h-[85vh] flex flex-col p-0 gap-0">
+                    <DialogHeader className="p-6 pb-2"><DialogTitle>{isViewMode ? "View FAQ" : "Edit FAQ"}</DialogTitle></DialogHeader>
+                    <ScrollableContainer className="flex-1 p-6 pt-2">
+                        {isViewMode ? (
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-bold">{currentFaq?.question}</h3>
+                                <p className="text-muted-foreground">{currentFaq?.answer}</p>
+                                <div className="flex gap-2">
+                                    {currentFaq?.categories?.home && <Badge>Home</Badge>}
+                                    {currentFaq?.categories?.pricing && <Badge>Pricing</Badge>}
+                                    {currentFaq?.categories?.dashboard && <Badge>Dashboard</Badge>}
                                 </div>
                             </div>
-                            <div className="space-y-2"><Label>Order</Label><Input type="number" name="order" defaultValue={currentFaq?.order} /></div>
-                            <DialogFooter>
-                                <Button type="submit" disabled={isLoading}>
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save
-                                </Button>
-                            </DialogFooter>
-                        </form>
+                        ) : (
+                            <form id="faq-form" onSubmit={handleSave} className="space-y-4">
+                                <div className="space-y-2"><Label>Question</Label><Input name="question" defaultValue={currentFaq?.question} required /></div>
+                                <div className="space-y-2"><Label>Answer</Label><Textarea name="answer" defaultValue={currentFaq?.answer} required /></div>
+                                <div className="space-y-2">
+                                    <Label>Show On:</Label>
+                                    <div className="flex gap-4">
+                                        <div className="flex items-center space-x-2"><Checkbox id="cat_home" name="cat_home" defaultChecked={currentFaq?.categories?.home} /><Label htmlFor="cat_home">Home</Label></div>
+                                        <div className="flex items-center space-x-2"><Checkbox id="cat_pricing" name="cat_pricing" defaultChecked={currentFaq?.categories?.pricing} /><Label htmlFor="cat_pricing">Pricing</Label></div>
+                                        <div className="flex items-center space-x-2"><Checkbox id="cat_dashboard" name="cat_dashboard" defaultChecked={currentFaq?.categories?.dashboard} /><Label htmlFor="cat_dashboard">Dashboard</Label></div>
+                                    </div>
+                                </div>
+                                <div className="space-y-2"><Label>Order</Label><Input type="number" name="order" defaultValue={currentFaq?.order} /></div>
+                            </form>
+                        )}
+                    </ScrollableContainer>
+                    {!isViewMode && (
+                        <DialogFooter className="p-6 pt-2 border-t">
+                            <Button type="submit" form="faq-form" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save
+                            </Button>
+                        </DialogFooter>
                     )}
                 </DialogContent>
             </Dialog>
@@ -1846,27 +1875,31 @@ function JobManager({ data, onUpdate, refreshData }) {
                 </Table>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>{isViewMode ? "View Job" : "Edit Job"}</DialogTitle></DialogHeader>
-                    {isViewMode ? (
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-start"><div><h2 className="text-xl font-bold">{currentJob?.title}</h2><p className="text-muted-foreground">{currentJob?.department} • {currentJob?.location}</p></div><Badge>{currentJob?.type}</Badge></div>
-                            <div><Label>Description</Label><p className="text-sm">{currentJob?.description}</p></div>
-                            <div><Label>Requirements</Label><ul className="list-disc pl-4 text-sm">{currentJob?.requirements?.map((r, i) => <li key={i}>{r}</li>)}</ul></div>
-                        </div>
-                    ) : (
-                        <form onSubmit={handleSave} className="space-y-4">
-                            <div className="grid md:grid-cols-2 gap-4"><div className="space-y-2"><Label>Title</Label><Input name="title" defaultValue={currentJob?.title} required /></div><div className="space-y-2"><Label>Department</Label><Input name="department" defaultValue={currentJob?.department} required /></div></div>
-                            <div className="grid md:grid-cols-3 gap-4"><div className="space-y-2"><Label>Location</Label><Input name="location" defaultValue={currentJob?.location} required /></div><div className="space-y-2"><Label>Type</Label><Input name="type" defaultValue={currentJob?.type} required /></div><div className="space-y-2"><Label>Experience</Label><Input name="experience" defaultValue={currentJob?.experience} /></div></div>
-                            <div className="space-y-2"><Label>Description</Label><Textarea name="description" defaultValue={currentJob?.description} rows={3} /></div>
-                            <ArrayInput values={requirements} onChange={setRequirements} label="Requirements" placeholder="Requirement..." />
-                            <DialogFooter>
-                                <Button type="submit" disabled={isLoading}>
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save
-                                </Button>
-                            </DialogFooter>
-                        </form>
+                <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 gap-0">
+                    <DialogHeader className="p-6 pb-2"><DialogTitle>{isViewMode ? "View Job" : "Edit Job"}</DialogTitle></DialogHeader>
+                    <ScrollableContainer className="flex-1 p-6 pt-2">
+                        {isViewMode ? (
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-start"><div><h2 className="text-xl font-bold">{currentJob?.title}</h2><p className="text-muted-foreground">{currentJob?.department} • {currentJob?.location}</p></div><Badge>{currentJob?.type}</Badge></div>
+                                <div><Label>Description</Label><p className="text-sm">{currentJob?.description}</p></div>
+                                <div><Label>Requirements</Label><ul className="list-disc pl-4 text-sm">{currentJob?.requirements?.map((r, i) => <li key={i}>{r}</li>)}</ul></div>
+                            </div>
+                        ) : (
+                            <form id="job-form" onSubmit={handleSave} className="space-y-4">
+                                <div className="grid md:grid-cols-2 gap-4"><div className="space-y-2"><Label>Title</Label><Input name="title" defaultValue={currentJob?.title} required /></div><div className="space-y-2"><Label>Department</Label><Input name="department" defaultValue={currentJob?.department} required /></div></div>
+                                <div className="grid md:grid-cols-3 gap-4"><div className="space-y-2"><Label>Location</Label><Input name="location" defaultValue={currentJob?.location} required /></div><div className="space-y-2"><Label>Type</Label><Input name="type" defaultValue={currentJob?.type} required /></div><div className="space-y-2"><Label>Experience</Label><Input name="experience" defaultValue={currentJob?.experience} /></div></div>
+                                <div className="space-y-2"><Label>Description</Label><Textarea name="description" defaultValue={currentJob?.description} rows={3} /></div>
+                                <ArrayInput values={requirements} onChange={setRequirements} label="Requirements" placeholder="Requirement..." />
+                            </form>
+                        )}
+                    </ScrollableContainer>
+                    {!isViewMode && (
+                        <DialogFooter className="p-6 pt-2 border-t">
+                            <Button type="submit" form="job-form" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save
+                            </Button>
+                        </DialogFooter>
                     )}
                 </DialogContent>
             </Dialog>
