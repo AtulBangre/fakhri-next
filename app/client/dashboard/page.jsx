@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import WhatsAppButton from "@/components/client/WhatsAppButton";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
 import { markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, clearAllNotifications } from "@/lib/actions/notification";
-import { getUsers, getUserByEmail, updateUser } from "@/lib/actions/user";
+import { getUsers, getUserByEmail, getUserById, updateUser } from "@/lib/actions/user";
 import useNotificationPolling from "@/hooks/useNotificationPolling";
 
 // Tabs
@@ -36,6 +36,8 @@ export default function ClientDashboardPage() {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [notifications, setNotifications] = useState([]);
   const [user, setUser] = useState(null);
+  const [managerPhone, setManagerPhone] = useState("");
+  const [managerName, setManagerName] = useState("");
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -55,6 +57,27 @@ export default function ClientDashboardPage() {
 
         if (currentUser) {
           setUser(currentUser);
+
+          // Fetch the client's manager (admin) phone number for WhatsApp
+          if (currentUser.managerId) {
+            try {
+              const managerUser = await getUserById(currentUser.managerId);
+              if (managerUser) {
+                if (managerUser.name) {
+                  setManagerName(managerUser.name);
+                }
+                if (managerUser.phone) {
+                  // Ensure the phone number has country code (default India +91)
+                  const phone = managerUser.phone.startsWith('+')
+                    ? managerUser.phone.replace(/[^0-9]/g, '')
+                    : managerUser.phone.replace(/[^0-9]/g, '');
+                  setManagerPhone(phone);
+                }
+              }
+            } catch (err) {
+              console.error('Error fetching manager phone:', err);
+            }
+          }
         }
       } catch (error) {
         console.error("Error loading dashboard data:", error);
@@ -270,10 +293,12 @@ export default function ClientDashboardPage() {
       </div>
 
       {/* Floating WhatsApp Button */}
-      <WhatsAppButton
-        phoneNumber="919876543210"
-        message="Hi! I need assistance with my account."
-      />
+      {managerPhone && (
+        <WhatsAppButton
+          phoneNumber={managerPhone}
+          message={`Hi ${managerName || 'there'}! This is ${user?.name || 'your client'}. I need assistance with my account.`}
+        />
+      )}
     </div>
   );
 }
