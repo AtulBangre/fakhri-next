@@ -1,4 +1,5 @@
 import PricingContent from '@/components/pricing/PricingContent';
+import UnderConstruction from '@/components/ui/UnderConstruction';
 import { seoData } from '@/data/company';
 
 export const metadata = {
@@ -8,5 +9,13 @@ export const metadata = {
 };
 
 export default function PricingPage() {
-    return <PricingContent />;
+    return (
+        <>
+            {/* <PricingContent /> */}
+            <UnderConstruction
+                title="Service Pricing & Plans"
+                messageIndex={4}
+            />
+        </>
+    );
 }

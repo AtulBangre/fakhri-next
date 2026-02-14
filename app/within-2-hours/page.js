@@ -1,3 +1,4 @@
+import UnderConstruction from '@/components/ui/UnderConstruction';
 import Within2HoursContent from '@/components/within-2-hours/Within2HoursContent';
 import { seoData } from '@/data/company';
 
@@ -8,5 +9,13 @@ export const metadata = {
 };
 
 export default function Within2HoursPage() {
-    return <Within2HoursContent />;
+    return (
+        <>
+            {/* <Within2HoursContent /> */}
+            <UnderConstruction
+                title="Within 2 Hours Service"
+                messageIndex={1}
+            />
+        </>
+    );
 }
