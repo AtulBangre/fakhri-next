@@ -265,7 +265,7 @@ export default function AdminDashboardPage() {
 
           {activeTab === "Clients" && <AdminClientsTab currentUser={currentUser} />}
           {activeTab === "Tasks" && <AdminTasksTab currentUser={currentUser} />}
-          {activeTab === "Files" && <AdminFilesTab />}
+          {activeTab === "Files" && <AdminFilesTab currentUser={currentUser} />}
           {activeTab === "Profile" && <AdminProfileTab currentUser={currentUser} />}
         </main>
       </div>
