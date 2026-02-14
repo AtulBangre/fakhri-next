@@ -124,7 +124,10 @@ const ClientPlanTab = ({ currentUser, managerPhone, managerName }) => {
         try {
             const servicesToSubscribe = cartItems.map(item => ({
                 serviceId: item.id,
-                name: item.name
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                total: item.price * item.quantity
             }));
 
             const result = await addClientSubscribedServices(client._id, servicesToSubscribe);

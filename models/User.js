@@ -45,6 +45,15 @@ const UserSchema = new mongoose.Schema({
         status: { type: String, enum: ['active', 'expired', 'cancelled'], default: 'active' }
     }],
     joinedDate: { type: Date, default: Date.now },
+    paymentMethods: [{
+        brand: { type: String, default: 'Visa' }, // Visa, Mastercard, American Express
+        last4: { type: String },
+        expiry: { type: String },
+        cardholderName: { type: String },
+        isDefault: { type: Boolean, default: false },
+        providerId: { type: String }, // For Stripe/PayPal payment method IDs
+        createdAt: { type: Date, default: Date.now }
+    }],
     notificationSettings: {
         soundEnabled: { type: Boolean, default: true },
         emailNotifications: { type: Boolean, default: true },
