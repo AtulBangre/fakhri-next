@@ -6,6 +6,7 @@ import { LayoutDashboard, CreditCard, CheckSquare, FileText, Receipt, User, Menu
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
 import WhatsAppButton from "@/components/client/WhatsAppButton";
+import CartDropdown from "@/components/client/CartDropdown";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
 import { markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, clearAllNotifications } from "@/lib/actions/notification";
 import { getUsers, getUserByEmail, getUserById, updateUser } from "@/lib/actions/user";
@@ -267,6 +268,9 @@ export default function ClientDashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Cart Dropdown */}
+            <CartDropdown />
+
             <NotificationDropdown
               notifications={notifications}
               onMarkAsRead={handleMarkAsRead}
@@ -283,7 +287,7 @@ export default function ClientDashboardPage() {
         {/* Page Content */}
         <main className="flex-1 p-4 lg:p-6">
           {activeTab === "Dashboard" && <ClientDashboardTab setActiveTab={setActiveTab} currentUser={user} />}
-          {activeTab === "Plan" && <ClientPlanTab currentUser={user} />}
+          {activeTab === "Plan" && <ClientPlanTab currentUser={user} managerPhone={managerPhone} managerName={managerName} />}
           {activeTab === "Tasks" && <ClientTasksTab currentUser={user} />}
           {activeTab === "Files" && <ClientFilesTab currentUser={user} />}
           {activeTab === "Billing" && <ClientBillingTab currentUser={user} />}

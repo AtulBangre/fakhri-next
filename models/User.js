@@ -38,6 +38,12 @@ const UserSchema = new mongoose.Schema({
     leadSource: { type: String },
     listingManager: { type: String },
     location: { type: String },
+    subscribedServices: [{
+        serviceId: { type: String },
+        name: { type: String },
+        subscribedDate: { type: Date, default: Date.now },
+        status: { type: String, enum: ['active', 'expired', 'cancelled'], default: 'active' }
+    }],
     joinedDate: { type: Date, default: Date.now },
     notificationSettings: {
         soundEnabled: { type: Boolean, default: true },

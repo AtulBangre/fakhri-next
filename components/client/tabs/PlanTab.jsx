@@ -1,18 +1,23 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { CheckCircle2, Star, Plus, ShoppingCart, Loader2, Package } from "lucide-react";
+import { CheckCircle2, Star, Plus, Minus, ShoppingCart, Loader2, Package, Trash2, BadgeCheck, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getUsers } from "@/lib/actions/user";
 import { getPricingPlans, getCatalogServices } from "@/lib/actions/content";
+import { addClientSubscribedServices } from "@/lib/actions/user";
+import { useCart } from "@/context/CartContext";
+import { toast } from "sonner";
 
-const ClientPlanTab = ({ currentUser }) => {
+const ClientPlanTab = ({ currentUser, managerPhone, managerName }) => {
     const [loading, setLoading] = useState(true);
     const [activeSubTab, setActiveSubTab] = useState("plan");
     const [client, setClient] = useState(null);
     const [allPlans, setAllPlans] = useState([]);
     const [catalogServices, setCatalogServices] = useState([]);
+    const [quantities, setQuantities] = useState({});
+
+    const { cartItems, addToCart, removeFromCart, updateQuantity, totalItems, totalAmount, clearCart } = useCart();
 
     useEffect(() => {
         const loadPlanData = async () => {
@@ -30,6 +35,13 @@ const ClientPlanTab = ({ currentUser }) => {
 
                 const servicesData = await getCatalogServices();
                 setCatalogServices(servicesData);
+
+                // Initialize quantities for all services
+                const initialQuantities = {};
+                servicesData.forEach(s => {
+                    initialQuantities[s.serviceId || s._id] = 1;
+                });
+                setQuantities(initialQuantities);
             } catch (error) {
                 console.error("Error loading plan data:", error);
             } finally {
@@ -45,22 +57,112 @@ const ClientPlanTab = ({ currentUser }) => {
         if (!client || !allPlans.length) return null;
         return allPlans.find(p =>
             p.name?.toLowerCase() === client.plan?.toLowerCase() ||
+            p.planId?.toLowerCase() === client.plan?.toLowerCase() ||
             p._id === client.plan
         );
     }, [client, allPlans]);
 
-    // Available Add-on Services from Catalog
+    // Get subscribed service IDs
+    const subscribedServiceIds = useMemo(() => {
+        if (!client?.subscribedServices) return new Set();
+        return new Set(
+            client.subscribedServices
+                .filter(s => s.status === 'active')
+                .map(s => s.serviceId)
+        );
+    }, [client]);
+
+    // Filter add-on services: only show services client hasn't subscribed to
     const availableAddOnServices = useMemo(() => {
-        return catalogServices.map(s => ({
-            id: s._id,
-            name: s.name,
-            description: s.description || "Professional service for your Amazon business.",
-            price: s.price ? `₹${s.price}` : "Custom",
-            priceType: s.priceType || "per service",
-            icon: Package,
-            popular: s.isPopular || false
-        }));
-    }, [catalogServices]);
+        return catalogServices
+            .filter(s => !subscribedServiceIds.has(s.serviceId))
+            .map(s => ({
+                id: s.serviceId || s._id,
+                name: s.name,
+                category: s.category,
+                price: s.pricing?.standard?.price || s.pricing?.priority?.price || 0,
+                priceLabel: s.pricing?.standard?.label || s.pricing?.priority?.label || "",
+                hasPriority: !!s.pricing?.priority,
+                priorityPrice: s.pricing?.priority?.price || 0,
+                priorityLabel: s.pricing?.priority?.label || "",
+            }));
+    }, [catalogServices, subscribedServiceIds]);
+
+    // Already subscribed services
+    const subscribedServices = useMemo(() => {
+        if (!client?.subscribedServices) return [];
+        return client.subscribedServices.filter(s => s.status === 'active');
+    }, [client]);
+
+    // Quantity handlers
+    const handleIncrement = (id) => {
+        setQuantities(prev => ({ ...prev, [id]: (prev[id] || 1) + 1 }));
+    };
+
+    const handleDecrement = (id) => {
+        setQuantities(prev => ({ ...prev, [id]: Math.max(1, (prev[id] || 1) - 1) }));
+    };
+
+    const handleAddToCart = (service) => {
+        const quantity = quantities[service.id] || 1;
+        addToCart({
+            id: service.id,
+            name: service.name,
+            price: service.price,
+            category: service.category,
+            quantity: quantity
+        });
+        // Reset quantity to 1 after adding
+        setQuantities(prev => ({ ...prev, [service.id]: 1 }));
+        toast.success(`${service.name} added to cart`);
+    };
+
+    const handleCheckout = async () => {
+        if (!client || cartItems.length === 0) return;
+
+        setLoading(true);
+        try {
+            const servicesToSubscribe = cartItems.map(item => ({
+                serviceId: item.id,
+                name: item.name
+            }));
+
+            const result = await addClientSubscribedServices(client._id, servicesToSubscribe);
+
+            if (result.success) {
+                toast.success("Services subscribed successfully!");
+                clearCart();
+                // In a real app, we'd trigger a re-fetch of user data here
+                // For now, we manually update the local client state
+                setClient(prev => ({
+                    ...prev,
+                    subscribedServices: [
+                        ...(prev.subscribedServices || []),
+                        ...servicesToSubscribe.map(s => ({ ...s, status: 'active', subscribedDate: new Date() }))
+                    ]
+                }));
+                setActiveSubTab("plan"); // Switch to plan tab to see active services
+            } else {
+                toast.error(result.error || "Failed to subscribe");
+            }
+        } catch (error) {
+            console.error("Checkout error:", error);
+            toast.error("An error occurred during checkout");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Check if a service is already in cart
+    const isInCart = (serviceId) => {
+        return cartItems.some(item => item.id === serviceId);
+    };
+
+    // Format price
+    const formatPrice = (price) => {
+        if (!price) return "Custom";
+        return new Intl.NumberFormat('en-IN').format(price);
+    };
 
     // Mock dates
     const startDate = client?.createdAt ? new Date(client.createdAt).toLocaleDateString() : "N/A";
@@ -111,6 +213,11 @@ const ClientPlanTab = ({ currentUser }) => {
                 >
                     <Plus className="h-4 w-4" />
                     Add-on Services
+                    {totalItems > 0 && (
+                        <span className="ml-1 h-5 w-5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                            {totalItems}
+                        </span>
+                    )}
                 </button>
             </div>
 
@@ -124,7 +231,7 @@ const ClientPlanTab = ({ currentUser }) => {
                                 <div>
                                     <Badge className="bg-white/20 text-white mb-2">Current Plan</Badge>
                                     <h2 className="font-heading text-3xl font-bold uppercase">{currentPlan?.name || client.plan || "No Plan"}</h2>
-                                    <p className="text-white/80 mt-1">₹{currentPlan?.price || 0} / month</p>
+                                    <p className="text-white/80 mt-1">₹{currentPlan?.prices?.monthly || "0"} {currentPlan?.period || "/ month"}</p>
                                 </div>
                                 <div className="text-right">
                                     <div className="flex items-center gap-1 text-yellow-300 mb-2">
@@ -169,6 +276,30 @@ const ClientPlanTab = ({ currentUser }) => {
                         </div>
                     </div>
 
+                    {/* Subscribed Add-on Services */}
+                    {subscribedServices.length > 0 && (
+                        <div className="bg-card rounded-xl border p-6">
+                            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+                                <BadgeCheck className="h-5 w-5 text-primary" />
+                                Active Add-on Services
+                            </h3>
+                            <div className="grid md:grid-cols-2 gap-3">
+                                {subscribedServices.map((service, i) => (
+                                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                                        <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium truncate">{service.name}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Since {new Date(service.subscribedDate).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                        <Badge variant="outline" className="text-primary border-primary/30 text-xs">Active</Badge>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Upgrade CTA */}
                     <div className="bg-card rounded-xl border p-6 text-center">
                         <h3 className="font-heading font-semibold mb-2">Need More Features?</h3>
@@ -184,63 +315,159 @@ const ClientPlanTab = ({ currentUser }) => {
 
             {/* Add-on Services Tab Content */}
             {activeSubTab === "addons" && (
-                <>
+                <div className="relative">
                     {/* Available Add-on Services */}
                     <div>
-                        <h3 className="font-heading font-semibold mb-4 text-lg">Available Add-on Services</h3>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-heading font-semibold text-lg">Available Add-on Services</h3>
+                        </div>
+
                         {availableAddOnServices.length > 0 ? (
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {availableAddOnServices.map((service) => {
-                                    const IconComponent = service.icon;
-                                    return (
-                                        <div
-                                            key={service.id}
-                                            className="bg-card rounded-xl border p-5 hover:border-primary/30 transition-colors relative"
-                                        >
-                                            {service.popular && (
-                                                <Badge className="absolute -top-2 -right-2 bg-primary">Popular</Badge>
-                                            )}
-                                            <div className="flex items-start gap-3 mb-3">
-                                                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                                    <IconComponent className="h-5 w-5 text-primary" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h4 className="font-medium text-sm">{service.name}</h4>
-                                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{service.description}</p>
+                            <div className="bg-card rounded-xl border overflow-hidden">
+                                <div className="divide-y divide-border/50">
+                                    {availableAddOnServices.map((service) => {
+                                        const inCart = isInCart(service.id);
+                                        return (
+                                            <div
+                                                key={service.id}
+                                                className={`group p-5 transition-colors ${inCart ? 'bg-primary/5' : 'hover:bg-accent/30'}`}
+                                            >
+                                                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                                                    {/* Service Info */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-3 flex-wrap">
+                                                            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                                <Package className="h-4 w-4 text-primary" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-medium text-sm group-hover:text-primary transition-colors">
+                                                                    {service.name}
+                                                                </h4>
+                                                                <p className="text-xs text-muted-foreground mt-0.5">
+                                                                    {service.category}
+                                                                    {service.priceLabel && ` • ${service.priceLabel}`}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Price & Actions */}
+                                                    <div className="flex items-center gap-3 w-full lg:w-auto">
+                                                        {/* Price */}
+                                                        <div className="flex-shrink-0">
+                                                            <span className="font-bold text-lg text-foreground">
+                                                                ₹{formatPrice(service.price)}
+                                                            </span>
+                                                        </div>
+
+                                                        {inCart ? (
+                                                            /* Already in cart - show update controls */
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex items-center gap-1 bg-accent/50 rounded-full px-1.5 py-1.5 border border-border">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const cartItem = cartItems.find(i => i.id === service.id);
+                                                                            if (cartItem) updateQuantity(service.id, cartItem.quantity - 1);
+                                                                        }}
+                                                                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-background transition-all duration-200"
+                                                                    >
+                                                                        <Minus className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                    </button>
+                                                                    <span className="w-8 text-center font-semibold text-sm text-foreground">
+                                                                        {cartItems.find(i => i.id === service.id)?.quantity || 0}
+                                                                    </span>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const cartItem = cartItems.find(i => i.id === service.id);
+                                                                            if (cartItem) updateQuantity(service.id, cartItem.quantity + 1);
+                                                                        }}
+                                                                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-background transition-all duration-200"
+                                                                    >
+                                                                        <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                    </button>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => removeFromCart(service.id)}
+                                                                    className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                                                                    title="Remove from cart"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            /* Not in cart - show add controls */
+                                                            <>
+                                                                {/* Quantity Controls */}
+                                                                <div className="flex items-center gap-1 bg-accent/50 rounded-full px-1.5 py-1.5 border border-border">
+                                                                    <button
+                                                                        onClick={() => handleDecrement(service.id)}
+                                                                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-background transition-all duration-200"
+                                                                    >
+                                                                        <Minus className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                    </button>
+                                                                    <span className="w-8 text-center font-semibold text-sm text-foreground">
+                                                                        {quantities[service.id] || 1}
+                                                                    </span>
+                                                                    <button
+                                                                        onClick={() => handleIncrement(service.id)}
+                                                                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-background transition-all duration-200"
+                                                                    >
+                                                                        <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Add to Cart Button */}
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() => handleAddToCart(service)}
+                                                                    className="flex items-center gap-2 whitespace-nowrap"
+                                                                >
+                                                                    <ShoppingCart className="h-4 w-4" />
+                                                                    <span className="hidden sm:inline">Add to Cart</span>
+                                                                    <span className="sm:hidden">Add</span>
+                                                                </Button>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center justify-between pt-3 border-t">
-                                                <div>
-                                                    <span className="font-heading font-bold text-lg text-primary">{service.price}</span>
-                                                    <span className="text-xs text-muted-foreground ml-1">{service.priceType}</span>
-                                                </div>
-                                                <Button size="sm" variant="outline">
-                                                    <Plus className="h-4 w-4 mr-1" />
-                                                    Add
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
                         ) : (
-                            <div className="bg-card rounded-xl border p-8 text-center text-muted-foreground">
-                                No add-on services available at the moment.
+                            <div className="bg-card rounded-xl border p-8 text-center">
+                                <BadgeCheck className="h-12 w-12 mx-auto mb-3 text-primary/30" />
+                                <h4 className="font-medium mb-1">All Caught Up!</h4>
+                                <p className="text-muted-foreground text-sm">
+                                    You've subscribed to all available add-on services.
+                                </p>
                             </div>
                         )}
                     </div>
 
+
+
                     {/* Custom Request CTA */}
-                    <div className="bg-gradient-primary rounded-xl p-6 text-white text-center">
+                    <div className="bg-gradient-primary rounded-xl p-6 text-white text-center mt-6">
                         <h3 className="font-heading font-semibold text-lg mb-2">Need Something Custom?</h3>
                         <p className="text-white/80 text-sm mb-4">
                             Contact your account manager for custom service packages tailored to your needs.
                         </p>
-                        <Button variant="secondary" className="bg-white text-primary hover:bg-white/90">
+                        <Button
+                            variant="secondary"
+                            className="bg-white text-primary hover:bg-white/90 flex items-center gap-2 mx-auto"
+                            onClick={() => {
+                                const message = encodeURIComponent(`Hi ${managerName || 'Manager'}! I'm ${currentUser?.name || 'a client'} and I'm interested in a custom service package for my account.`);
+                                window.open(`https://wa.me/${managerPhone}?text=${message}`, '_blank');
+                            }}
+                            disabled={!managerPhone}
+                        >
+                            <MessageSquare className="h-4 w-4" />
                             Contact Account Manager
                         </Button>
                     </div>
-                </>
+                </div>
             )}
         </div>
     );
