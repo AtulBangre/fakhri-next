@@ -4,9 +4,9 @@ import { Mail, Phone, Building, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getAdmins, getClients, getTasks } from "@/lib/actions/admin";
+import { getClients, getTasks } from "@/lib/actions/admin";
 
-const AdminProfileTab = () => {
+const AdminProfileTab = ({ currentUser }) => {
     const [admin, setAdmin] = useState(null);
     const [clientCount, setClientCount] = useState(0);
     const [activeTasksCount, setActiveTasksCount] = useState(0);
@@ -15,33 +15,24 @@ const AdminProfileTab = () => {
 
     useEffect(() => {
         async function loadProfile() {
+            if (!currentUser) {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             try {
-                const [admins, clients, tasks] = await Promise.all([
-                    getAdmins(),
-                    getClients(),
-                    getTasks()
+                const [clients, tasks] = await Promise.all([
+                    getClients({ managerId: currentUser._id }),
+                    getTasks({ 'assignee.id': currentUser._id })
                 ]);
 
-                // Use first admin as the "current" admin (mock)
-                const currentAdmin = admins[0] || {
-                    name: "Admin User",
-                    email: "admin@fakhri.com",
-                    phone: "+91 9876543210",
-                    adminRole: "Account Manager",
-                    joinedDate: new Date().toISOString()
-                };
-
-                setAdmin(currentAdmin);
+                setAdmin(currentUser);
                 setClientCount(clients.length);
 
-                // Filter tasks by this admin
-                const adminName = currentAdmin.name;
-                const myTasks = tasks.filter(t =>
-                    t.owner === adminName || t.assignee?.name === adminName
-                );
-                setActiveTasksCount(myTasks.filter(t => ["in-progress", "In Progress"].includes(t.status)).length);
-                setCompletedTasksCount(myTasks.filter(t => ["completed", "Completed"].includes(t.status)).length);
+                // Tasks are already filtered by API
+                setActiveTasksCount(tasks.filter(t => ["in-progress", "In Progress"].includes(t.status)).length);
+                setCompletedTasksCount(tasks.filter(t => ["completed", "Completed"].includes(t.status)).length);
             } catch (error) {
                 console.error("Failed to load profile data", error);
             } finally {
@@ -49,10 +40,14 @@ const AdminProfileTab = () => {
             }
         }
         loadProfile();
-    }, []);
+    }, [currentUser]);
 
-    if (loading || !admin) {
+    if (loading) {
         return <div className="flex justify-center p-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+    }
+
+    if (!admin) {
+        return <div className="p-6 text-center text-muted-foreground">User information not available.</div>;
     }
 
     const initials = admin.name ? admin.name.split(" ").map(n => n[0]).join("") : "A";

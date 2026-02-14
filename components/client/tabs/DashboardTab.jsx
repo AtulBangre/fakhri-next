@@ -8,7 +8,7 @@ import { getTasks } from "@/lib/actions/task";
 import { getUserById, getUsers } from "@/lib/actions/user";
 import { getNotifications } from "@/lib/actions/notification";
 
-const ClientDashboardTab = ({ setActiveTab }) => {
+const ClientDashboardTab = ({ setActiveTab, currentUser }) => {
     const [loading, setLoading] = useState(true);
     const [client, setClient] = useState(null);
     const [manager, setManager] = useState(null);
@@ -17,31 +17,30 @@ const ClientDashboardTab = ({ setActiveTab }) => {
 
     useEffect(() => {
         const loadDashboardData = async () => {
+            if (!currentUser) {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             try {
-                // For demo purposes, we fetch the first client if we don't have a logged-in one
-                // In a real app, this would be the session user ID
-                const { users } = await getUsers({ role: 'client', limit: 1 });
-                if (users && users.length > 0) {
-                    const currentClient = users[0];
-                    setClient(currentClient);
+                setClient(currentUser);
 
-                    // Fetch tasks for this client
-                    const tasksResponse = await getTasks({ clientId: currentClient._id, limit: 10 });
-                    setTasks(tasksResponse.tasks || []);
+                // Fetch tasks for this client
+                const tasksResponse = await getTasks({ clientId: currentUser._id, limit: 10 });
+                setTasks(tasksResponse.tasks || []);
 
-                    // Fetch notifications
-                    const notifs = await getNotifications(currentClient._id);
-                    setNotifications(notifs);
+                // Fetch notifications
+                const notifs = await getNotifications({ recipientId: currentUser._id, limit: 10 });
+                setNotifications(notifs || []);
 
-                    // Fetch manager if assigned
-                    if (currentClient.managerId) {
-                        const managerData = await getUserById(currentClient.managerId);
-                        setManager(managerData);
-                    } else if (currentClient.manager) {
-                        // Fallback if manager is stored as a string or object
-                        setManager(typeof currentClient.manager === 'object' ? currentClient.manager : { name: currentClient.manager });
-                    }
+                // Fetch manager if assigned
+                if (currentUser.managerId) {
+                    const managerData = await getUserById(currentUser.managerId);
+                    setManager(managerData);
+                } else if (currentUser.manager) {
+                    // Fallback if manager is stored as a string or object
+                    setManager(typeof currentUser.manager === 'object' ? currentUser.manager : { name: currentUser.manager });
                 }
             } catch (error) {
                 console.error("Error loading client dashboard data:", error);
@@ -51,7 +50,7 @@ const ClientDashboardTab = ({ setActiveTab }) => {
         };
 
         loadDashboardData();
-    }, []);
+    }, [currentUser]);
 
     if (loading) {
         return (

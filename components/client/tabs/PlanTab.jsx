@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getUsers } from "@/lib/actions/user";
 import { getPricingPlans, getCatalogServices } from "@/lib/actions/content";
 
-const ClientPlanTab = () => {
+const ClientPlanTab = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
     const [activeSubTab, setActiveSubTab] = useState("plan");
     const [client, setClient] = useState(null);
@@ -16,13 +16,14 @@ const ClientPlanTab = () => {
 
     useEffect(() => {
         const loadPlanData = async () => {
+            if (!currentUser) {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             try {
-                // Fetch first client for demo purposes
-                const { users } = await getUsers({ role: 'client', limit: 1 });
-                if (users && users.length > 0) {
-                    setClient(users[0]);
-                }
+                setClient(currentUser);
 
                 const plansData = await getPricingPlans();
                 setAllPlans(plansData);
@@ -37,7 +38,7 @@ const ClientPlanTab = () => {
         };
 
         loadPlanData();
-    }, []);
+    }, [currentUser]);
 
     // Find current plan details
     const currentPlan = useMemo(() => {

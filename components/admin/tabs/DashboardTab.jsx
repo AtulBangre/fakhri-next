@@ -6,21 +6,24 @@ import StatusBadge from "@/components/dashboard/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { getClients, getTasks } from "@/lib/actions/admin";
 
-// Mock logged-in admin
-const CURRENT_ADMIN_NAME = "Sarah Mitchell";
-
-const AdminDashboardTab = ({ setActiveTab }) => {
+const AdminDashboardTab = ({ setActiveTab, currentUser }) => {
     const [clients, setClients] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function loadData() {
+            if (!currentUser) {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             try {
-                const [c, t] = await Promise.all([getClients(), getTasks()]);
-                // Filter for current admin if needed, or show all for super-admin view
-                // specialized logic for 'my clients' could be added here
+                const [c, t] = await Promise.all([
+                    getClients({ managerId: currentUser._id }),
+                    getTasks({ 'assignee.id': currentUser._id })
+                ]);
                 setClients(c);
                 setTasks(t);
             } catch (error) {
@@ -30,10 +33,10 @@ const AdminDashboardTab = ({ setActiveTab }) => {
             }
         }
         loadData();
-    }, []);
+    }, [currentUser]);
 
-    // Filter data for "My" views
-    const myTasks = tasks.filter(t => t.owner === CURRENT_ADMIN_NAME || t.assignee?.name === CURRENT_ADMIN_NAME);
+    // Data is already filtered by API
+    const myTasks = tasks;
 
     // Calculate stats
     const activeTasksCount = myTasks.filter(t => ["in-progress", "In Progress"].includes(t.status)).length;
@@ -58,11 +61,15 @@ const AdminDashboardTab = ({ setActiveTab }) => {
         return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div>;
     }
 
+    if (!currentUser) {
+        return <div className="p-6 text-center text-muted-foreground">User information not available.</div>;
+    }
+
     return (
         <div className="space-y-6">
             {/* Welcome Banner */}
             <div className="bg-gradient-primary text-white rounded-xl p-6">
-                <h1 className="font-heading text-2xl font-bold mb-2">Welcome, {CURRENT_ADMIN_NAME.split(' ')[0]}!</h1>
+                <h1 className="font-heading text-2xl font-bold mb-2">Welcome, {currentUser?.name?.split(' ')[0] || 'Admin'}!</h1>
                 <p className="text-white/80">You have {activeTasksCount + pendingTasksCount} active tasks and {myClients.length} assigned clients.</p>
             </div>
 

@@ -19,7 +19,7 @@ const feedbackCategories = [
     { value: "other", label: "Other" }
 ];
 
-const SupportTab = () => {
+const SupportTab = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
     const [faqData, setFaqData] = useState([]);
     const [showFeedbackForm, setShowFeedbackForm] = useState(false);

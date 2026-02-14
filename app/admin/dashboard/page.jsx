@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, clearAllNotifications } from "@/lib/actions/notification";
-import { getUsers } from "@/lib/actions/user";
+import { getUsers, getUserByEmail } from "@/lib/actions/user";
+
 
 // Tabs
 import AdminDashboardTab from "@/components/admin/tabs/DashboardTab";
@@ -37,10 +38,20 @@ export default function AdminDashboardPage() {
     const loadInitialData = async () => {
       setLoading(true);
       try {
-        // Fetch first admin for demo purposes
-        const { users } = await getUsers({ role: 'admin', limit: 1 });
-        if (users && users.length > 0) {
-          const admin = users[0];
+        // Fetch specific admin: Sarah Mitchell
+        let admin = await getUserByEmail('sarah@fakhriit.com');
+
+        // Fallback or create if not exists (though user implied she exists)
+        if (!admin) {
+          console.log("Sarah Mitchell not found, falling back to first admin");
+          const { users } = await getUsers({ role: 'admin', limit: 1 });
+          if (users && users.length > 0) {
+            admin = users[0];
+          }
+        }
+
+        if (admin) {
+          console.log("Logged in as:", admin.name);
           setCurrentUser(admin);
 
           const { notifications: notifs } = await getNotifications({ recipientId: admin._id, limit: 10 });
@@ -197,11 +208,12 @@ export default function AdminDashboardPage() {
 
         {/* Page Content */}
         <main className="flex-1 p-4 lg:p-6">
-          {activeTab === "Dashboard" && <AdminDashboardTab setActiveTab={setActiveTab} />}
-          {activeTab === "Clients" && <AdminClientsTab />}
-          {activeTab === "Tasks" && <AdminTasksTab />}
+          {activeTab === "Dashboard" && <AdminDashboardTab setActiveTab={setActiveTab} currentUser={currentUser} />}
+
+          {activeTab === "Clients" && <AdminClientsTab currentUser={currentUser} />}
+          {activeTab === "Tasks" && <AdminTasksTab currentUser={currentUser} />}
           {activeTab === "Files" && <AdminFilesTab />}
-          {activeTab === "Profile" && <AdminProfileTab />}
+          {activeTab === "Profile" && <AdminProfileTab currentUser={currentUser} />}
         </main>
       </div>
     </div>

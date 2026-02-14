@@ -1,31 +1,44 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Mail, Phone, Building, MapPin, Loader2 } from "lucide-react";
+import { Mail, Phone, Building, MapPin, Loader2, Edit, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getUsers, getUserById } from "@/lib/actions/user";
+import { getUsers, getUserById, updateUser } from "@/lib/actions/user";
+import { toast } from "sonner";
 
-const ClientProfileTab = () => {
+const ClientProfileTab = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
     const [client, setClient] = useState(null);
     const [manager, setManager] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState({});
 
     useEffect(() => {
         const loadProfileData = async () => {
+            if (!currentUser) {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             try {
-                // Fetch first client for demo purposes
-                const { users } = await getUsers({ role: 'client', limit: 1 });
-                if (users && users.length > 0) {
-                    const currentClient = users[0];
-                    setClient(currentClient);
+                setClient(currentUser);
+                setFormData({
+                    name: currentUser.name || "",
+                    phone: currentUser.phone || "",
+                    company: currentUser.company || "",
+                    location: currentUser.location || "",
+                    // Email is usually not editable by user easily without verification, but let's allow it or keep readOnly
+                    // For now, let's keep email readOnly as it's often the ID
+                });
 
-                    if (currentClient.managerId) {
-                        const managerData = await getUserById(currentClient.managerId);
-                        setManager(managerData);
-                    }
+                if (currentUser.managerId) {
+                    const managerData = await getUserById(currentUser.managerId);
+                    setManager(managerData);
+                } else if (currentUser.manager) {
+                    setManager(typeof currentUser.manager === 'object' ? currentUser.manager : { name: currentUser.manager });
                 }
             } catch (error) {
                 console.error("Error loading profile data:", error);
@@ -35,7 +48,33 @@ const ClientProfileTab = () => {
         };
 
         loadProfileData();
-    }, []);
+    }, [currentUser]);
+
+    const handleSave = async () => {
+        try {
+            const res = await updateUser(client._id, formData);
+            if (res) {
+                setClient(res);
+                setIsEditing(false);
+                toast.success("Profile updated successfully");
+            } else {
+                toast.error("Failed to update profile");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("An error occurred");
+        }
+    };
+
+    const handleCancel = () => {
+        setIsEditing(false);
+        setFormData({
+            name: client.name || "",
+            phone: client.phone || "",
+            company: client.company || "",
+            location: client.location || ""
+        });
+    };
 
     if (loading) {
         return (
@@ -60,9 +99,17 @@ const ClientProfileTab = () => {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="font-heading text-2xl font-bold mb-2">Profile</h1>
-                <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="font-heading text-2xl font-bold mb-2">Profile</h1>
+                    <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+                </div>
+                {!isEditing && (
+                    <Button onClick={() => setIsEditing(true)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Profile
+                    </Button>
+                )}
             </div>
 
             {/* Profile Card */}
@@ -83,12 +130,14 @@ const ClientProfileTab = () => {
                 <div className="p-6 space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <Label htmlFor="firstName">First Name</Label>
-                            <Input id="firstName" value={client.name?.split(" ")[0] || ""} readOnly className="bg-accent/50" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="lastName">Last Name</Label>
-                            <Input id="lastName" value={client.name?.split(" ")[1] || ""} readOnly className="bg-accent/50" />
+                            <Label htmlFor="name">Full Name</Label>
+                            <Input
+                                id="name"
+                                value={isEditing ? formData.name : (client.name || "")}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                readOnly={!isEditing}
+                                className={!isEditing ? "bg-accent/50" : ""}
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
@@ -96,42 +145,67 @@ const ClientProfileTab = () => {
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input id="email" value={client.email || ""} readOnly className="pl-10 bg-accent/50" />
                             </div>
+                            <p className="text-xs text-muted-foreground">Email cannot be changed directly.</p>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="phone">Phone</Label>
                             <div className="relative">
                                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input id="phone" value={client.phone || "N/A"} readOnly className="pl-10 bg-accent/50" />
+                                <Input
+                                    id="phone"
+                                    value={isEditing ? formData.phone : (client.phone || "N/A")}
+                                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                    readOnly={!isEditing}
+                                    className={`pl-10 ${!isEditing ? "bg-accent/50" : ""}`}
+                                />
                             </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="company">Company</Label>
                             <div className="relative">
                                 <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input id="company" value={client.company || "N/A"} readOnly className="pl-10 bg-accent/50" />
+                                <Input
+                                    id="company"
+                                    value={isEditing ? formData.company : (client.company || "N/A")}
+                                    onChange={e => setFormData({ ...formData, company: e.target.value })}
+                                    readOnly={!isEditing}
+                                    className={`pl-10 ${!isEditing ? "bg-accent/50" : ""}`}
+                                />
                             </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="location">Location</Label>
                             <div className="relative">
                                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input id="location" value={client.location || "N/A"} readOnly className="pl-10 bg-accent/50" />
+                                <Input
+                                    id="location"
+                                    value={isEditing ? formData.location : (client.location || "N/A")}
+                                    onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                    readOnly={!isEditing}
+                                    className={`pl-10 ${!isEditing ? "bg-accent/50" : ""}`}
+                                />
                             </div>
                         </div>
                     </div>
 
-                    <div className="pt-4 border-t flex justify-end">
-                        <Button>Request Profile Update</Button>
-                    </div>
+                    {isEditing && (
+                        <div className="pt-4 border-t flex justify-end gap-2">
+                            <Button variant="outline" onClick={handleCancel}>
+                                <X className="h-4 w-4 mr-2" />
+                                Cancel
+                            </Button>
+                            <Button onClick={handleSave}>
+                                <Save className="h-4 w-4 mr-2" />
+                                Save Changes
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Account Manager Contact */}
             <div className="bg-card rounded-xl border p-6">
-                <h3 className="font-heading font-semibold mb-4">Need to Update Your Profile?</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                    Contact your account manager to request any changes to your profile information.
-                </p>
+                <h3 className="font-heading font-semibold mb-4">Account Manager</h3>
                 {manager ? (
                     <div className="flex items-center gap-4 p-4 rounded-lg bg-accent/50">
                         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-heading font-bold">

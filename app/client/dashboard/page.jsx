@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import WhatsAppButton from "@/components/client/WhatsAppButton";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, clearAllNotifications } from "@/lib/actions/notification";
-import { getUsers } from "@/lib/actions/user";
+import { getUsers, getUserByEmail } from "@/lib/actions/user";
 
 // Tabs
 import ClientDashboardTab from "@/components/client/tabs/DashboardTab";
@@ -40,10 +40,19 @@ export default function ClientDashboardPage() {
     const loadInitialData = async () => {
       setLoading(true);
       try {
-        // Fetch first client for demo purposes
-        const { users } = await getUsers({ role: 'client', limit: 1 });
-        if (users && users.length > 0) {
-          const currentUser = users[0];
+        // Fetch specific client: Alex
+        let currentUser = await getUserByEmail('alex@digitalgoods.com');
+
+        // Fallback or create if not exists
+        if (!currentUser) {
+          console.log("Alex not found, falling back to first client");
+          const { users } = await getUsers({ role: 'client', limit: 1 });
+          if (users && users.length > 0) {
+            currentUser = users[0];
+          }
+        }
+
+        if (currentUser) {
           setUser(currentUser);
 
           const { notifications: notifs } = await getNotifications({ recipientId: currentUser._id, limit: 10 });
@@ -197,13 +206,13 @@ export default function ClientDashboardPage() {
 
         {/* Page Content */}
         <main className="flex-1 p-4 lg:p-6">
-          {activeTab === "Dashboard" && <ClientDashboardTab setActiveTab={setActiveTab} />}
-          {activeTab === "Plan" && <ClientPlanTab />}
-          {activeTab === "Tasks" && <ClientTasksTab />}
-          {activeTab === "Files" && <ClientFilesTab />}
-          {activeTab === "Billing" && <ClientBillingTab />}
-          {activeTab === "Support" && <ClientSupportTab />}
-          {activeTab === "Profile" && <ClientProfileTab />}
+          {activeTab === "Dashboard" && <ClientDashboardTab setActiveTab={setActiveTab} currentUser={user} />}
+          {activeTab === "Plan" && <ClientPlanTab currentUser={user} />}
+          {activeTab === "Tasks" && <ClientTasksTab currentUser={user} />}
+          {activeTab === "Files" && <ClientFilesTab currentUser={user} />}
+          {activeTab === "Billing" && <ClientBillingTab currentUser={user} />}
+          {activeTab === "Support" && <ClientSupportTab currentUser={user} />}
+          {activeTab === "Profile" && <ClientProfileTab currentUser={user} />}
         </main>
       </div>
 

@@ -1,9 +1,9 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
 import {
-    Plus, Eye, X, Mail, Phone, Building2, CreditCard,
     CheckSquare, StickyNote, Edit, Save, Calendar, User,
-    Filter, ChevronDown, ChevronUp, Clock, ArrowLeft, UserCog, Loader2
+    Filter, ChevronDown, ChevronUp, Clock, ArrowLeft, UserCog, Loader2, Trash2,
+    Plus, Eye, X, Mail, Phone, Building2, CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import { getUsers } from "@/lib/actions/user";
 import { getTasks } from "@/lib/actions/task";
+import { upsertClient, deleteClient, upsertTask, upsertNote, getNotes } from "@/lib/actions/admin";
+import { toast } from "sonner";
 
 const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
     value: (i + 1).toString(),
@@ -23,6 +25,7 @@ const SuperAdminClientsTab = () => {
     const [clients, setClients] = useState([]);
     const [managers, setManagers] = useState([]);
     const [tasks, setTasks] = useState([]);
+    const [notes, setNotes] = useState([]); // Add notes state
     const [loading, setLoading] = useState(true);
     const [selectedClient, setSelectedClient] = useState(null);
 
@@ -41,14 +44,21 @@ const SuperAdminClientsTab = () => {
         loadInitialData();
     }, []);
 
-    // Fetch tasks when a client is selected
+    // Fetch tasks and notes when a client is selected
     useEffect(() => {
         if (selectedClient) {
-            async function loadClientTasks() {
-                const tasksRes = await getTasks({ clientId: selectedClient._id });
+            async function loadClientData() {
+                const [tasksRes, notesRes] = await Promise.all([
+                    getTasks({ clientId: selectedClient._id }),
+                    getNotes(selectedClient._id)
+                ]);
                 if (tasksRes.tasks) setTasks(tasksRes.tasks);
+                if (notesRes) setNotes(notesRes);
             }
-            loadClientTasks();
+            loadClientData();
+        } else {
+            setTasks([]);
+            setNotes([]);
         }
     }, [selectedClient]);
 
@@ -152,8 +162,8 @@ const SuperAdminClientsTab = () => {
         return filteredTasks;
     }, [selectedClient, taskStatusFilter, priorityFilter, ownerFilter, tasks]);
 
-    // Notes mapped to Task Updates for now or placeholder
-    const clientNotes = [];
+    // Use notes from state
+    const clientNotes = notes;
 
     const handleClientClick = (client) => {
         setSelectedClient(client);
@@ -182,16 +192,71 @@ const SuperAdminClientsTab = () => {
         });
     };
 
-    const handleCreateTask = () => {
-        console.log("Creating task for client:", selectedClient.name, newTask);
-        setShowCreateTask(false);
-        resetNewTaskForm();
+    const handleCreateTask = async () => {
+        try {
+            // Basic validation
+            if (!newTask.title) {
+                toast.error("Task title is required");
+                return;
+            }
+
+            const taskPayload = {
+                title: newTask.title,
+                description: newTask.description,
+                status: newTask.isCompleted ? 'Completed' : 'To Do',
+                priority: newTask.isHighPriority ? 'High' : 'Medium',
+                client: {
+                    id: selectedClient._id,
+                    name: selectedClient.name,
+                    company: selectedClient.company
+                },
+                clientId: selectedClient._id,
+                assignee: {
+                    name: newTask.owner // In a real app, should map to ID too
+                },
+                owner: newTask.owner,
+                dueDate: newTask.dueDate,
+                planForWeek: newTask.planForWeek
+            };
+
+            const savedTask = await upsertTask(taskPayload);
+            if (savedTask) {
+                setTasks(prev => [savedTask, ...prev]);
+                setShowCreateTask(false);
+                resetNewTaskForm();
+                toast.success("Task created");
+            } else {
+                toast.error("Failed to create task");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("An error occurred");
+        }
     };
 
-    const handleAddNote = () => {
-        console.log("Adding note:", newNote);
-        setShowAddNote(false);
-        setNewNote("");
+    const handleAddNote = async () => {
+        if (!newNote.trim()) return;
+        try {
+            const notePayload = {
+                clientId: selectedClient._id,
+                author: "Admin", // Should use current user name if available
+                content: newNote,
+                date: new Date()
+            };
+
+            const savedNote = await upsertNote(notePayload);
+            if (savedNote) {
+                setNotes(prev => [savedNote, ...prev]);
+                setShowAddNote(false);
+                setNewNote("");
+                toast.success("Note added");
+            } else {
+                toast.error("Failed to add note");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Error adding note");
+        }
     };
 
     const handleSendMail = () => {
@@ -203,25 +268,36 @@ const SuperAdminClientsTab = () => {
         setMailBody("");
     };
 
-    const handleAddClient = () => {
-        console.log("Adding new client:", newClientData);
-        setShowAddClient(false);
-        // Reset form
-        setNewClientData({
-            name: "",
-            company: "",
-            email: "",
-            phone: "",
-            plan: "Premium",
-            manager: "Unassigned",
-            salesManager: "",
-            spCentralRequestId: "",
-            marketplace: "",
-            userPermission: "",
-            accountAccessUrl: "",
-            leadSource: "",
-            listingManager: ""
-        });
+    const handleAddClient = async () => {
+        try {
+            const res = await upsertClient(newClientData);
+            if (res) {
+                setClients([res, ...clients]);
+                setShowAddClient(false);
+                toast.success("Client added successfully");
+                // Reset form
+                setNewClientData({
+                    name: "",
+                    company: "",
+                    email: "",
+                    phone: "",
+                    plan: "Premium",
+                    manager: "Unassigned",
+                    salesManager: "",
+                    spCentralRequestId: "",
+                    marketplace: "",
+                    userPermission: "",
+                    accountAccessUrl: "",
+                    leadSource: "",
+                    listingManager: ""
+                });
+            } else {
+                toast.error("Failed to add client");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("An error occurred");
+        }
     };
 
     const handleEditClick = () => {
@@ -229,12 +305,43 @@ const SuperAdminClientsTab = () => {
         setShowEditClient(true);
     };
 
-    const handleSaveClient = () => {
-        console.log("Saving client updates:", editClientData);
-        // Mock update
-        const updatedClient = { ...selectedClient, ...editClientData };
-        setSelectedClient(updatedClient);
-        setShowEditClient(false);
+    const handleSaveClient = async () => {
+        try {
+            const updatedClient = { ...selectedClient, ...editClientData };
+            const res = await upsertClient(updatedClient);
+            if (res) {
+                // Update local state
+                setClients(prev => prev.map(c => c._id === res._id ? res : c));
+                setSelectedClient(res);
+                setShowEditClient(false);
+                toast.success("Client updated successfully");
+            } else {
+                toast.error("Failed to update client");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("An error occurred");
+        }
+    };
+
+    const handleDeleteClient = async (e, client) => {
+        e.stopPropagation();
+        if (confirm("Are you sure you want to delete this client?")) {
+            try {
+                const res = await deleteClient(client._id);
+                if (res.success) {
+                    setClients(prev => prev.filter(c => c._id !== client._id));
+                    if (selectedClient?._id === client._id) {
+                        setSelectedClient(null);
+                    }
+                    toast.success("Client deleted");
+                } else {
+                    toast.error("Failed to delete client");
+                }
+            } catch (error) {
+                toast.error("An error occurred");
+            }
+        }
     };
 
     // Client List View
@@ -357,9 +464,14 @@ const SuperAdminClientsTab = () => {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleClientClick(client); }}>
-                                            <Eye className="h-4 w-4" />
-                                        </Button>
+                                        <div className="flex justify-end gap-1">
+                                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleClientClick(client); }}>
+                                                <Eye className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteClient(e, client); }} className="text-destructive hover:text-destructive">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             )) : (

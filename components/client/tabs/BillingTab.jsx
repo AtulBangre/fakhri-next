@@ -9,7 +9,7 @@ import { formatINR } from "@/lib/utils";
 import { getInvoices, getInvoiceSummary } from "@/lib/actions/invoice";
 import { getUsers } from "@/lib/actions/user";
 
-const ClientBillingTab = () => {
+const ClientBillingTab = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
     const [client, setClient] = useState(null);
     const [invoices, setInvoices] = useState([]);
@@ -17,20 +17,20 @@ const ClientBillingTab = () => {
 
     useEffect(() => {
         const loadBillingData = async () => {
+            if (!currentUser) {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             try {
-                // Fetch first client for demo purposes
-                const { users } = await getUsers({ role: 'client', limit: 1 });
-                if (users && users.length > 0) {
-                    const currentClient = users[0];
-                    setClient(currentClient);
+                setClient(currentUser);
 
-                    const invoicesResponse = await getInvoices({ clientId: currentClient._id, limit: 10 });
-                    setInvoices(invoicesResponse.invoices || []);
+                const invoicesResponse = await getInvoices({ clientId: currentUser._id, limit: 10 });
+                setInvoices(invoicesResponse.invoices || []);
 
-                    const summaryResponse = await getInvoiceSummary(currentClient._id);
-                    setSummary(summaryResponse);
-                }
+                const summaryResponse = await getInvoiceSummary(currentUser._id);
+                setSummary(summaryResponse);
             } catch (error) {
                 console.error("Error loading client billing data:", error);
             } finally {
@@ -39,7 +39,7 @@ const ClientBillingTab = () => {
         };
 
         loadBillingData();
-    }, []);
+    }, [currentUser]);
 
     if (loading) {
         return (
@@ -95,8 +95,8 @@ const ClientBillingTab = () => {
                         <CreditCard className="h-5 w-5 text-primary" />
                         <span className="text-sm text-muted-foreground">Total Paid</span>
                     </div>
-                    <p className="text-2xl font-heading font-bold">₹{formatINR(summary?.totalPaid || 0)}</p>
-                    <p className="text-sm text-muted-foreground">{summary?.paidInvoices || 0} invoices paid</p>
+                    <p className="text-2xl font-heading font-bold">₹{formatINR(summary?.totalAmount || 0)}</p>
+                    <p className="text-sm text-muted-foreground">{summary?.paidCount || 0} invoices paid</p>
                 </div>
             </div>
 

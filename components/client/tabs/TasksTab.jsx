@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { getTasks } from "@/lib/actions/task";
 import { getUsers } from "@/lib/actions/user";
 
-const ClientTasksTab = () => {
+const ClientTasksTab = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
     const [tasks, setTasks] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
@@ -19,15 +19,15 @@ const ClientTasksTab = () => {
 
     useEffect(() => {
         const loadTasksData = async () => {
+            if (!currentUser) {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             try {
-                // Fetch first client for demo purposes
-                const { users } = await getUsers({ role: 'client', limit: 1 });
-                if (users && users.length > 0) {
-                    const currentClient = users[0];
-                    const response = await getTasks({ clientId: currentClient._id, limit: 50 });
-                    setTasks(response.tasks || []);
-                }
+                const response = await getTasks({ clientId: currentUser._id, limit: 50 });
+                setTasks(response.tasks || []);
             } catch (error) {
                 console.error("Error loading client tasks:", error);
             } finally {
@@ -36,7 +36,7 @@ const ClientTasksTab = () => {
         };
 
         loadTasksData();
-    }, []);
+    }, [currentUser]);
 
     // Get unique managers from tasks
     const managers = useMemo(() => {

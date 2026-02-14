@@ -17,7 +17,7 @@ const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
 
 const managers = ["Sarah Mitchell", "John Anderson", "Emma Wilson"];
 
-const AdminTasksTab = () => {
+const AdminTasksTab = ({ currentUser }) => {
     const [clients, setClients] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -32,9 +32,17 @@ const AdminTasksTab = () => {
 
     useEffect(() => {
         async function loadData() {
+            if (!currentUser) {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             try {
-                const [c, t] = await Promise.all([getClients(), getTasks()]);
+                const [c, t] = await Promise.all([
+                    getClients({ managerId: currentUser._id }),
+                    getTasks({ 'assignee.id': currentUser._id })
+                ]);
                 // Ensure clients have id property for consistency
                 setClients(c.map(client => ({ ...client, id: client._id })));
                 setTasks(t);
@@ -46,7 +54,7 @@ const AdminTasksTab = () => {
             }
         }
         loadData();
-    }, []);
+    }, [currentUser]);
 
     // Get current week number
     const getCurrentWeek = () => {
@@ -60,7 +68,7 @@ const AdminTasksTab = () => {
     // New task form
     const [newTask, setNewTask] = useState({
         title: "",
-        owner: "Sarah Mitchell",
+        owner: currentUser?.name || "Admin",
         dueDate: "",
         planForWeek: getCurrentWeek(),
         relatedTo: "", // Client ID
@@ -134,6 +142,14 @@ const AdminTasksTab = () => {
         }
     };
 
+
+    if (loading) {
+        return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div>;
+    }
+
+    if (!currentUser) {
+        return <div className="p-6 text-center text-muted-foreground">User information not available.</div>;
+    }
 
     return (
         <div className="space-y-6">

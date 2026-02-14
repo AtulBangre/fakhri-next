@@ -19,7 +19,7 @@ const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
     label: `Week ${i + 1}`
 }));
 
-const AdminClientsTab = () => {
+const AdminClientsTab = ({ currentUser }) => {
     const [clients, setClients] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [notes, setNotes] = useState([]);
@@ -39,9 +39,17 @@ const AdminClientsTab = () => {
 
     useEffect(() => {
         async function loadData() {
+            if (!currentUser) {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             try {
-                const [c, t] = await Promise.all([getClients(), getTasks()]);
+                const [c, t] = await Promise.all([
+                    getClients({ managerId: currentUser._id }),
+                    getTasks({ 'assignee.id': currentUser._id })
+                ]);
                 const clientsWithCounts = c.map(client => {
                     const clientTasks = t.filter(task => task.client?.id === client._id || task.clientId === client._id);
                     const activeCount = clientTasks.filter(task => task.status !== 'Completed').length;
@@ -57,7 +65,7 @@ const AdminClientsTab = () => {
             }
         }
         loadData();
-    }, []);
+    }, [currentUser]);
 
     // Get current week number
     const getCurrentWeek = () => {
@@ -71,7 +79,8 @@ const AdminClientsTab = () => {
     // New task form
     const [newTask, setNewTask] = useState({
         title: "",
-        owner: "Sarah Mitchell", // Default, could be current user
+        owner: currentUser?.name || "Admin", // Default
+
         dueDate: "",
         planForWeek: getCurrentWeek(),
         description: "",
@@ -238,6 +247,14 @@ const AdminClientsTab = () => {
         setMailSubject("");
         setMailBody("");
     };
+
+    if (loading) {
+        return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div>;
+    }
+
+    if (!currentUser) {
+        return <div className="p-6 text-center text-muted-foreground">User information not available.</div>;
+    }
 
     // Client List View
     if (!selectedClient) {
@@ -540,7 +557,7 @@ const AdminClientsTab = () => {
                                     </TableHeader>
                                     <TableBody>
                                         {clientTasks.length > 0 ? clientTasks.map((task) => (
-                                            <TableRow key={task.id}>
+                                            <TableRow key={task._id || task.id}>
                                                 <TableCell>
                                                     <div>
                                                         <p className="font-medium">{task.title}</p>
@@ -713,19 +730,19 @@ const AdminClientsTab = () => {
                         <div className="grid grid-cols-3 gap-4 text-center">
                             <div className="p-3 bg-yellow-500/10 rounded-lg">
                                 <p className="text-xl font-bold text-yellow-600">
-                                    {tasksData.filter(t => t.clientId === selectedClient.id && t.status === "in-progress").length}
+                                    {tasks.filter(t => (t.clientId === selectedClient.id || t.client?.id === selectedClient.id) && ["in-progress", "In Progress"].includes(t.status)).length}
                                 </p>
                                 <p className="text-xs text-muted-foreground">In Progress</p>
                             </div>
                             <div className="p-3 bg-gray-500/10 rounded-lg">
                                 <p className="text-xl font-bold text-gray-600">
-                                    {tasksData.filter(t => t.clientId === selectedClient.id && t.status === "pending").length}
+                                    {tasks.filter(t => (t.clientId === selectedClient.id || t.client?.id === selectedClient.id) && ["pending", "To Do", "To-Do"].includes(t.status)).length}
                                 </p>
                                 <p className="text-xs text-muted-foreground">Pending</p>
                             </div>
                             <div className="p-3 bg-green-500/10 rounded-lg">
                                 <p className="text-xl font-bold text-green-600">
-                                    {tasksData.filter(t => t.clientId === selectedClient.id && t.status === "completed").length}
+                                    {tasks.filter(t => (t.clientId === selectedClient.id || t.client?.id === selectedClient.id) && ["completed", "Completed"].includes(t.status)).length}
                                 </p>
                                 <p className="text-xs text-muted-foreground">Completed</p>
                             </div>

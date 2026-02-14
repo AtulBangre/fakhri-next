@@ -24,22 +24,22 @@ const getFileTypeLabel = (type) => {
     return type || "File";
 };
 
-const ClientFilesTab = () => {
+const ClientFilesTab = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
     const [allFiles, setAllFiles] = useState([]);
     const [dateRange, setDateRange] = useState({ start: "", end: "" });
 
     useEffect(() => {
         const loadFilesData = async () => {
+            if (!currentUser) {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             try {
-                // Fetch first client for demo purposes
-                const { users } = await getUsers({ role: 'client', limit: 1 });
-                if (users && users.length > 0) {
-                    const currentClient = users[0];
-                    const response = await getFilesByClientId(currentClient._id, { limit: 100 });
-                    setAllFiles(response.files || []);
-                }
+                const response = await getFilesByClientId(currentUser._id, { limit: 100 });
+                setAllFiles(response.files || []);
             } catch (error) {
                 console.error("Error loading client files:", error);
             } finally {
@@ -48,7 +48,7 @@ const ClientFilesTab = () => {
         };
 
         loadFilesData();
-    }, []);
+    }, [currentUser]);
 
     // Parse date string to Date object
     const parseDate = (dateStr) => {
