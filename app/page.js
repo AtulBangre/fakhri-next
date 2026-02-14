@@ -22,7 +22,7 @@ export default function Home() {
       <ServicesPreview />
       <WhyChooseUs />
       <CTA />
-      <Testimonials />
+      {/* <Testimonials /> */}
       <FaQ data={homeFAQs} />
     </>
   );

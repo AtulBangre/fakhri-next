@@ -100,7 +100,7 @@ export default function AboutContent() {
             </section>
 
             {/* Team & Leadership */}
-            <section className="section-padding bg-secondary/30">
+            {/* <section className="section-padding bg-secondary/30">
                 <div className="container-custom">
                     <div className="text-center max-w-3xl mx-auto mb-16">
                         <h2 className="heading-lg mb-4">Meet Our Leadership</h2>
@@ -109,7 +109,7 @@ export default function AboutContent() {
                         </p>
                     </div>
 
-                    {/* Core Leadership */}
+                  
                     <div className="grid md:grid-cols-3 gap-8 mb-16">
                         {leadershipTeam.core.map((member, index) => (
                             <ScrollReveal key={index} delay={index * 0.1}>
@@ -134,7 +134,7 @@ export default function AboutContent() {
                         ))}
                     </div>
 
-                    {/* Senior Management */}
+                    
                     <div className="mb-16">
                         <h3 className="heading-md text-center mb-10">Senior Management</h3>
                         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
@@ -158,7 +158,7 @@ export default function AboutContent() {
                         </div>
                     </div>
 
-                    {/* Other Team Members Grid */}
+                
                     <div>
                         <h3 className="heading-md text-center mb-10">Our Rising Stars</h3>
                         <StaggerContainer className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -183,7 +183,7 @@ export default function AboutContent() {
                         </StaggerContainer>
                     </div>
                 </div>
-            </section>
+            </section> */}
 
             {/* Why Choose Us */}
             <section className="section-padding">
