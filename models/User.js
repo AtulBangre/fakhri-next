@@ -14,6 +14,7 @@ const UserSchema = new mongoose.Schema({
     adminRole: { type: String }, // e.g., 'Account Manager', 'Senior Manager'
     team: { type: String },
     teamId: { type: Number },
+    teams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }],
     permissions: [{ type: String }],
     performance: {
         activeTasks: { type: Number, default: 0 },

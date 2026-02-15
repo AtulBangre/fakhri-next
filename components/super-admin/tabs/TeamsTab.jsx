@@ -166,7 +166,9 @@ const SuperAdminTeamsTab = () => {
                                 </div>
                                 <div>
                                     <h3 className="font-heading font-semibold">{team.name}</h3>
-                                    <p className="text-sm text-muted-foreground">{team.members.length} members</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {team.members.length} members • {team.clientCount} clients
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -320,7 +322,6 @@ const SuperAdminTeamsTab = () => {
                                                 <Mail className="h-3 w-3" />
                                                 <span>{member.email}</span>
                                             </div>
-                                            <p className="text-primary font-medium mt-1">{member.clientsCount || 0} clients</p>
                                         </div>
                                     </div>
                                 )) : (

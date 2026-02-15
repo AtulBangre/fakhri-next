@@ -10,11 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { ScrollableContainer } from "@/components/ui/scrollable-container";
 
 import { getUsers } from "@/lib/actions/user";
 import { getTasks } from "@/lib/actions/task";
 import { upsertClient, deleteClient, upsertTask, upsertNote, getNotes } from "@/lib/actions/admin";
+import { getTeams } from "@/lib/actions/team";
 import { toast } from "sonner";
 
 const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
@@ -25,6 +28,7 @@ const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
 const SuperAdminClientsTab = () => {
     const [clients, setClients] = useState([]);
     const [managers, setManagers] = useState([]);
+    const [teams, setTeams] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [notes, setNotes] = useState([]); // Add notes state
     const [loading, setLoading] = useState(true);
@@ -33,13 +37,15 @@ const SuperAdminClientsTab = () => {
     useEffect(() => {
         async function loadInitialData() {
             setLoading(true);
-            const [clientsRes, adminsRes] = await Promise.all([
-                getUsers({ role: 'client' }),
-                getUsers({ role: 'admin' })
+            const [clientsRes, adminsRes, teamsRes] = await Promise.all([
+                getUsers({ role: 'client', limit: 1000 }),
+                getUsers({ role: 'admin', limit: 1000 }),
+                getTeams()
             ]);
 
             if (clientsRes.users) setClients(clientsRes.users);
             if (adminsRes.users) setManagers(adminsRes.users.map(u => u.name));
+            if (teamsRes) setTeams(teamsRes);
             setLoading(false);
         }
         loadInitialData();
@@ -72,6 +78,7 @@ const SuperAdminClientsTab = () => {
     // List filters
     const [planFilter, setPlanFilter] = useState("all");
     const [managerFilter, setManagerFilter] = useState("all");
+    const [teamFilter, setTeamFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
 
     // Task filters
@@ -120,7 +127,8 @@ const SuperAdminClientsTab = () => {
         userPermission: "",
         accountAccessUrl: "",
         leadSource: "",
-        listingManager: ""
+        listingManager: "",
+        teams: []
     });
 
     // Edit Client State
@@ -140,10 +148,14 @@ const SuperAdminClientsTab = () => {
             const matchesManager = managerFilter === "all" ||
                 (managerFilter === "unassigned" && (!client.manager || client.manager === "Unassigned")) ||
                 client.manager === managerFilter;
+            const matchesTeam = teamFilter === "all" || (client.teams && client.teams.some(t => {
+                const teamId = typeof t === "object" ? t._id : t;
+                return teamId === teamFilter;
+            }));
             const matchesStatus = statusFilter === "all" || client.status === statusFilter;
-            return matchesSearch && matchesPlan && matchesManager && matchesStatus;
+            return matchesSearch && matchesPlan && matchesManager && matchesStatus && matchesTeam;
         });
-    }, [searchQuery, planFilter, managerFilter, statusFilter, clients]);
+    }, [searchQuery, planFilter, managerFilter, statusFilter, teamFilter, clients]);
 
     // Get tasks for selected client
     const clientTasks = useMemo(() => {
@@ -302,7 +314,10 @@ const SuperAdminClientsTab = () => {
     };
 
     const handleEditClick = () => {
-        setEditClientData({ ...selectedClient });
+        setEditClientData({
+            ...selectedClient,
+            teams: selectedClient.teams || [] // Ensure teams is initialized
+        });
         setShowEditClient(true);
     };
 
@@ -397,6 +412,17 @@ const SuperAdminClientsTab = () => {
                             <SelectItem value="unassigned">Unassigned</SelectItem>
                             {managers.map((m) => (
                                 <SelectItem key={m} value={m}>{m}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={teamFilter} onValueChange={setTeamFilter}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Team" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Teams</SelectItem>
+                            {teams.map((t) => (
+                                <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -545,6 +571,32 @@ const SuperAdminClientsTab = () => {
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
+                                                <div className="grid gap-2">
+                                                    <Label>Assigned Teams</Label>
+                                                    <div className="grid grid-cols-1 gap-2 border rounded-lg p-3 max-h-32 overflow-y-auto bg-accent/10">
+                                                        {teams.map((team) => (
+                                                            <div key={team._id} className="flex items-center space-x-2">
+                                                                <Checkbox
+                                                                    id={`new-team-${team._id}`}
+                                                                    checked={newClientData.teams.includes(team._id)}
+                                                                    onCheckedChange={(checked) => {
+                                                                        if (checked) {
+                                                                            setNewClientData({ ...newClientData, teams: [...newClientData.teams, team._id] });
+                                                                        } else {
+                                                                            setNewClientData({ ...newClientData, teams: newClientData.teams.filter(id => id !== team._id) });
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <Label
+                                                                    htmlFor={`new-team-${team._id}`}
+                                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                                >
+                                                                    {team.name}
+                                                                </Label>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             {/* Additional Details */}
@@ -590,8 +642,8 @@ const SuperAdminClientsTab = () => {
                                         Add Client
                                     </Button>
                                 </div>
-                            </div>
-                        </div>
+                            </div >
+                        </div >
                     )
                 }
             </div >
@@ -1283,6 +1335,33 @@ const SuperAdminClientsTab = () => {
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label>Assigned Teams</Label>
+                                                <div className="grid grid-cols-1 gap-2 border rounded-lg p-3 max-h-32 overflow-y-auto bg-accent/10">
+                                                    {teams.map((team) => (
+                                                        <div key={team._id} className="flex items-center space-x-2">
+                                                            <Checkbox
+                                                                id={`edit-team-${team._id}`}
+                                                                checked={(editClientData.teams || []).includes(team._id)}
+                                                                onCheckedChange={(checked) => {
+                                                                    const currentTeams = editClientData.teams || [];
+                                                                    if (checked) {
+                                                                        setEditClientData({ ...editClientData, teams: [...currentTeams, team._id] });
+                                                                    } else {
+                                                                        setEditClientData({ ...editClientData, teams: currentTeams.filter(id => id !== team._id) });
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <Label
+                                                                htmlFor={`edit-team-${team._id}`}
+                                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                            >
+                                                                {team.name}
+                                                            </Label>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
 
