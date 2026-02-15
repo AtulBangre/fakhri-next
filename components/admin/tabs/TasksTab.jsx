@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TaskDetailsDialog from "@/components/dashboard/TaskDetailsDialog";
-import { getClients, getTasks, upsertTask, deleteTask } from "@/lib/actions/admin";
+import { getClients, getTasks, upsertTask, deleteTask, getTeamMembers } from "@/lib/actions/admin";
 import { toast } from "sonner";
 import {
     AlertDialog,
@@ -33,6 +33,7 @@ const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
 const AdminTasksTab = ({ currentUser }) => {
     const [clients, setClients] = useState([]);
     const [tasks, setTasks] = useState([]);
+    const [teamMembers, setTeamMembers] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [showCreateTask, setShowCreateTask] = useState(false);
@@ -55,8 +56,9 @@ const AdminTasksTab = ({ currentUser }) => {
 
             setLoading(true);
             try {
-                const [c] = await Promise.all([
-                    getClients(currentUser.role === 'super-admin' ? {} : { managerId: currentUser._id })
+                const [c, team] = await Promise.all([
+                    getClients(currentUser.role === 'super-admin' ? {} : { managerId: currentUser._id }),
+                    getTeamMembers()
                 ]);
 
                 const clientIds = c.map(client => client._id);
@@ -79,6 +81,7 @@ const AdminTasksTab = ({ currentUser }) => {
 
                 // Ensure clients have id property for consistency
                 setClients(uniqueClients.map(client => ({ ...client, id: client._id })));
+                setTeamMembers(team);
                 setTasks(uniqueTasks);
             } catch (error) {
                 console.error("Failed to load data", error);
@@ -103,6 +106,7 @@ const AdminTasksTab = ({ currentUser }) => {
     const [newTask, setNewTask] = useState({
         title: "",
         owner: currentUser?.name || "Admin",
+        ownerId: currentUser?._id,
         dueDate: "",
         planForWeek: getCurrentWeek(),
         relatedTo: "", // Client ID
@@ -125,6 +129,7 @@ const AdminTasksTab = ({ currentUser }) => {
         setNewTask({
             title: "",
             owner: currentUser?.name || "Admin",
+            ownerId: currentUser?._id,
             dueDate: "",
             planForWeek: getCurrentWeek(),
             relatedTo: "",
@@ -137,14 +142,18 @@ const AdminTasksTab = ({ currentUser }) => {
     // Auto-select manager when client is selected
     const handleClientChange = (clientId) => {
         const client = clients.find(c => c.id.toString() === clientId);
-        let updates = { relatedTo: clientId, owner: currentUser.name };
+        // Don't auto-reset owner if already set manually, or do? 
+        // Current logic: updates owner to currentUser. Let's keep it but maybe we shouldn't purely override if user selected someone else?
+        // Actually, let's NOT override owner here to allow user flexibility.
+        // let updates = { relatedTo: clientId, owner: currentUser.name };
+        let updates = { relatedTo: clientId };
         setNewTask(prev => ({ ...prev, ...updates }));
     };
 
     // Auto-select manager when client is selected in Edit Task
     const handleEditClientChange = (clientId) => {
         const client = clients.find(c => c.id.toString() === clientId);
-        let updates = { relatedTo: clientId, owner: currentUser.name };
+        let updates = { relatedTo: clientId };
         setShowEditTask(prev => ({ ...prev, ...updates }));
     };
 
@@ -171,7 +180,7 @@ const AdminTasksTab = ({ currentUser }) => {
                 clientId: selectedClient?.id,
                 assignee: {
                     name: newTask.owner,
-                    id: currentUser._id // Assign to current admin by default if they are the owner
+                    id: newTask.ownerId || currentUser._id
                 },
                 owner: newTask.owner,
                 dueDate: newTask.dueDate,
@@ -216,6 +225,10 @@ const AdminTasksTab = ({ currentUser }) => {
                     company: selectedClient?.company
                 },
                 clientId: selectedClient?.id,
+                assignee: {
+                    name: showEditTask.owner,
+                    id: showEditTask.assignee?.id || showEditTask.ownerId || currentUser._id
+                },
                 owner: showEditTask.owner,
                 dueDate: showEditTask.dueDate,
                 planForWeek: showEditTask.planForWeek,
@@ -316,8 +329,25 @@ const AdminTasksTab = ({ currentUser }) => {
                         <h3 className="font-heading font-semibold text-lg">Task Information</h3>
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted-foreground">Owner</span>
-                                <Input value={currentUser?.name} disabled className="bg-muted" />
+                                <span className="text-sm text-muted-foreground mr-1">Owner:</span>
+                                <Select
+                                    value={newTask.ownerId}
+                                    onValueChange={(id) => {
+                                        const member = teamMembers.find(m => m._id === id);
+                                        if (member) {
+                                            setNewTask(prev => ({ ...prev, ownerId: id, owner: member.name }));
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger className="w-[180px] h-8 text-sm">
+                                        <SelectValue placeholder={newTask.owner} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {teamMembers.map(member => (
+                                            <SelectItem key={member._id} value={member._id}>{member.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <Button variant="ghost" size="sm" onClick={() => { setShowCreateTask(false); resetNewTaskForm(); }}>
                                 <X className="h-4 w-4" />
@@ -524,8 +554,30 @@ const AdminTasksTab = ({ currentUser }) => {
                             <h3 className="font-heading font-semibold text-lg">Edit Task</h3>
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-sm text-muted-foreground">Owner</span>
-                                    <Input value={currentUser?.name} disabled className="bg-muted" />
+                                    <span className="text-sm text-muted-foreground mr-1">Owner:</span>
+                                    <Select
+                                        value={showEditTask.assignee?.id || showEditTask.ownerId || ""}
+                                        onValueChange={(id) => {
+                                            const member = teamMembers.find(m => m._id === id);
+                                            if (member) {
+                                                setShowEditTask(prev => ({
+                                                    ...prev,
+                                                    ownerId: id,
+                                                    owner: member.name,
+                                                    assignee: { ...prev.assignee, id: id, name: member.name }
+                                                }));
+                                            }
+                                        }}
+                                    >
+                                        <SelectTrigger className="w-[180px] h-8 text-sm">
+                                            <SelectValue placeholder={showEditTask.owner} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {teamMembers.map(member => (
+                                                <SelectItem key={member._id} value={member._id}>{member.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <Button variant="ghost" size="sm" onClick={() => setShowEditTask(null)}>
                                     <X className="h-4 w-4" />

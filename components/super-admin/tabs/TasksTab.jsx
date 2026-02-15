@@ -11,7 +11,7 @@ import TaskDetailsDialog from "@/components/dashboard/TaskDetailsDialog";
 
 import { getTasks } from "@/lib/actions/task";
 import { getUsers } from "@/lib/actions/user";
-import { upsertTask, deleteTask } from "@/lib/actions/admin";
+import { upsertTask, deleteTask, getTeamMembers } from "@/lib/actions/admin";
 import { toast } from "sonner";
 import {
     AlertDialog,
@@ -53,10 +53,10 @@ const SuperAdminTasksTab = () => {
         async function loadData() {
             setLoading(true);
             try {
-                const [tasksRes, clientsRes, adminsRes] = await Promise.all([
+                const [tasksRes, clientsRes, teamRes] = await Promise.all([
                     getTasks({}),
                     getUsers({ role: 'client' }),
-                    getUsers({ role: 'admin' })
+                    getTeamMembers()
                 ]);
 
                 if (tasksRes.tasks) setTasks(tasksRes.tasks);
@@ -68,8 +68,8 @@ const SuperAdminTasksTab = () => {
                     }));
                     setClients(normalizedClients);
                 }
-                if (adminsRes.users) {
-                    const normalizedAdmins = adminsRes.users.map(a => ({
+                if (teamRes) {
+                    const normalizedAdmins = teamRes.map(a => ({
                         ...a,
                         id: a._id || a.id
                     }));
@@ -102,6 +102,7 @@ const SuperAdminTasksTab = () => {
     const [newTask, setNewTask] = useState({
         title: "",
         owner: "",
+        ownerId: "",
         dueDate: "",
         planForWeek: getCurrentWeek(),
         relatedTo: "", // Client ID
@@ -127,6 +128,7 @@ const SuperAdminTasksTab = () => {
         setNewTask({
             title: "",
             owner: "",
+            ownerId: "",
             dueDate: "",
             planForWeek: getCurrentWeek(),
             relatedTo: "",
@@ -138,17 +140,14 @@ const SuperAdminTasksTab = () => {
 
     // Filter available clients based on selected manager (owner)
     const availableClients = useMemo(() => {
-        if (!newTask.owner) return clients;
-        const selectedManager = managers.find(m => m.name === newTask.owner);
-        if (!selectedManager) return clients;
-        // Filter clients who are assigned to this manager
-        // Note: checking both managerId and manager object structure for robustness
+        if (!newTask.ownerId) return clients;
+        // Filter clients who are assigned to this manager ownerId
         return clients.filter(c =>
-            c.managerId === selectedManager.id ||
-            (c.manager && c.manager.id === selectedManager.id) ||
-            (c.manager && c.manager === selectedManager.id)
+            c.managerId === newTask.ownerId ||
+            (c.manager && c.manager.id === newTask.ownerId) ||
+            (c.manager && c.manager === newTask.ownerId)
         );
-    }, [newTask.owner, clients, managers]);
+    }, [newTask.ownerId, clients]);
 
     // Auto-select manager when client is selected
     const handleClientChange = (clientId) => {
@@ -162,6 +161,7 @@ const SuperAdminTasksTab = () => {
                 const manager = managers.find(m => m.id === managerId);
                 if (manager) {
                     updates.owner = manager.name;
+                    updates.ownerId = manager.id;
                 }
             }
         }
@@ -170,15 +170,14 @@ const SuperAdminTasksTab = () => {
 
     // Filter available clients for Edit Task based on selected manager (owner)
     const editAvailableClients = useMemo(() => {
-        if (!showEditTask?.owner) return clients;
-        const selectedManager = managers.find(m => m.name === showEditTask.owner);
-        if (!selectedManager) return clients;
+        const ownerId = showEditTask?.ownerId || showEditTask?.assignee?.id;
+        if (!ownerId) return clients;
         return clients.filter(c =>
-            c.managerId === selectedManager.id ||
-            (c.manager && c.manager.id === selectedManager.id) ||
-            (c.manager && c.manager === selectedManager.id)
+            c.managerId === ownerId ||
+            (c.manager && c.manager.id === ownerId) ||
+            (c.manager && c.manager === ownerId)
         );
-    }, [showEditTask?.owner, clients, managers]);
+    }, [showEditTask?.ownerId, showEditTask?.assignee?.id, clients]);
 
     // Auto-select manager when client is selected in Edit Task
     const handleEditClientChange = (clientId) => {
@@ -191,6 +190,8 @@ const SuperAdminTasksTab = () => {
                 const manager = managers.find(m => m.id === managerId);
                 if (manager) {
                     updates.owner = manager.name;
+                    updates.ownerId = manager.id;
+                    updates.assignee = { name: manager.name, id: manager.id };
                 }
             }
         }
@@ -221,7 +222,7 @@ const SuperAdminTasksTab = () => {
                 clientId: selectedClient?.id,
                 assignee: {
                     name: newTask.owner,
-                    id: selectedManager?.id
+                    id: newTask.ownerId
                 },
                 owner: newTask.owner,
                 dueDate: newTask.dueDate,
@@ -269,7 +270,7 @@ const SuperAdminTasksTab = () => {
                 clientId: selectedClient?.id,
                 assignee: {
                     name: showEditTask.owner,
-                    id: selectedManager?.id
+                    id: showEditTask.ownerId || showEditTask.assignee?.id
                 },
                 owner: showEditTask.owner,
                 dueDate: showEditTask.dueDate,
@@ -387,13 +388,21 @@ const SuperAdminTasksTab = () => {
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-muted-foreground">Assigned To</span>
-                                    <Select value={newTask.owner} onValueChange={(v) => setNewTask({ ...newTask, owner: v })}>
+                                    <Select
+                                        value={newTask.ownerId}
+                                        onValueChange={(id) => {
+                                            const member = managers.find(m => m.id === id);
+                                            if (member) {
+                                                setNewTask(prev => ({ ...prev, ownerId: id, owner: member.name }));
+                                            }
+                                        }}
+                                    >
                                         <SelectTrigger className="w-[180px]">
-                                            <SelectValue placeholder="Select Manager" />
+                                            <SelectValue placeholder={newTask.owner || "Select Manager"} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {managers.map(admin => (
-                                                <SelectItem key={admin.id} value={admin.name}>{admin.name}</SelectItem>
+                                                <SelectItem key={admin.id} value={admin.id}>{admin.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -581,6 +590,7 @@ const SuperAdminTasksTab = () => {
                                                 ...task,
                                                 relatedTo: (task.clientId || task.client?.id)?.toString(),
                                                 owner: task.assignee?.name || task.owner,
+                                                ownerId: task.assignee?.id,
                                                 isHighPriority: task.priority === 'High',
                                                 isCompleted: task.status === 'Completed'
                                             };
@@ -614,13 +624,26 @@ const SuperAdminTasksTab = () => {
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-muted-foreground">Assigned To</span>
-                                    <Select value={showEditTask.owner || ""} onValueChange={(v) => setShowEditTask({ ...showEditTask, owner: v })}>
+                                    <Select
+                                        value={showEditTask.ownerId || showEditTask.assignee?.id || ""}
+                                        onValueChange={(id) => {
+                                            const member = managers.find(m => m.id === id);
+                                            if (member) {
+                                                setShowEditTask(prev => ({
+                                                    ...prev,
+                                                    ownerId: id,
+                                                    owner: member.name,
+                                                    assignee: { ...prev.assignee, id: id, name: member.name }
+                                                }));
+                                            }
+                                        }}
+                                    >
                                         <SelectTrigger className="w-[180px]">
-                                            <SelectValue placeholder="Select Manager" />
+                                            <SelectValue placeholder={showEditTask.owner || "Select Manager"} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {managers.map(admin => (
-                                                <SelectItem key={admin.id} value={admin.name}>{admin.name}</SelectItem>
+                                                <SelectItem key={admin.id} value={admin.id}>{admin.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
