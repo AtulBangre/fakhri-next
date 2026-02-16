@@ -347,6 +347,10 @@ export default function SuperAdminResponsesTab() {
                                                 <p>{selectedItem.clientName}</p>
                                             </div>
                                             <div>
+                                                <h4 className="font-semibold text-sm text-muted-foreground">Subject</h4>
+                                                <p>{selectedItem.subject || 'N/A'}</p>
+                                            </div>
+                                            <div>
                                                 <h4 className="font-semibold text-sm text-muted-foreground">Rating</h4>
                                                 <div className="flex text-yellow-500">
                                                     {[...Array(5)].map((_, i) => (

@@ -13,13 +13,7 @@ import { getFAQs } from "@/lib/actions/content";
 import { submitClientFeedback } from "@/lib/actions/responses";
 import { toast } from "sonner";
 
-const feedbackCategories = [
-    { value: "general", label: "General Feedback" },
-    { value: "bug", label: "Report a Bug" },
-    { value: "feature", label: "Feature Request" },
-    { value: "support", label: "Support Issue" },
-    { value: "other", label: "Other" }
-];
+
 
 const SupportTab = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
@@ -27,7 +21,6 @@ const SupportTab = ({ currentUser }) => {
     const [showFeedbackForm, setShowFeedbackForm] = useState(false);
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
     const [formData, setFormData] = useState({
-        category: "general",
         subject: "",
         message: "",
         rating: 0
@@ -74,8 +67,7 @@ const SupportTab = ({ currentUser }) => {
                 client: currentUser._id,
                 clientName: currentUser.name || "Unknown Client",
                 rating: formData.rating,
-                message: `Subject: ${formData.subject}\nCategory: ${formData.category}\n\n${formData.message}`,
-                category: formData.category, // Assuming model supports it or we pack it in message
+                message: formData.message,
                 subject: formData.subject
             };
 
@@ -90,7 +82,6 @@ const SupportTab = ({ currentUser }) => {
                     setFeedbackSubmitted(false);
                     setShowFeedbackForm(false);
                     setFormData({
-                        category: "general",
                         subject: "",
                         message: "",
                         rating: 0
@@ -222,22 +213,7 @@ const SupportTab = ({ currentUser }) => {
                                     </div>
                                 </div>
 
-                                {/* Category */}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Category</label>
-                                    <select
-                                        name="category"
-                                        value={formData.category}
-                                        onChange={handleInputChange}
-                                        className="w-full px-3 py-2 border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                    >
-                                        {feedbackCategories.map((cat) => (
-                                            <option key={cat.value} value={cat.value}>
-                                                {cat.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+
 
                                 {/* Subject */}
                                 <div className="space-y-2">
