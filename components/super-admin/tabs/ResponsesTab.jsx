@@ -10,11 +10,14 @@ import {
     Trash2,
     Loader2,
     RefreshCcw,
-    Eye
+    Eye,
+    UserCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
     Table,
     TableBody,
@@ -39,6 +42,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { getAllResponses, updateResponseStatus, deleteResponse } from "@/lib/actions/responses";
+import { getProfileUpdateRequests, approveProfileUpdateRequest, rejectProfileUpdateRequest } from "@/lib/actions/profile-requests";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -46,17 +50,19 @@ import { ScrollableContainer } from "@/components/ui/scrollable-container";
 
 export default function SuperAdminResponsesTab() {
     const [loading, setLoading] = useState(true);
-    const [data, setData] = useState({ feedback: [], contacts: [], applications: [] });
+    const [data, setData] = useState({ feedback: [], contacts: [], applications: [], profileRequests: [] });
     const [refreshing, setRefreshing] = useState(false);
 
     // View Dialog State
     const [selectedItem, setSelectedItem] = useState(null);
-    const [viewType, setViewType] = useState(null); // 'feedback', 'contact', 'career'
+    const [viewType, setViewType] = useState(null); // 'feedback', 'contact', 'career', 'profile-update'
+    const [editData, setEditData] = useState(null); // For profile update editing
 
     const loadData = async () => {
         try {
-            const result = await getAllResponses();
-            setData(result);
+            const responses = await getAllResponses();
+            console.log("Loaded responses:", responses);
+            setData(responses);
         } catch (error) {
             console.error("Error loading responses:", error);
             toast.error("Failed to load responses");
@@ -107,9 +113,46 @@ export default function SuperAdminResponsesTab() {
         }
     };
 
+    const handleApproveRequest = async (id) => {
+        const notes = prompt("Enter notes for the client (optional):", "Approved and applied.");
+        if (notes === null) return;
+        try {
+            const res = await approveProfileUpdateRequest(id, editData, notes);
+            if (res.success) {
+                toast.success("Request approved and profile updated");
+                loadData();
+                setSelectedItem(null);
+            } else {
+                toast.error("Failed to approve: " + res.error);
+            }
+        } catch (error) {
+            toast.error("Error approving request");
+        }
+    };
+
+    const handleRejectRequest = async (id) => {
+        const notes = prompt("Enter reason for rejection (optional):");
+        if (notes === null) return;
+        try {
+            const res = await rejectProfileUpdateRequest(id, notes);
+            if (res.success) {
+                toast.success("Request rejected");
+                loadData();
+                setSelectedItem(null);
+            } else {
+                toast.error("Failed to reject: " + res.error);
+            }
+        } catch (error) {
+            toast.error("Error rejecting request");
+        }
+    };
+
     const openViewDialog = (item, type) => {
         setSelectedItem(item);
         setViewType(type);
+        if (type === 'profile-update') {
+            setEditData({ ...item.newData });
+        }
     };
 
     if (loading) {
@@ -126,7 +169,7 @@ export default function SuperAdminResponsesTab() {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Responses</h2>
-                    <p className="text-muted-foreground">Manage feedback, inquiries, and job applications.</p>
+                    <p className="text-muted-foreground">Manage feedback, inquiries, job applications, and profile updates.</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
                     <RefreshCcw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
@@ -135,7 +178,7 @@ export default function SuperAdminResponsesTab() {
             </div>
 
             <Tabs defaultValue="feedback" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 max-w-[600px]">
+                <TabsList className="grid w-full grid-cols-4 max-w-[800px]">
                     <TabsTrigger value="feedback" className="flex items-center gap-2">
                         <MessageSquare className="h-4 w-4" />
                         Feedback
@@ -150,6 +193,11 @@ export default function SuperAdminResponsesTab() {
                         <Briefcase className="h-4 w-4" />
                         Careers
                         <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{data.applications.length}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="profile" className="flex items-center gap-2">
+                        <UserCircle className="h-4 w-4" />
+                        Profile
+                        <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{data.profileRequests.filter(r => r.status === 'pending').length}</Badge>
                     </TabsTrigger>
                 </TabsList>
 
@@ -317,6 +365,65 @@ export default function SuperAdminResponsesTab() {
                                     ))}
                                     {data.applications.length === 0 && (
                                         <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No applications yet.</TableCell></TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                {/* PROFILE UPDATE TAB */}
+                <TabsContent value="profile" className="mt-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Profile Update Requests</CardTitle>
+                            <CardDescription>Requests from clients and admins to update their profile information.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Client</TableHead>
+                                        <TableHead>Changes</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {data.profileRequests.map((item) => (
+                                        <TableRow key={item._id}>
+                                            <TableCell className="font-medium">
+                                                <div>{item.userName}</div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-muted-foreground">{item.user?.email || 'N/A'}</span>
+                                                    <Badge variant="outline" className="text-[10px] h-4 px-1 capitalize">{item.userRole}</Badge>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">
+                                                    {Object.keys(item.newData).length} field(s)
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>{format(new Date(item.createdAt), 'MMM dd, yyyy')}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={item.status === 'pending' ? "default" : item.status === 'approved' ? "secondary" : "destructive"}>
+                                                    {item.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button variant="ghost" size="icon" onClick={() => openViewDialog(item, 'profile-update')}>
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete('profile-update', item._id)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {data.profileRequests.length === 0 && (
+                                        <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No profile update requests yet.</TableCell></TableRow>
                                     )}
                                 </TableBody>
                             </Table>
@@ -503,6 +610,75 @@ export default function SuperAdminResponsesTab() {
                                                 Reject
                                             </Button>
                                         </div>
+                                    </div>
+                                )}
+
+                                {/* Profile Update View */}
+                                {viewType === 'profile-update' && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center justify-between border-b pb-4">
+                                            <div>
+                                                <h3 className="text-xl font-bold">{selectedItem.userName}</h3>
+                                                <div className="text-muted-foreground flex items-center gap-2">
+                                                    Profile Update Request
+                                                    <Badge variant="outline" className="capitalize">{selectedItem.userRole}</Badge>
+                                                </div>
+                                            </div>
+                                            <Badge variant={selectedItem.status === 'pending' ? "default" : selectedItem.status === 'approved' ? "secondary" : "destructive"}>
+                                                {selectedItem.status.toUpperCase()}
+                                            </Badge>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Proposed Changes</h4>
+                                            <div className="grid gap-4 bg-accent/30 p-4 rounded-lg border">
+                                                {Object.keys(selectedItem.newData).map(field => (
+                                                    <div key={field} className="grid grid-cols-1 md:grid-cols-2 gap-2 border-b border-white/10 pb-2 last:border-0 last:pb-0">
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground font-medium uppercase">{field}</p>
+                                                            <p className="text-sm line-through opacity-50">{selectedItem.oldData[field] || 'Empty'}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-primary font-medium uppercase">New Value</p>
+                                                            {selectedItem.status === 'pending' ? (
+                                                                <Input
+                                                                    value={editData[field]}
+                                                                    onChange={(e) => setEditData({ ...editData, [field]: e.target.value })}
+                                                                    className="h-8 text-sm mt-1"
+                                                                />
+                                                            ) : (
+                                                                <p className="text-sm font-medium">{selectedItem.newData[field]}</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {selectedItem.adminNotes && (
+                                            <div className="space-y-2">
+                                                <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Admin Notes</h4>
+                                                <p className="text-sm bg-muted p-2 rounded italic">"{selectedItem.adminNotes}"</p>
+                                            </div>
+                                        )}
+
+                                        {selectedItem.status === 'pending' && (
+                                            <div className="flex gap-3 pt-6 border-t mt-6">
+                                                <Button
+                                                    onClick={() => handleApproveRequest(selectedItem._id)}
+                                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                                >
+                                                    Approve & Apply
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => handleRejectRequest(selectedItem._id)}
+                                                    className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10"
+                                                >
+                                                    Reject
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

@@ -5,7 +5,8 @@ import { Mail, Phone, Building, MapPin, Loader2, Edit, Save, X } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getUsers, getUserById, updateUser } from "@/lib/actions/user";
+import { getUsers, getUserById } from "@/lib/actions/user";
+import { submitProfileUpdateRequest, getPendingRequestForUser } from "@/lib/actions/profile-requests";
 import { toast } from "sonner";
 
 const ClientProfileTab = ({ currentUser }) => {
@@ -14,6 +15,7 @@ const ClientProfileTab = ({ currentUser }) => {
     const [manager, setManager] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({});
+    const [pendingRequest, setPendingRequest] = useState(null);
 
     useEffect(() => {
         const loadProfileData = async () => {
@@ -30,8 +32,6 @@ const ClientProfileTab = ({ currentUser }) => {
                     phone: currentUser.phone || "",
                     company: currentUser.company || "",
                     location: currentUser.location || "",
-                    // Email is usually not editable by user easily without verification, but let's allow it or keep readOnly
-                    // For now, let's keep email readOnly as it's often the ID
                 });
 
                 if (currentUser.managerId) {
@@ -40,6 +40,10 @@ const ClientProfileTab = ({ currentUser }) => {
                 } else if (currentUser.manager) {
                     setManager(typeof currentUser.manager === 'object' ? currentUser.manager : { name: currentUser.manager });
                 }
+
+                // Check for pending requests
+                const pReq = await getPendingRequestForUser(currentUser._id);
+                setPendingRequest(pReq);
             } catch (error) {
                 console.error("Error loading profile data:", error);
             } finally {
@@ -52,13 +56,17 @@ const ClientProfileTab = ({ currentUser }) => {
 
     const handleSave = async () => {
         try {
-            const res = await updateUser(client._id, formData);
-            if (res) {
-                setClient(res);
+            const res = await submitProfileUpdateRequest(client._id, formData);
+            if (res.success) {
                 setIsEditing(false);
-                toast.success("Profile updated successfully");
+                toast.success("Profile update request sent to admin");
+                // Force delay for consistency
+                setTimeout(async () => {
+                    const pReq = await getPendingRequestForUser(client._id);
+                    setPendingRequest(pReq);
+                }, 1000);
             } else {
-                toast.error("Failed to update profile");
+                toast.error("Failed to send update request: " + res.error);
             }
         } catch (error) {
             console.error(error);
@@ -105,12 +113,24 @@ const ClientProfileTab = ({ currentUser }) => {
                     <p className="text-muted-foreground">Manage your account settings and preferences.</p>
                 </div>
                 {!isEditing && (
-                    <Button onClick={() => setIsEditing(true)}>
+                    <Button onClick={() => setIsEditing(true)} disabled={!!pendingRequest}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Profile
                     </Button>
                 )}
             </div>
+
+            {pendingRequest && (
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center gap-3 text-amber-800 animate-in fade-in slide-in-from-top-2">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 text-amber-600 font-bold italic">
+                        !
+                    </div>
+                    <div>
+                        <p className="font-medium">Pending Update Request</p>
+                        <p className="text-sm opacity-90">An update request for your profile is currently pending admin approval. You cannot make further changes until it is processed.</p>
+                    </div>
+                </div>
+            )}
 
             {/* Profile Card */}
             <div className="bg-card rounded-xl border overflow-hidden">

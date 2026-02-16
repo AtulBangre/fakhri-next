@@ -44,7 +44,10 @@ const SuperAdminClientsTab = () => {
             ]);
 
             if (clientsRes.users) setClients(clientsRes.users);
-            if (adminsRes.users) setManagers(adminsRes.users.map(u => u.name));
+            if (adminsRes.users) {
+                const uniqueNames = [...new Set(adminsRes.users.map(u => u.name).filter(Boolean))];
+                setManagers(uniqueNames);
+            }
             if (teamsRes) setTeams(teamsRes);
             setLoading(false);
         }
