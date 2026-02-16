@@ -973,7 +973,7 @@ const SuperAdminClientsTab = () => {
                             {/* Notes List */}
                             <div className="space-y-4">
                                 {clientNotes.length > 0 ? clientNotes.map((note) => (
-                                    <div key={note.id} className="bg-card rounded-xl border p-4">
+                                    <div key={note._id} className="bg-card rounded-xl border p-4">
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-medium">

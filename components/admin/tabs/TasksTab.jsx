@@ -47,50 +47,53 @@ const AdminTasksTab = ({ currentUser }) => {
     const [clientFilter, setClientFilter] = useState("all");
     const [priorityFilter, setPriorityFilter] = useState("all");
 
-    useEffect(() => {
-        async function loadData() {
-            if (!currentUser) {
-                setLoading(false);
-                return;
-            }
+    const fetchTasks = async () => {
+        if (!currentUser) return;
 
-            setLoading(true);
-            try {
-                const [c, team] = await Promise.all([
-                    getClients(currentUser.role === 'super-admin' ? {} : { managerId: currentUser._id }),
-                    getTeamMembers()
-                ]);
+        // Don't set loading true here to avoid flickering, or maybe just for table?
+        // User said "refresh the table". If we set loading=true, the whole component replaces with spinner (line 267).
+        // Better to separate initial loading from refresh loading?
+        // Or just let it be fast.
 
-                const clientIds = c.map(client => client._id);
+        try {
+            const [c, team] = await Promise.all([
+                getClients(currentUser.role === 'super-admin' ? {} : { managerId: currentUser._id }),
+                getTeamMembers()
+            ]);
 
-                // Fetch tasks assigned to me OR tasks for my clients
-                const taskFilter = currentUser.role === 'super-admin'
-                    ? {}
-                    : {
-                        $or: [
-                            { 'assignee.id': currentUser._id },
-                            { clientId: { $in: clientIds } }
-                        ]
-                    };
+            const clientIds = c.map(client => client._id);
 
-                const t = await getTasks(taskFilter);
+            // Fetch tasks assigned to me OR tasks for my clients
+            const taskFilter = currentUser.role === 'super-admin'
+                ? {}
+                : {
+                    $or: [
+                        { 'assignee.id': currentUser._id },
+                        { clientId: { $in: clientIds } }
+                    ]
+                };
 
-                // Deduplicate data to avoid key errors
-                const uniqueClients = Array.from(new Map(c.map(item => [String(item._id), item])).values());
-                const uniqueTasks = Array.from(new Map(t.map(item => [String(item._id || item.id), item])).values());
+            const t = await getTasks(taskFilter);
 
-                // Ensure clients have id property for consistency
-                setClients(uniqueClients.map(client => ({ ...client, id: client._id })));
-                setTeamMembers(team);
-                setTasks(uniqueTasks);
-            } catch (error) {
-                console.error("Failed to load data", error);
-                toast.error("Failed to load tasks");
-            } finally {
-                setLoading(false);
-            }
+            // Deduplicate data to avoid key errors
+            const uniqueClients = Array.from(new Map(c.map(item => [String(item._id), item])).values());
+            const uniqueTasks = Array.from(new Map(t.map(item => [String(item._id || item.id), item])).values());
+
+            // Ensure clients have id property for consistency
+            setClients(uniqueClients.map(client => ({ ...client, id: client._id })));
+            setTeamMembers(team);
+            setTasks(uniqueTasks);
+        } catch (error) {
+            console.error("Failed to load data", error);
+            toast.error("Failed to refresh tasks");
         }
-        loadData();
+    };
+
+    useEffect(() => {
+        if (currentUser) {
+            setLoading(true);
+            fetchTasks().finally(() => setLoading(false));
+        }
     }, [currentUser]);
 
     // Get current week number
@@ -189,7 +192,7 @@ const AdminTasksTab = ({ currentUser }) => {
 
             const savedTask = await upsertTask(taskPayload);
             if (savedTask) {
-                setTasks(prev => [savedTask, ...prev]);
+                await fetchTasks();
                 setShowCreateTask(false);
                 resetNewTaskForm();
                 toast.success("Task created");
@@ -231,12 +234,12 @@ const AdminTasksTab = ({ currentUser }) => {
                 },
                 owner: showEditTask.owner,
                 dueDate: showEditTask.dueDate,
-                planForWeek: showEditTask.planForWeek,
+                planForWeek: showEditTask.planForWeek || getCurrentWeek(),
             };
 
             const updatedTask = await upsertTask(taskPayload);
             if (updatedTask) {
-                setTasks(prev => prev.map(t => (t._id === updatedTask._id || t.id === updatedTask.id) ? updatedTask : t));
+                await fetchTasks();
                 setShowEditTask(null);
                 toast.success("Task updated");
             }
@@ -252,7 +255,7 @@ const AdminTasksTab = ({ currentUser }) => {
         try {
             const res = await deleteTask(id);
             if (res.success) {
-                setTasks(prev => prev.filter(t => (t._id || t.id) !== id));
+                await fetchTasks();
                 toast.success("Task deleted");
             } else {
                 toast.error("Failed to delete task");
@@ -477,8 +480,8 @@ const AdminTasksTab = ({ currentUser }) => {
                                     No tasks found.
                                 </TableCell>
                             </TableRow>
-                        ) : filteredTasks.map((task) => (
-                            <TableRow key={task._id || task.id}>
+                        ) : filteredTasks.map((task, index) => (
+                            <TableRow key={task._id ? `${task._id}-${index}` : index}>
                                 <TableCell>
                                     <div>
                                         <p className="font-medium">{task.title}</p>
@@ -498,7 +501,7 @@ const AdminTasksTab = ({ currentUser }) => {
                                         onValueChange={async (v) => {
                                             try {
                                                 await upsertTask({ id: task._id || task.id, status: v });
-                                                setTasks(prev => prev.map(t => (t._id === task._id || t.id === task.id) ? { ...t, status: v } : t));
+                                                await fetchTasks();
                                                 toast.success("Status updated");
                                             } catch (error) {
                                                 console.error(error);
@@ -529,7 +532,8 @@ const AdminTasksTab = ({ currentUser }) => {
                                                 ...task,
                                                 relatedTo: (task.clientId || task.client?.id)?.toString(),
                                                 isHighPriority: task.priority === 'High',
-                                                isCompleted: task.status === 'Completed'
+                                                isCompleted: task.status === 'Completed',
+                                                planForWeek: task.planForWeek || getCurrentWeek()
                                             };
                                             setShowEditTask(normalizedTask);
                                         }}>

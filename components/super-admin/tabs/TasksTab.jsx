@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Plus, Eye, Upload, Edit, Clock, X, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import TaskDetailsDialog from "@/components/dashboard/TaskDetailsDialog";
 
 import { getTasks } from "@/lib/actions/task";
 import { getUsers } from "@/lib/actions/user";
-import { upsertTask, deleteTask, getTeamMembers } from "@/lib/actions/admin";
+import { upsertTask, deleteTask, getTeamMembers, getClients } from "@/lib/actions/admin";
 import { toast } from "sonner";
 import {
     AlertDialog,
@@ -23,8 +23,19 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
 import { Trash2 } from "lucide-react";
 import { ScrollableContainer } from "@/components/ui/scrollable-container";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
+import * as XLSX from "xlsx";
 
 // Generate week numbers 1-52
 const weekNumbers = Array.from({ length: 52 }, (_, i) => ({
@@ -43,45 +54,60 @@ const SuperAdminTasksTab = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [taskToDelete, setTaskToDelete] = useState(null);
 
+    // Bulk Upload State
+    const [showBulkPreview, setShowBulkPreview] = useState(false);
+    const [bulkTasks, setBulkTasks] = useState([]);
+    const [isBulkUploading, setIsBulkUploading] = useState(false);
+    const fileInputRef = useRef(null);
+
     // Filters
     const [statusFilter, setStatusFilter] = useState("all");
     const [managerFilter, setManagerFilter] = useState("all");
     const [priorityFilter, setPriorityFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
 
-    useEffect(() => {
-        async function loadData() {
-            setLoading(true);
-            try {
-                const [tasksRes, clientsRes, teamRes] = await Promise.all([
-                    getTasks({}),
-                    getUsers({ role: 'client' }),
-                    getTeamMembers()
-                ]);
+    const fetchTasks = async (showLoading = false) => {
+        if (showLoading) setLoading(true);
+        try {
+            // We can optimize to fetch only tasks if we want "refresh table only"
+            // But to be consistent with "loadData", I'll fetch everything or at least tasks.
+            // User asked "refresh the table only". Table depends on `tasks`.
+            // But `tasks` might depend on `clients` / `team` for names if not populated?
+            // `tasks` usually comes populated from `getTasks`.
+            // Let's refetch everything to be safe but lightweight.
 
-                if (tasksRes.tasks) setTasks(tasksRes.tasks);
-                if (clientsRes.users) {
-                    // Normalize client data to ensure consistent id/name access
-                    const normalizedClients = clientsRes.users.map(c => ({
-                        ...c,
-                        id: c._id || c.id
-                    }));
-                    setClients(normalizedClients);
-                }
-                if (teamRes) {
-                    const normalizedAdmins = teamRes.map(a => ({
-                        ...a,
-                        id: a._id || a.id
-                    }));
-                    setManagers(normalizedAdmins);
-                }
-            } catch (error) {
-                console.error("Error loading tasks data:", error);
-            } finally {
-                setLoading(false);
+            const [tasksRes, clientsRes, teamRes] = await Promise.all([
+                getTasks({}),
+                getClients({}),
+                getTeamMembers()
+            ]);
+
+            if (tasksRes.tasks) setTasks(tasksRes.tasks);
+            // Updating clients/managers is also good in case users changed
+            if (clientsRes) {
+                const normalizedClients = clientsRes.map(c => ({
+                    ...c,
+                    id: c._id || c.id
+                }));
+                setClients(normalizedClients);
             }
+            if (teamRes) {
+                const normalizedAdmins = teamRes.map(a => ({
+                    ...a,
+                    id: a._id || a.id
+                }));
+                setManagers(normalizedAdmins);
+            }
+        } catch (error) {
+            console.error("Error loading tasks data:", error);
+            toast.error("Failed to refresh tasks");
+        } finally {
+            if (showLoading) setLoading(false);
         }
-        loadData();
+    };
+
+    useEffect(() => {
+        fetchTasks(true);
     }, []);
 
     // Helper to get initials
@@ -124,6 +150,17 @@ const SuperAdminTasksTab = () => {
         });
     }, [searchQuery, statusFilter, managerFilter, priorityFilter, tasks]);
 
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, statusFilter, managerFilter, priorityFilter]);
+
+    const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
+    const paginatedTasks = filteredTasks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
     const resetNewTaskForm = () => {
         setNewTask({
             title: "",
@@ -140,14 +177,16 @@ const SuperAdminTasksTab = () => {
 
     // Filter available clients based on selected manager (owner)
     const availableClients = useMemo(() => {
-        if (!newTask.ownerId) return clients;
-        // Filter clients who are assigned to this manager ownerId
+        if (!newTask.ownerId && !newTask.owner) return clients;
+        // Filter clients who are assigned to this manager ownerId or name
         return clients.filter(c =>
             c.managerId === newTask.ownerId ||
             (c.manager && c.manager.id === newTask.ownerId) ||
-            (c.manager && c.manager === newTask.ownerId)
+            (c.manager && c.manager === newTask.ownerId) ||
+            (c.manager === newTask.owner) ||
+            (c.manager && c.manager.name === newTask.owner)
         );
-    }, [newTask.ownerId, clients]);
+    }, [newTask.ownerId, newTask.owner, clients]);
 
     // Auto-select manager when client is selected
     const handleClientChange = (clientId) => {
@@ -156,9 +195,13 @@ const SuperAdminTasksTab = () => {
 
         if (client) {
             // Try to find the manager for this client
-            const managerId = client.managerId || (client.manager?.id) || (typeof client.manager === 'string' ? client.manager : null);
-            if (managerId) {
-                const manager = managers.find(m => m.id === managerId);
+            const managerIdOrName = client.managerId || (client.manager?.id) || (typeof client.manager === 'string' ? client.manager : null);
+            if (managerIdOrName) {
+                let manager = managers.find(m => m.id === managerIdOrName);
+                if (!manager) {
+                    manager = managers.find(m => m.name === managerIdOrName);
+                }
+
                 if (manager) {
                     updates.owner = manager.name;
                     updates.ownerId = manager.id;
@@ -171,13 +214,17 @@ const SuperAdminTasksTab = () => {
     // Filter available clients for Edit Task based on selected manager (owner)
     const editAvailableClients = useMemo(() => {
         const ownerId = showEditTask?.ownerId || showEditTask?.assignee?.id;
-        if (!ownerId) return clients;
+        const ownerName = showEditTask?.owner || showEditTask?.assignee?.name;
+
+        if (!ownerId && !ownerName) return clients;
         return clients.filter(c =>
             c.managerId === ownerId ||
             (c.manager && c.manager.id === ownerId) ||
-            (c.manager && c.manager === ownerId)
+            (c.manager && c.manager === ownerId) ||
+            (c.manager === ownerName) ||
+            (c.manager && c.manager.name === ownerName)
         );
-    }, [showEditTask?.ownerId, showEditTask?.assignee?.id, clients]);
+    }, [showEditTask?.ownerId, showEditTask?.assignee?.id, showEditTask?.owner, showEditTask?.assignee?.name, clients]);
 
     // Auto-select manager when client is selected in Edit Task
     const handleEditClientChange = (clientId) => {
@@ -185,9 +232,13 @@ const SuperAdminTasksTab = () => {
         let updates = { relatedTo: clientId };
 
         if (client) {
-            const managerId = client.managerId || (client.manager?.id) || (typeof client.manager === 'string' ? client.manager : null);
-            if (managerId) {
-                const manager = managers.find(m => m.id === managerId);
+            const managerIdOrName = client.managerId || (client.manager?.id) || (typeof client.manager === 'string' ? client.manager : null);
+            if (managerIdOrName) {
+                let manager = managers.find(m => m.id === managerIdOrName);
+                if (!manager) {
+                    manager = managers.find(m => m.name === managerIdOrName);
+                }
+
                 if (manager) {
                     updates.owner = manager.name;
                     updates.ownerId = manager.id;
@@ -231,7 +282,7 @@ const SuperAdminTasksTab = () => {
 
             const savedTask = await upsertTask(taskPayload);
             if (savedTask) {
-                setTasks(prev => [savedTask, ...prev]);
+                await fetchTasks();
                 setShowCreateTask(false);
                 resetNewTaskForm();
                 toast.success("Task created");
@@ -274,12 +325,12 @@ const SuperAdminTasksTab = () => {
                 },
                 owner: showEditTask.owner,
                 dueDate: showEditTask.dueDate,
-                planForWeek: showEditTask.planForWeek,
+                planForWeek: showEditTask.planForWeek || getCurrentWeek(),
             };
 
             const updatedTask = await upsertTask(taskPayload);
             if (updatedTask) {
-                setTasks(prev => prev.map(t => (t._id === updatedTask._id || t.id === updatedTask.id) ? updatedTask : t));
+                await fetchTasks();
                 setShowEditTask(null);
                 toast.success("Task updated");
             }
@@ -295,15 +346,155 @@ const SuperAdminTasksTab = () => {
         try {
             const res = await deleteTask(id);
             if (res.success) {
-                setTasks(prev => prev.filter(t => (t._id || t.id) !== id));
-                toast.success("Task deleted");
+                await fetchTasks();
                 setTaskToDelete(null);
+                toast.success("Task deleted");
             } else {
                 toast.error("Failed to delete task");
             }
         } catch (error) {
             console.error(error);
             toast.error("Error deleting task");
+        }
+    };
+
+    // Bulk Upload Handlers
+    const normalizeStatus = (status) => {
+        const s = (status || "").toLowerCase().trim();
+        if (s.includes("do") || s.includes("todo")) return "To Do";
+        if (s.includes("progress")) return "In Progress";
+        if (s.includes("review")) return "In Review";
+        if (s.includes("complete") || s.includes("done")) return "Completed";
+        if (s.includes("hold")) return "On Hold";
+        return "To Do";
+    };
+
+    const normalizePriority = (priority) => {
+        const p = (priority || "").toLowerCase().trim();
+        if (p === "high" || p === "urgent") return "High";
+        if (p === "low") return "Low";
+        return "Medium";
+    };
+
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: "array" });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                // Map excel data to task format
+                const mappedTasks = jsonData.map(row => {
+                    const normalizedRow = {};
+                    Object.keys(row).forEach(key => {
+                        normalizedRow[key.toLowerCase().trim()] = row[key];
+                    });
+
+                    return {
+                        title: normalizedRow['title'] || normalizedRow['task name'] || "Untitled Task",
+                        description: normalizedRow['description'] || "",
+                        status: normalizeStatus(normalizedRow['status']),
+                        priority: normalizePriority(normalizedRow['priority']),
+                        dueDate: normalizedRow['due date'] || normalizedRow['duedate'] || "",
+                        planForWeek: normalizedRow['week'] || normalizedRow['plan for week'] || getCurrentWeek(),
+                        clientName: normalizedRow['client'] || normalizedRow['related to'] || "",
+                        ownerName: normalizedRow['owner'] || normalizedRow['manager'] || normalizedRow['assignee'] || ""
+                    };
+                });
+
+                setBulkTasks(mappedTasks);
+                setShowBulkPreview(true);
+            } catch (error) {
+                console.error("Error parsing Excel:", error);
+                toast.error("Failed to parse Excel file");
+            }
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    const handleBulkUploadConfirm = async () => {
+        if (bulkTasks.length === 0) return;
+        setIsBulkUploading(true);
+        let successCount = 0;
+        let failCount = 0;
+
+        try {
+            if (clients.length === 0) {
+                console.error("No clients loaded in state. Cannot perform bulk upload.");
+                toast.error("Client data not loaded. Please refresh the page.");
+                setIsBulkUploading(false);
+                return;
+            }
+
+            for (const task of bulkTasks) {
+                const searchName = (task.clientName || "").toLowerCase().trim();
+
+                const client = clients.find(c => {
+                    const nameMatch = c.name && c.name.toLowerCase().trim() === searchName;
+                    const companyMatch = c.company && c.company.toLowerCase().trim() === searchName;
+                    return nameMatch || companyMatch;
+                });
+
+                const manager = managers.find(m =>
+                    m.name && m.name.toLowerCase().trim() === (task.ownerName || "").toLowerCase().trim()
+                );
+
+                if (!client) {
+                    console.error(`Client NOT FOUND for: "${task.clientName}"`);
+                    console.log(`Current Clients in memory (${clients.length}):`, clients.map(c => `"${c.name}" / "${c.company}"`).join(' | '));
+                    failCount++;
+                    continue;
+                }
+
+                const taskPayload = {
+                    title: task.title,
+                    description: task.description,
+                    status: task.status,
+                    priority: task.priority,
+                    dueDate: task.dueDate,
+                    planForWeek: task.planForWeek ? String(task.planForWeek) : getCurrentWeek(),
+                    clientId: client.id,
+                    client: {
+                        id: client.id,
+                        name: client.name,
+                        company: client.company
+                    },
+                    owner: manager ? manager.name : (task.ownerName || "Unassigned"),
+                    assignee: manager ? { name: manager.name, id: manager.id } : null,
+                    ownerId: manager ? manager.id : null
+                };
+
+                try {
+                    const result = await upsertTask(taskPayload);
+                    if (result) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                } catch (err) {
+                    console.error("Failed to create specific task", err);
+                    failCount++;
+                }
+            }
+
+            if (successCount > 0) toast.success(`Bulk upload complete: ${successCount} tasks created`);
+            if (failCount > 0) toast.error(`${failCount} tasks failed. Check console for details.`);
+
+            setShowBulkPreview(false);
+            setBulkTasks([]);
+            fetchTasks();
+        } catch (error) {
+            console.error("Bulk upload error:", error);
+            toast.error("Bulk upload failed");
+        } finally {
+            setIsBulkUploading(false);
         }
     };
 
@@ -324,9 +515,16 @@ const SuperAdminTasksTab = () => {
                     <p className="text-muted-foreground">View and manage all tasks across the platform.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline">
+                    <input
+                        type="file"
+                        accept=".xlsx, .xls"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                    />
+                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
                         <Upload className="h-4 w-4 mr-2" />
-                        Upload Deliverable
+                        Bulk Upload Tasks
                     </Button>
                     <Button onClick={() => setShowCreateTask(true)}>
                         <Plus className="h-4 w-4 mr-2" />
@@ -530,8 +728,8 @@ const SuperAdminTasksTab = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredTasks.length > 0 ? filteredTasks.map((task) => (
-                            <TableRow key={task._id}>
+                        {paginatedTasks.length > 0 ? paginatedTasks.map((task, index) => (
+                            <TableRow key={task._id ? `${task._id}-${index}` : index}>
                                 <TableCell>
                                     <div>
                                         <p className="font-medium">{task.title}</p>
@@ -551,7 +749,7 @@ const SuperAdminTasksTab = () => {
                                         onValueChange={async (v) => {
                                             try {
                                                 await upsertTask({ id: task._id || task.id, status: v });
-                                                setTasks(prev => prev.map(t => (t._id === task._id || t.id === task.id) ? { ...t, status: v } : t));
+                                                await fetchTasks();
                                                 toast.success("Status updated");
                                             } catch (error) {
                                                 console.error(error);
@@ -592,7 +790,8 @@ const SuperAdminTasksTab = () => {
                                                 owner: task.assignee?.name || task.owner,
                                                 ownerId: task.assignee?.id,
                                                 isHighPriority: task.priority === 'High',
-                                                isCompleted: task.status === 'Completed'
+                                                isCompleted: task.status === 'Completed',
+                                                planForWeek: task.planForWeek || getCurrentWeek()
                                             };
                                             setShowEditTask(normalizedTask);
                                         }}>
@@ -614,162 +813,302 @@ const SuperAdminTasksTab = () => {
                     </TableBody>
                 </Table>
             </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="mt-4">
+                    <Pagination>
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        if (currentPage > 1) setCurrentPage(p => p - 1);
+                                    }}
+                                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                />
+                            </PaginationItem>
+
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                                if (
+                                    totalPages <= 7 ||
+                                    page === 1 ||
+                                    page === totalPages ||
+                                    (page >= currentPage - 1 && page <= currentPage + 1)
+                                ) {
+                                    return (
+                                        <PaginationItem key={page}>
+                                            <PaginationLink
+                                                href="#"
+                                                isActive={page === currentPage}
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    setCurrentPage(page);
+                                                }}
+                                            >
+                                                {page}
+                                            </PaginationLink>
+                                        </PaginationItem>
+                                    );
+                                } else if (
+                                    (page === currentPage - 2 && currentPage > 3) ||
+                                    (page === currentPage + 2 && currentPage < totalPages - 2)
+                                ) {
+                                    return (
+                                        <PaginationItem key={page}>
+                                            <PaginationEllipsis />
+                                        </PaginationItem>
+                                    );
+                                }
+                                return null;
+                            })}
+
+                            <PaginationItem>
+                                <PaginationNext
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        if (currentPage < totalPages) setCurrentPage(p => p + 1);
+                                    }}
+                                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
+            )}
+
+
+
+            {/* Bulk Preview Modal */}
+            {
+                showBulkPreview && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowBulkPreview(false)}>
+                        <ScrollableContainer className="bg-card rounded-xl border p-6 w-full max-w-4xl animate-in zoom-in-95" maxHeight="90vh" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="font-heading font-semibold text-lg">Preview Bulk Tasks ({bulkTasks.length})</h3>
+                                <Button variant="ghost" size="sm" onClick={() => setShowBulkPreview(false)}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+
+                            <div className="border rounded-md overflow-hidden mb-6">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Title</TableHead>
+                                            <TableHead>Client (CSV)</TableHead>
+                                            <TableHead>Manager (CSV)</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead>Priority</TableHead>
+                                            <TableHead>Due Date</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {bulkTasks.slice(0, 10).map((task, idx) => (
+                                            <TableRow key={idx}>
+                                                <TableCell className="font-medium">{task.title}</TableCell>
+                                                <TableCell>
+                                                    {task.clientName}
+                                                    {!clients.find(c =>
+                                                        (c.name?.toLowerCase().trim() === task.clientName?.toLowerCase().trim()) ||
+                                                        (c.company?.toLowerCase().trim() === task.clientName?.toLowerCase().trim())
+                                                    ) && (
+                                                            <span className="text-destructive ml-1 text-xs">(Not Found)</span>
+                                                        )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {task.ownerName}
+                                                    {!managers.find(m => m.name?.toLowerCase() === task.ownerName?.toLowerCase()) && task.ownerName && (
+                                                        <span className="text-warning ml-1 text-xs">(Not Found)</span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>{task.status}</TableCell>
+                                                <TableCell>{task.priority}</TableCell>
+                                                <TableCell>{task.dueDate}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                        {bulkTasks.length > 10 && (
+                                            <TableRow>
+                                                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                                                    ... and {bulkTasks.length - 10} more rows
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+
+                            <div className="flex justify-end gap-2">
+                                <Button variant="outline" onClick={() => setShowBulkPreview(false)}>Cancel</Button>
+                                <Button onClick={handleBulkUploadConfirm} disabled={isBulkUploading}>
+                                    {isBulkUploading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
+                                    Upload {bulkTasks.length} Tasks
+                                </Button>
+                            </div>
+                        </ScrollableContainer>
+                    </div>
+                )
+            }
+
 
             {/* Edit Task Modal */}
-            {showEditTask && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowEditTask(null)}>
-                    <ScrollableContainer className="bg-card rounded-xl border p-6 w-full max-w-2xl animate-in zoom-in-95" maxHeight="90vh" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="font-heading font-semibold text-lg">Edit Task</h3>
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm text-muted-foreground">Assigned To</span>
+            {
+                showEditTask && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowEditTask(null)}>
+                        <ScrollableContainer className="bg-card rounded-xl border p-6 w-full max-w-2xl animate-in zoom-in-95" maxHeight="90vh" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="font-heading font-semibold text-lg">Edit Task</h3>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-muted-foreground">Assigned To</span>
+                                        <Select
+                                            value={showEditTask.ownerId || showEditTask.assignee?.id || ""}
+                                            onValueChange={(id) => {
+                                                const member = managers.find(m => m.id === id);
+                                                if (member) {
+                                                    setShowEditTask(prev => ({
+                                                        ...prev,
+                                                        ownerId: id,
+                                                        owner: member.name,
+                                                        assignee: { ...prev.assignee, id: id, name: member.name }
+                                                    }));
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-[180px]">
+                                                <SelectValue placeholder={showEditTask.owner || "Select Manager"} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {managers.map(admin => (
+                                                    <SelectItem key={admin.id} value={admin.id}>{admin.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <Button variant="ghost" size="sm" onClick={() => setShowEditTask(null)}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-5">
+                                <div className="flex items-center gap-4">
+                                    <label className="text-sm font-medium w-32 text-right">Task Name</label>
+                                    <Input
+                                        className="flex-1"
+                                        value={showEditTask.title}
+                                        onChange={(e) => setShowEditTask({ ...showEditTask, title: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <label className="text-sm font-medium w-32 text-right">Due Date</label>
+                                    <Input
+                                        type="date"
+                                        className="flex-1"
+                                        value={showEditTask.dueDate || ""}
+                                        onChange={(e) => setShowEditTask({ ...showEditTask, dueDate: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <label className="text-sm font-medium w-32 text-right">Plan for the week</label>
                                     <Select
-                                        value={showEditTask.ownerId || showEditTask.assignee?.id || ""}
-                                        onValueChange={(id) => {
-                                            const member = managers.find(m => m.id === id);
-                                            if (member) {
-                                                setShowEditTask(prev => ({
-                                                    ...prev,
-                                                    ownerId: id,
-                                                    owner: member.name,
-                                                    assignee: { ...prev.assignee, id: id, name: member.name }
-                                                }));
-                                            }
-                                        }}
+                                        value={showEditTask.planForWeek || getCurrentWeek()}
+                                        onValueChange={(v) => setShowEditTask({ ...showEditTask, planForWeek: v })}
                                     >
-                                        <SelectTrigger className="w-[180px]">
-                                            <SelectValue placeholder={showEditTask.owner || "Select Manager"} />
+                                        <SelectTrigger className="flex-1">
+                                            <SelectValue placeholder="Select week" />
                                         </SelectTrigger>
-                                        <SelectContent>
-                                            {managers.map(admin => (
-                                                <SelectItem key={admin.id} value={admin.id}>{admin.name}</SelectItem>
+                                        <SelectContent className="max-h-[300px]">
+                                            {weekNumbers.map(week => (
+                                                <SelectItem key={week.value} value={week.value}>{week.label}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <Button variant="ghost" size="sm" onClick={() => setShowEditTask(null)}>
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
 
-                        <div className="space-y-5">
-                            <div className="flex items-center gap-4">
-                                <label className="text-sm font-medium w-32 text-right">Task Name</label>
-                                <Input
-                                    className="flex-1"
-                                    value={showEditTask.title}
-                                    onChange={(e) => setShowEditTask({ ...showEditTask, title: e.target.value })}
-                                />
-                            </div>
+                                <div className="flex items-center gap-4">
+                                    <label className="text-sm font-medium w-32 text-right">Related To</label>
+                                    <Select
+                                        value={showEditTask.relatedTo}
+                                        onValueChange={handleEditClientChange}
+                                    >
+                                        <SelectTrigger className="flex-1">
+                                            <SelectValue placeholder="Select client" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {editAvailableClients.map(c => (
+                                                <SelectItem key={c.id} value={c.id.toString()}>{c.company || c.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
 
-                            <div className="flex items-center gap-4">
-                                <label className="text-sm font-medium w-32 text-right">Due Date</label>
-                                <Input
-                                    type="date"
-                                    className="flex-1"
-                                    value={showEditTask.dueDate || ""}
-                                    onChange={(e) => setShowEditTask({ ...showEditTask, dueDate: e.target.value })}
-                                />
-                            </div>
+                                <div className="flex items-start gap-4">
+                                    <label className="text-sm font-medium w-32 text-right pt-2">Description</label>
+                                    <textarea
+                                        className="flex-1 px-3 py-2 border rounded-lg bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        rows={3}
+                                        value={showEditTask.description || ""}
+                                        onChange={(e) => setShowEditTask({ ...showEditTask, description: e.target.value })}
+                                    />
+                                </div>
 
-                            <div className="flex items-center gap-4">
-                                <label className="text-sm font-medium w-32 text-right">Plan for the week</label>
-                                <Select
-                                    value={showEditTask.planForWeek || getCurrentWeek()}
-                                    onValueChange={(v) => setShowEditTask({ ...showEditTask, planForWeek: v })}
-                                >
-                                    <SelectTrigger className="flex-1">
-                                        <SelectValue placeholder="Select week" />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-[300px]">
-                                        {weekNumbers.map(week => (
-                                            <SelectItem key={week.value} value={week.value}>{week.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                <label className="text-sm font-medium w-32 text-right">Related To</label>
-                                <Select
-                                    value={showEditTask.relatedTo}
-                                    onValueChange={handleEditClientChange}
-                                >
-                                    <SelectTrigger className="flex-1">
-                                        <SelectValue placeholder="Select client" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {editAvailableClients.map(c => (
-                                            <SelectItem key={c.id} value={c.id.toString()}>{c.company || c.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="flex items-start gap-4">
-                                <label className="text-sm font-medium w-32 text-right pt-2">Description</label>
-                                <textarea
-                                    className="flex-1 px-3 py-2 border rounded-lg bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                    rows={3}
-                                    value={showEditTask.description || ""}
-                                    onChange={(e) => setShowEditTask({ ...showEditTask, description: e.target.value })}
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                <label className="text-sm font-medium w-32 text-right"></label>
-                                <div className="flex-1 space-y-3">
-                                    <div className="flex items-center gap-6">
-                                        <div className="flex-1">
-                                            <label className="text-sm font-medium mb-1 block">Priority</label>
-                                            <Select
-                                                value={showEditTask.priority}
-                                                onValueChange={(v) => setShowEditTask({ ...showEditTask, priority: v, isHighPriority: v === 'High' })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="High">High</SelectItem>
-                                                    <SelectItem value="Medium">Medium</SelectItem>
-                                                    <SelectItem value="Low">Low</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="flex-1">
-                                            <label className="text-sm font-medium mb-1 block">Status</label>
-                                            <Select
-                                                value={showEditTask.status}
-                                                onValueChange={(v) => setShowEditTask({ ...showEditTask, status: v, isCompleted: v === 'Completed' })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="To Do">To Do</SelectItem>
-                                                    <SelectItem value="In Progress">In Progress</SelectItem>
-                                                    <SelectItem value="Completed">Completed</SelectItem>
-                                                    <SelectItem value="In Review">In Review</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                <div className="flex items-center gap-4">
+                                    <label className="text-sm font-medium w-32 text-right"></label>
+                                    <div className="flex-1 space-y-3">
+                                        <div className="flex items-center gap-6">
+                                            <div className="flex-1">
+                                                <label className="text-sm font-medium mb-1 block">Priority</label>
+                                                <Select
+                                                    value={showEditTask.priority}
+                                                    onValueChange={(v) => setShowEditTask({ ...showEditTask, priority: v, isHighPriority: v === 'High' })}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="High">High</SelectItem>
+                                                        <SelectItem value="Medium">Medium</SelectItem>
+                                                        <SelectItem value="Low">Low</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="flex-1">
+                                                <label className="text-sm font-medium mb-1 block">Status</label>
+                                                <Select
+                                                    value={showEditTask.status}
+                                                    onValueChange={(v) => setShowEditTask({ ...showEditTask, status: v, isCompleted: v === 'Completed' })}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="To Do">To Do</SelectItem>
+                                                        <SelectItem value="In Progress">In Progress</SelectItem>
+                                                        <SelectItem value="Completed">Completed</SelectItem>
+                                                        <SelectItem value="In Review">In Review</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
-                            <Button variant="outline" onClick={() => setShowEditTask(null)}>Cancel</Button>
-                            <Button onClick={handleUpdateTask} disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
-                                Save Changes
-                            </Button>
-                        </div>
-                    </ScrollableContainer>
-                </div>
-            )}
+                            <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+                                <Button variant="outline" onClick={() => setShowEditTask(null)}>Cancel</Button>
+                                <Button onClick={handleUpdateTask} disabled={isSubmitting}>
+                                    {isSubmitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+                                    Save Changes
+                                </Button>
+                            </div>
+                        </ScrollableContainer>
+                    </div>
+                )
+            }
 
             {/* Delete Confirmation */}
             <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>

@@ -10,10 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, User, Building2, Clock, AlertCircle } from "lucide-react";
+import { Calendar, User, Building2, Clock } from "lucide-react";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import { ScrollableContainer } from "@/components/ui/scrollable-container";
-import { Separator } from "@/components/ui/separator";
 
 const TaskDetailsDialog = ({ open, onOpenChange, task }) => {
     if (!task) return null;
@@ -41,7 +40,7 @@ const TaskDetailsDialog = ({ open, onOpenChange, task }) => {
         }
     };
 
-    const updates = task.updates || [];
+
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -112,35 +111,7 @@ const TaskDetailsDialog = ({ open, onOpenChange, task }) => {
                             </div>
                         </div>
 
-                        <Separator />
 
-                        {/* Task Updates / History */}
-                        <div className="space-y-4">
-                            <h4 className="text-sm font-semibold text-foreground/80">Activity & Updates</h4>
-                            {updates.length > 0 ? (
-                                <div className="relative space-y-0 pl-2 border-l-2 border-muted ml-2">
-                                    {[...updates].reverse().map((update, index) => (
-                                        <div key={index} className="relative pl-6 pb-6 last:pb-0">
-                                            <div className="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full bg-background border-2 border-primary" />
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex items-center justify-between text-xs">
-                                                    <span className="font-semibold text-foreground">{update.user || "System"}</span>
-                                                    <span className="text-muted-foreground">{formatDate(update.date)}</span>
-                                                </div>
-                                                <p className="text-sm text-foreground/80 bg-muted/20 p-2 rounded-md border mt-1">
-                                                    {update.message}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground bg-muted/10 rounded-lg border border-dashed">
-                                    <AlertCircle className="h-8 w-8 mb-2 opacity-50" />
-                                    <p className="text-sm">No updates yet.</p>
-                                </div>
-                            )}
-                        </div>
                     </div>
                 </ScrollableContainer>
 

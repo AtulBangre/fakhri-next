@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 // Custom scrollable container that works with touch, mouse wheel, arrow keys, and scrollbar
-export function ScrollableContainer({ children, className = "", maxHeight = "100%" }) {
+export function ScrollableContainer({ children, className = "", maxHeight = "100%", ...props }) {
     const containerRef = useRef(null);
 
     useEffect(() => {
@@ -71,6 +71,7 @@ export function ScrollableContainer({ children, className = "", maxHeight = "100
                 scrollbarWidth: "thin",
                 scrollbarColor: "var(--scroll-thumb, #888) transparent",
             }}
+            {...props}
         >
             {children}
         </div>

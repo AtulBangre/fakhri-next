@@ -26,6 +26,7 @@ const TaskSchema = new mongoose.Schema({
     dueDate: { type: String },
     category: { type: String },
     tags: [{ type: String }],
+    planForWeek: { type: String },
     updates: [{
         user: { type: String },
         message: { type: String },
@@ -33,4 +34,7 @@ const TaskSchema = new mongoose.Schema({
     }]
 }, { timestamps: true });
 
+if (process.env.NODE_ENV === 'development') {
+    delete mongoose.models.Task;
+}
 export default mongoose.models.Task || mongoose.model('Task', TaskSchema);
