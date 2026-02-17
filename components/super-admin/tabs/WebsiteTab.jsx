@@ -680,6 +680,7 @@ function PricingManager({ data, onUpdate, refreshData }) {
             description: formData.get("description"),
             cta: formData.get("cta"),
             period: formData.get("period"),
+            order: Number(formData.get("order")) || 0,
             highlighted: formData.get("highlighted") === "on",
             planId: currentPlan && currentPlan.planId ? currentPlan.planId : (formData.get("name") || "").toLowerCase().replace(/\s+/g, '-')
         };
@@ -749,7 +750,13 @@ function PricingManager({ data, onUpdate, refreshData }) {
                                 <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>Name</Label><Input name="name" defaultValue={currentPlan?.name} required /></div><div className="grid gap-2"><Label>Subtitle</Label><Input name="subtitle" defaultValue={currentPlan?.subtitle} /></div></div>
                                 <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>Monthly Price (e.g. ₹20,000)</Label><Input name="monthly" defaultValue={currentPlan?.prices?.monthly} required /></div></div>
                                 <div className="grid gap-2"><Label>Description</Label><Textarea name="description" defaultValue={currentPlan?.description} /></div>
-                                <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label>CTA Text</Label><Input name="cta" defaultValue={currentPlan?.cta} /></div><div className="grid gap-2"><Label>Period</Label><Input name="period" defaultValue={currentPlan?.period} /></div></div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2"><Label>CTA Text</Label><Input name="cta" defaultValue={currentPlan?.cta} /></div>
+                                    <div className="grid gap-2"><Label>Period</Label><Input name="period" defaultValue={currentPlan?.period} /></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2"><Label>Order</Label><Input type="number" name="order" defaultValue={currentPlan?.order || 0} /></div>
+                                </div>
                                 <div className="flex items-center space-x-2"><Checkbox id="highlighted" name="highlighted" defaultChecked={currentPlan?.highlighted} /><Label htmlFor="highlighted">Highlight as Popular</Label></div>
                             </form>
                         )}

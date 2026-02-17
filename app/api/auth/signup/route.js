@@ -37,6 +37,40 @@ export async function POST(req) {
             status: "active",
         });
 
+        // Send Welcome Email
+        try {
+            const { sendEmail, emailTemplates } = await import("@/lib/mail");
+            const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/client/dashboard#Plan`;
+
+            await sendEmail({
+                to: email,
+                ...emailTemplates.welcomeClient({
+                    name,
+                    dashboardUrl
+                })
+            });
+            console.log(`Welcome email sent to ${email}`);
+        } catch (mailError) {
+            console.error("Failed to send welcome email:", mailError);
+            // Don't block registration if email fails
+        }
+
+        // Create Welcome Notification in Dashboard
+        try {
+            const { createNotification } = await import("@/lib/actions/notification");
+            await createNotification({
+                recipientId: newUser._id,
+                title: "Welcome to Fakhri IT Services!",
+                message: "We're excited to have you on board. Please check out our pricing plans to get started with our premium services.",
+                type: "info",
+                link: "#Plan", // Direct link to Plan tab
+                icon: "Star",
+                skipEmail: true
+            });
+        } catch (notifError) {
+            console.error("Failed to create welcome notification:", notifError);
+        }
+
         return NextResponse.json(
             { message: "User created successfully", user: { id: newUser._id, email: newUser.email } },
             { status: 201 }

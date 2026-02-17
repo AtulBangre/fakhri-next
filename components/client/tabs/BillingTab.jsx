@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { NoPlanState } from "@/components/client/NoPlanState";
 
 const ClientBillingTab = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
@@ -176,6 +177,15 @@ const ClientBillingTab = ({ currentUser }) => {
     nextPaymentDate.setDate(1); // Set to 1st of next month
     const nextPaymentDateString = nextPaymentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
+    if (!client.plan) {
+        return (
+            <NoPlanState
+                title="Billing & Invoices"
+                message="Your billing history and invoices will appear here once you have an active subscription."
+            />
+        );
+    }
+
     return (
         <div className="space-y-6">
             <div>
@@ -190,19 +200,19 @@ const ClientBillingTab = ({ currentUser }) => {
                         <CreditCard className="h-5 w-5 text-primary" />
                         <span className="text-sm text-muted-foreground">Current Plan</span>
                     </div>
-                    <p className="text-2xl font-heading font-bold uppercase">{client.plan || "N/A"}</p>
+                    <p className="text-2xl font-heading font-bold uppercase">{client.plan || "No Active Plan"}</p>
                     <p className="text-sm font-medium text-primary">
-                        {planDetails?.prices?.monthly || "Custom Pricing"}
+                        {client.plan ? (planDetails?.prices?.monthly || "Custom Pricing") : "-"}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Status: {client.status || "Active"}</p>
+                    <p className="text-[10px] text-muted-foreground">Status: {client.plan ? (client.status || "Active") : "-"}</p>
                 </div>
                 <div className="bg-card rounded-xl border p-6">
                     <div className="flex items-center gap-3 mb-2">
                         <CreditCard className="h-5 w-5 text-primary" />
                         <span className="text-sm text-muted-foreground">Next Payment</span>
                     </div>
-                    <p className="text-2xl font-heading font-bold">{nextPaymentDateString}</p>
-                    <p className="text-sm text-muted-foreground">Monthly recurrence</p>
+                    <p className="text-2xl font-heading font-bold">{client.plan ? nextPaymentDateString : "N/A"}</p>
+                    <p className="text-sm text-muted-foreground">{client.plan ? "Monthly recurrence" : "No payment scheduled"}</p>
                 </div>
                 <div className="bg-card rounded-xl border p-6">
                     <div className="flex items-center gap-3 mb-2">

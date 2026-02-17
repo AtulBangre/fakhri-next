@@ -269,7 +269,7 @@ export default function ClientDashboardPage() {
               </div>
               <div className="flex-1 min-w-0 text-white">
                 <p className="text-sm font-medium truncate">{user?.name || "Client"}</p>
-                <p className="text-xs text-sidebar-foreground/70 truncate uppercase">{user?.plan || "Basic"} Plan</p>
+                <p className="text-xs text-sidebar-foreground/70 truncate uppercase">{user?.plan || "No"} Plan</p>
               </div>
             </div>
             <Button

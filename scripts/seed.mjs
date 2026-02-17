@@ -195,7 +195,8 @@ async function seed() {
                 text: f.text,
                 value: f.values[plan.id],
                 included: f.included.includes(plan.id)
-            }))
+            })),
+            order: plans.indexOf(plan)
         })));
         console.log(`Seeded ${plans.length} pricing plans`);
 

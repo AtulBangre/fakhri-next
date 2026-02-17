@@ -11,6 +11,7 @@ import { getTasks } from "@/lib/actions/task";
 import { getUsers } from "@/lib/actions/user";
 import { toast } from "sonner";
 import TaskDetailsDialog from "@/components/dashboard/TaskDetailsDialog";
+import { NoPlanState } from "@/components/client/NoPlanState";
 
 const ClientTasksTab = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
@@ -105,6 +106,15 @@ const ClientTasksTab = ({ currentUser }) => {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <p className="text-muted-foreground animate-pulse">Loading tasks...</p>
             </div>
+        );
+    }
+
+    if (!currentUser?.plan) {
+        return (
+            <NoPlanState
+                title="Manage Your Projects"
+                message="To access task management and track your project progress, please choose a subscription plan."
+            />
         );
     }
 

@@ -16,7 +16,8 @@ const PricingPlanSchema = new mongoose.Schema({
         text: { type: String },
         value: { type: mongoose.Schema.Types.Mixed },
         included: { type: Boolean }
-    }]
+    }],
+    order: { type: Number, default: 0 }
 }, { timestamps: true });
 
 export default mongoose.models.PricingPlan || mongoose.model('PricingPlan', PricingPlanSchema);

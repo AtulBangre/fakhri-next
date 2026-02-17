@@ -8,8 +8,11 @@ import { getPricingPlans, getCatalogServices } from "@/lib/actions/content";
 import { addClientSubscribedServices } from "@/lib/actions/user";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
+import { PricingCard } from "@/components/ui/PricingCard";
+import { useRouter } from "next/navigation";
 
 const ClientPlanTab = ({ currentUser, managerPhone, managerName }) => {
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [activeSubTab, setActiveSubTab] = useState("plan");
     const [client, setClient] = useState(null);
@@ -167,9 +170,18 @@ const ClientPlanTab = ({ currentUser, managerPhone, managerName }) => {
         return new Intl.NumberFormat('en-IN').format(price);
     };
 
-    // Mock dates
-    const startDate = client?.createdAt ? new Date(client.createdAt).toLocaleDateString() : "N/A";
-    const validUntil = client?.createdAt ? new Date(new Date(client.createdAt).setMonth(new Date(client.createdAt).getMonth() + 1)).toLocaleDateString() : "N/A";
+    // Dates & Expiry Calculation
+    // Assuming validity of 28 days from purchase/joined date
+    const purchaseDate = client?.joinedDate ? new Date(client.joinedDate) : new Date();
+    const expiryDate = new Date(purchaseDate);
+    expiryDate.setDate(expiryDate.getDate() + 28);
+
+    const today = new Date();
+    const isExpired = today > expiryDate;
+    const daysLeft = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+
+    const startDateStr = purchaseDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const validUntilStr = expiryDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
     if (loading) {
         return (
@@ -189,11 +201,28 @@ const ClientPlanTab = ({ currentUser, managerPhone, managerName }) => {
         );
     }
 
+    // SCENARIO 1: No Plan Assigned
+    if (!client.plan) {
+        return (
+            <div className="space-y-6">
+                <div>
+                    <h1 className="font-heading text-2xl font-bold mb-2">Choose Your Plan</h1>
+                    <p className="text-muted-foreground">You currently don't have an active plan. Please select one to get started.</p>
+                </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {allPlans.map((plan, index) => (
+                        <PricingCard key={plan._id || index} plan={plan} index={index} />
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             <div>
                 <h1 className="font-heading text-2xl font-bold mb-2">My Plan</h1>
-                <p className="text-muted-foreground">View your current plan details and add-on services.</p>
+                <p className="text-muted-foreground">View your current plan details and validity.</p>
             </div>
 
             {/* Sub-Tab Navigation */}
@@ -227,20 +256,48 @@ const ClientPlanTab = ({ currentUser, managerPhone, managerName }) => {
             {/* Current Plan Tab Content */}
             {activeSubTab === "plan" && (
                 <>
+                    {/* Expiry Alert */}
+                    {isExpired && (
+                        <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-destructive text-destructive-foreground rounded-full">
+                                    <BadgeCheck className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-destructive">Plan Expired</h3>
+                                    <p className="text-sm text-muted-foreground">Your {client.plan} plan expired on {validUntilStr}.</p>
+                                </div>
+                            </div>
+                            <Button onClick={() => router.push(`/checkout?plan=${currentPlan.id}`)}>
+                                Renew Plan
+                            </Button>
+                        </div>
+                    )}
+
                     {/* Current Plan Card */}
                     <div className="bg-card rounded-xl border overflow-hidden">
-                        <div className="bg-gradient-primary text-white p-6">
+                        <div className={`p-6 ${isExpired ? 'bg-gray-100 text-gray-800' : 'bg-gradient-primary text-white'}`}>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <Badge className="bg-white/20 text-white mb-2">Current Plan</Badge>
+                                    <Badge className={`${isExpired ? 'bg-gray-300 text-gray-700' : 'bg-white/20 text-white'} mb-2`}>
+                                        {isExpired ? "Expired Plan" : "Current Plan"}
+                                    </Badge>
                                     <h2 className="font-heading text-3xl font-bold uppercase">{currentPlan?.name || client.plan || "No Plan"}</h2>
-                                    <p className="text-white/80 mt-1">₹{currentPlan?.prices?.monthly || "0"} {currentPlan?.period || "/ month"}</p>
+                                    <p className={`${isExpired ? 'text-gray-600' : 'text-white/80'} mt-1`}>
+                                        ₹{currentPlan?.prices?.monthly || "0"} {currentPlan?.period || "/ month"}
+                                    </p>
                                 </div>
                                 <div className="text-right">
-                                    <div className="flex items-center gap-1 text-yellow-300 mb-2">
-                                        {[1, 2, 3, 4, 5].map((i) => (<Star key={i} className="h-4 w-4 fill-current" />))}
-                                    </div>
-                                    <p className="text-sm text-white/80">{currentPlan?.isPopular ? "Most Popular" : "Active Plan"}</p>
+                                    {isExpired ? (
+                                        <div className="flex items-center gap-1 text-gray-400 mb-2">
+                                            <Badge variant="outline" className="border-gray-400 text-gray-500">Expired</Badge>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1 text-yellow-300 mb-2">
+                                            {[1, 2, 3, 4, 5].map((i) => (<Star key={i} className="h-4 w-4 fill-current" />))}
+                                        </div>
+                                    )}
+                                    <p className={`text-sm ${isExpired ? 'text-gray-500' : 'text-white/80'}`}>{currentPlan?.isPopular ? "Most Popular" : "Active Plan"}</p>
                                 </div>
                             </div>
                         </div>
@@ -249,15 +306,16 @@ const ClientPlanTab = ({ currentUser, managerPhone, managerName }) => {
                             <div className="grid md:grid-cols-3 gap-4 mb-6">
                                 <div className="p-4 rounded-lg bg-accent/50">
                                     <p className="text-sm text-muted-foreground">Start Date</p>
-                                    <p className="font-semibold">{startDate}</p>
+                                    <p className="font-semibold">{startDateStr}</p>
                                 </div>
-                                <div className="p-4 rounded-lg bg-accent/50">
+                                <div className={`p-4 rounded-lg ${isExpired ? 'bg-destructive/10' : 'bg-accent/50'}`}>
                                     <p className="text-sm text-muted-foreground">Valid Until</p>
-                                    <p className="font-semibold">{validUntil}</p>
+                                    <p className={`font-semibold ${isExpired ? 'text-destructive' : ''}`}>{validUntilStr}</p>
+                                    {!isExpired && <p className="text-xs text-primary font-medium mt-1">{daysLeft} days left</p>}
                                 </div>
                                 <div className="p-4 rounded-lg bg-accent/50">
                                     <p className="text-sm text-muted-foreground">Account Status</p>
-                                    <p className="font-semibold capitalize text-primary">{client.status || "Active"}</p>
+                                    <p className={`font-semibold capitalize ${client.status === 'active' ? 'text-primary' : 'text-muted-foreground'}`}>{client.status || "Active"}</p>
                                 </div>
                             </div>
 
@@ -267,8 +325,8 @@ const ClientPlanTab = ({ currentUser, managerPhone, managerName }) => {
                                     currentPlan.features.map((feature, i) => (
                                         <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
                                             <div className="flex items-center gap-3">
-                                                <CheckCircle2 className="h-4 w-4 text-primary" />
-                                                <span>{feature.text}</span>
+                                                <CheckCircle2 className={`h-4 w-4 ${isExpired ? 'text-gray-400' : 'text-primary'}`} />
+                                                <span className={isExpired ? 'text-muted-foreground' : ''}>{feature.text}</span>
                                             </div>
                                         </div>
                                     ))
@@ -278,6 +336,21 @@ const ClientPlanTab = ({ currentUser, managerPhone, managerName }) => {
                             </div>
                         </div>
                     </div>
+
+                    {/* If Expired, show other plans */}
+                    {isExpired && (
+                        <div className="space-y-6 pt-6">
+                            <div>
+                                <h2 className="font-heading text-xl font-bold mb-2">Choose Other Plan</h2>
+                                <p className="text-muted-foreground">Consider upgrading or switching to a different plan.</p>
+                            </div>
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {allPlans.map((plan, index) => (
+                                    <PricingCard key={plan._id || index} plan={plan} index={index} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Subscribed Add-on Services */}
                     {subscribedServices.length > 0 && (
@@ -303,16 +376,18 @@ const ClientPlanTab = ({ currentUser, managerPhone, managerName }) => {
                         </div>
                     )}
 
-                    {/* Upgrade CTA */}
-                    <div className="bg-card rounded-xl border p-6 text-center">
-                        <h3 className="font-heading font-semibold mb-2">Need More Features?</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Upgrade your plan to get dedicated support and more features.
-                        </p>
-                        <Button className="px-6 py-2">
-                            View Upgrade Options
-                        </Button>
-                    </div>
+                    {/* Upgrade CTA (Only if active) */}
+                    {!isExpired && (
+                        <div className="bg-card rounded-xl border p-6 text-center">
+                            <h3 className="font-heading font-semibold mb-2">Need More Features?</h3>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Upgrade your plan to get dedicated support and more features.
+                            </p>
+                            <Button className="px-6 py-2" onClick={() => router.push('/pricing')}>
+                                View Upgrade Options
+                            </Button>
+                        </div>
+                    )}
                 </>
             )}
 

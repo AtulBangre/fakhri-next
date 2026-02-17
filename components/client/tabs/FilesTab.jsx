@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { NoPlanState } from "@/components/client/NoPlanState";
 
 const getFileIcon = (type) => {
     switch (type) {
@@ -111,6 +112,15 @@ const ClientFilesTab = ({ currentUser }) => {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <p className="text-muted-foreground">Loading your files...</p>
             </div>
+        );
+    }
+
+    if (!currentUser?.plan) {
+        return (
+            <NoPlanState
+                title="Project Files & Assets"
+                message="Once you start a project with us, this is where you'll find all your project files and deliverables."
+            />
         );
     }
 
