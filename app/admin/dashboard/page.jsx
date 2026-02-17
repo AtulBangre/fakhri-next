@@ -27,7 +27,10 @@ const navigation = [
   { name: "Profile", id: "Profile", icon: User },
 ];
 
+import { signOut, useSession } from "next-auth/react";
+
 export default function AdminDashboardPage() {
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -37,26 +40,13 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     const loadInitialData = async () => {
+      if (!session?.user?.email) return;
       setLoading(true);
       try {
-        // Check for email in search params (for testing/multi-admin support)
-        const params = new URLSearchParams(window.location.search);
-        const targetEmail = params.get('email') || 'k6263638053@gmail.com';
-
-        // Fetch specific admin
-        let admin = await getUserByEmail(targetEmail);
-
-        // Fallback or create if not exists
-        if (!admin && targetEmail === 'k6263638053@gmail.com') {
-          console.log("Default admin not found, falling back to first available admin");
-          const { users } = await getUsers({ role: 'admin', limit: 1 });
-          if (users && users.length > 0) {
-            admin = users[0];
-          }
-        }
+        // Fetch actual logged in admin
+        const admin = await getUserByEmail(session.user.email);
 
         if (admin) {
-          console.log("Logged in as:", admin.name);
           setCurrentUser(admin);
         }
       } catch (error) {
@@ -67,7 +57,8 @@ export default function AdminDashboardPage() {
     };
 
     loadInitialData();
-  }, []);
+  }, [session]);
+
 
   // Sync tab with URL hash
   useEffect(() => {
@@ -270,12 +261,16 @@ export default function AdminDashboardPage() {
                 <p className="text-xs text-sidebar-foreground/70 truncate">{currentUser?.adminRole || "Account Manager"}</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="w-full border-white/20 text-white bg-white/10 hover:bg-white/20 hover:text-white" asChild>
-              <Link href="/">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-white/20 text-white bg-white/10 hover:bg-white/20 hover:text-white"
+              onClick={() => signOut({ callbackUrl: "/" })}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
             </Button>
+
           </div>
         </div>
       </aside>

@@ -17,10 +17,27 @@ import { formatINR } from "@/lib/utils";
  * @param {"public" | "dashboard"} props.variant - "public" shows total amount in trigger & checkout button; "dashboard" shows compact trigger & request quote button.
  * @param {string} props.emptyMessage - Custom empty cart message.
  */
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
 export default function CartDropdown({ variant = "dashboard", emptyMessage }) {
+    const { data: session } = useSession();
+    const router = useRouter();
     const { cartItems, removeFromCart, updateQuantity, totalItems, totalAmount } = useCart();
 
     const isPublic = variant === "public";
+
+    const handleCheckout = () => {
+        if (isPublic) {
+            if (!session) {
+                router.push('/login?role=client&callbackUrl=/checkout');
+            } else {
+                router.push('/checkout');
+            }
+        } else {
+            router.push('/contact');
+        }
+    };
 
     return (
         <DropdownMenu>
@@ -123,23 +140,13 @@ export default function CartDropdown({ variant = "dashboard", emptyMessage }) {
                         </div>
                         <Button
                             className="w-full"
-                            onClick={() => {
-                                if (isPublic) {
-                                    const isLoggedIn = false; // TODO: Replace with actual auth check
-                                    if (!isLoggedIn) {
-                                        window.location.href = '/auth/login?redirect=/checkout';
-                                    } else {
-                                        window.location.href = '/checkout';
-                                    }
-                                } else {
-                                    window.location.href = '/contact';
-                                }
-                            }}
+                            onClick={handleCheckout}
                         >
                             {isPublic ? "Checkout" : "Request Quote"}
                         </Button>
                     </div>
                 )}
+
             </DropdownMenuContent>
         </DropdownMenu>
     );

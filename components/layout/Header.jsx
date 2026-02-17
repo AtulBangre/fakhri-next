@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import CartDropdown from '@/components/client/CartDropdown';
+import { useSession } from 'next-auth/react';
+
 
 const navigationItems = [
     { label: "Home", href: "/" },
@@ -35,11 +37,21 @@ const navigationItems = [
 import { Button } from "@/components/ui/button";
 
 export default function Header() {
+    const { data: session } = useSession();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDesktopDropdown, setActiveDesktopDropdown] = useState(null);
     const [mobileExpanded, setMobileExpanded] = useState({});
     const pathname = usePathname();
+
+    const getDashboardUrl = (role) => {
+        switch (role) {
+            case 'super-admin': return '/super-admin/dashboard';
+            case 'admin': return '/admin/dashboard';
+            default: return '/client/dashboard';
+        }
+    };
+
 
 
     useEffect(() => {
@@ -169,13 +181,23 @@ export default function Header() {
                             {/* Cart Dropdown */}
                             <CartDropdown variant="public" />
 
-                            <Link
-                                href="/sign-in"
-                                className="btn-primary text-sm py-3 px-6"
-                            >
-                                Get Started
-                            </Link>
+                            {session ? (
+                                <Link
+                                    href={getDashboardUrl(session.user.role)}
+                                    className="btn-primary text-sm py-3 px-6"
+                                >
+                                    Dashboard
+                                </Link>
+                            ) : (
+                                <Link
+                                    href="/login"
+                                    className="btn-primary text-sm py-3 px-6"
+                                >
+                                    Get Started
+                                </Link>
+                            )}
                         </div>
+
 
                         {/* Mobile Menu Button */}
                         <button
@@ -282,13 +304,25 @@ export default function Header() {
                                     transition={{ delay: navigationItems.length * 0.05 }}
                                     className="pt-4"
                                 >
-                                    <Link
-                                        href="/contact"
-                                        className="btn-primary w-full text-center"
-                                    >
-                                        Get Started
-                                    </Link>
+                                    {session ? (
+                                        <Link
+                                            href={getDashboardUrl(session.user.role)}
+                                            className="btn-primary w-full text-center"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                        >
+                                            Dashboard
+                                        </Link>
+                                    ) : (
+                                        <Link
+                                            href="/login"
+                                            className="btn-primary w-full text-center"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                        >
+                                            Get Started
+                                        </Link>
+                                    )}
                                 </motion.div>
+
                             </nav>
                         </motion.div>
                     </>

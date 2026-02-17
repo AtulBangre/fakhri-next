@@ -13,6 +13,7 @@ import NotificationDropdown from "@/components/ui/NotificationDropdown";
 import { markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, clearAllNotifications } from "@/lib/actions/notification";
 import { getUsers, updateUser } from "@/lib/actions/user";
 import useNotificationPolling from "@/hooks/useNotificationPolling";
+import { signOut, useSession } from "next-auth/react";
 
 // Import Tabs
 import SuperAdminDashboardTab from "@/components/super-admin/tabs/DashboardTab";
@@ -38,6 +39,7 @@ const navigation = [
 ];
 
 export default function SuperAdminDashboardPage() {
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -46,13 +48,13 @@ export default function SuperAdminDashboardPage() {
 
   useEffect(() => {
     const loadInitialData = async () => {
+      if (!session?.user?.email) return;
       setLoading(true);
       try {
-        // Fetch first super-admin for demo purposes
-        const { users } = await getUsers({ role: 'super-admin', limit: 1 });
+        // Fetch actual logged in super-admin
+        const { users } = await getUsers({ email: session.user.email, limit: 1 });
         if (users && users.length > 0) {
-          const sa = users[0];
-          setCurrentUser(sa);
+          setCurrentUser(users[0]);
         }
       } catch (error) {
         console.error("Error loading super admin dashboard data:", error);
@@ -62,7 +64,9 @@ export default function SuperAdminDashboardPage() {
     };
 
     loadInitialData();
-  }, []);
+  }, [session]);
+
+
 
   // Real-time notification polling
   const handleNotificationsUpdate = useCallback((data) => {
@@ -238,12 +242,17 @@ export default function SuperAdminDashboardPage() {
                 <p className="text-xs text-sidebar-foreground/70 truncate">Super Administrator</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="w-full border-white/20 text-white bg-white/10" asChild>
-              <Link href="/">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-white/20 text-white bg-white/10"
+              onClick={() => signOut({ callbackUrl: "/" })}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
             </Button>
+
+
           </div>
         </div>
       </aside>

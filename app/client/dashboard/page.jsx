@@ -32,7 +32,10 @@ const navigation = [
   { name: "Profile", id: "Profile", icon: User },
 ];
 
+import { signOut, useSession } from "next-auth/react";
+
 export default function ClientDashboardPage() {
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -44,19 +47,11 @@ export default function ClientDashboardPage() {
 
   useEffect(() => {
     const loadInitialData = async () => {
+      if (!session?.user?.email) return;
       setLoading(true);
       try {
-        // Fetch specific client: Alex
-        let currentUser = await getUserByEmail('mauryatech7@gmail.com');
-
-        // Fallback or create if not exists
-        if (!currentUser) {
-          console.log("Alex not found, falling back to first client");
-          const { users } = await getUsers({ role: 'client', limit: 1 });
-          if (users && users.length > 0) {
-            currentUser = users[0];
-          }
-        }
+        // Fetch actual logged in client
+        let currentUser = await getUserByEmail(session.user.email);
 
         if (currentUser) {
           setUser(currentUser);
@@ -90,7 +85,8 @@ export default function ClientDashboardPage() {
     };
 
     loadInitialData();
-  }, []);
+  }, [session]);
+
 
   // Sync tab with URL hash
   useEffect(() => {
@@ -276,12 +272,16 @@ export default function ClientDashboardPage() {
                 <p className="text-xs text-sidebar-foreground/70 truncate uppercase">{user?.plan || "Basic"} Plan</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="w-full border-white/20 text-white bg-white/10 hover:bg-white/20 hover:text-white" asChild>
-              <Link href="/">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-white/20 text-white bg-white/10 hover:bg-white/20 hover:text-white"
+              onClick={() => signOut({ callbackUrl: "/" })}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
             </Button>
+
           </div>
         </div>
       </aside>

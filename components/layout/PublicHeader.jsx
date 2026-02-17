@@ -39,13 +39,24 @@ const navigationItems = [
   { label: "Contact", href: "/contact" },
 ];
 
+import { useSession, signOut } from "next-auth/react";
+
 const PublicHeader = () => {
+  const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
   const isActive = (href) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
+  };
+
+  const getDashboardUrl = (role) => {
+    switch (role) {
+      case 'super-admin': return '/super-admin/dashboard';
+      case 'admin': return '/admin/dashboard';
+      default: return '/client/dashboard';
+    }
   };
 
   return (
@@ -91,13 +102,22 @@ const PublicHeader = () => {
 
         {/* CTA Buttons */}
         <div className="hidden lg:flex items-center gap-3">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/client/dashboard">Client Login</Link>
-          </Button>
-          <ContactDialog
-            trigger={<Button size="sm">Get Started</Button>}
-          />
+          {session ? (
+            <Button size="sm" asChild>
+              <Link href={getDashboardUrl(session.user.role)}>Dashboard</Link>
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/login">Login</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/login">Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
+
 
         {/* Mobile Menu Button */}
         <button
@@ -145,13 +165,22 @@ const PublicHeader = () => {
               </div>
             ))}
             <div className="pt-4 space-y-2 border-t mt-4">
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/client/dashboard">Client Login</Link>
-              </Button>
-              <ContactDialog
-                trigger={<Button className="w-full">Get Started</Button>}
-              />
+              {session ? (
+                <Button className="w-full" asChild onClick={() => setMobileMenuOpen(false)}>
+                  <Link href={getDashboardUrl(session.user.role)}>Dashboard</Link>
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" className="w-full" asChild onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/login">Login</Link>
+                  </Button>
+                  <Button className="w-full" asChild onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/login">Get Started</Link>
+                  </Button>
+                </>
+              )}
             </div>
+
           </nav>
         </div>
       )}

@@ -6,15 +6,29 @@ import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import Link from 'next/link';
 import { ContactDialog } from '@/components/dialogs/ContactDialog';
 
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
 export const PricingCard = ({ plan, index }) => {
+    const { data: session } = useSession();
+    const router = useRouter();
+
     const handleCardClick = (e) => {
         // Don't trigger if clicking the button
-        if (e.target.closest('a')) return;
+        if (e.target.closest('button') || e.target.closest('a')) return;
 
         // Scroll to compare plans section
         const comparePlansSection = document.getElementById('compare-plans');
         if (comparePlansSection) {
             comparePlansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    const handlePurchase = () => {
+        if (!session) {
+            router.push(`/login?role=client&callbackUrl=/checkout?plan=${plan.id}`);
+        } else {
+            router.push(`/checkout?plan=${plan.id}`);
         }
     };
 
@@ -102,23 +116,21 @@ export const PricingCard = ({ plan, index }) => {
                     )}
 
                     {/* CTA */}
-                    <ContactDialog
-                        trigger={
-                            <motion.button
-                                suppressHydrationWarning
-                                className={`w-full py-4 rounded-lg font-poppins font-semibold transition-all duration-300 ${plan.highlighted
-                                    ? 'bg-background text-primary hover:bg-background/90'
-                                    : 'bg-primary text-primary-foreground hover:shadow-red'
-                                    }`}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                {plan.cta}
-                            </motion.button>
-                        }
-                    />
+                    <motion.button
+                        suppressHydrationWarning
+                        className={`w-full py-4 rounded-lg font-poppins font-semibold transition-all duration-300 ${plan.highlighted
+                            ? 'bg-background text-primary hover:bg-background/90'
+                            : 'bg-primary text-primary-foreground hover:shadow-red'
+                            }`}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handlePurchase}
+                    >
+                        {plan.cta || "Get Started"}
+                    </motion.button>
                 </div>
             </motion.div>
         </ScrollReveal>
     );
 };
+
