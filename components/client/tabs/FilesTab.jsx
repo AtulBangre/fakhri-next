@@ -115,7 +115,7 @@ const ClientFilesTab = ({ currentUser }) => {
         );
     }
 
-    if (!currentUser?.plan) {
+    if (!currentUser?.plan && allFiles.length === 0) {
         return (
             <NoPlanState
                 title="Project Files & Assets"

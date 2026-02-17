@@ -177,11 +177,11 @@ const ClientBillingTab = ({ currentUser }) => {
     nextPaymentDate.setDate(1); // Set to 1st of next month
     const nextPaymentDateString = nextPaymentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-    if (!client.plan) {
+    if (!client.plan && invoices.length === 0) {
         return (
             <NoPlanState
                 title="Billing & Invoices"
-                message="Your billing history and invoices will appear here once you have an active subscription."
+                message="Your billing history and invoices will appear here once you have an active subscription or make a purchase."
             />
         );
     }
@@ -380,7 +380,7 @@ const ClientBillingTab = ({ currentUser }) => {
             </Dialog>
 
             {/* Payment Methods */}
-            <div className="bg-card rounded-xl border p-6">
+            {/* <div className="bg-card rounded-xl border p-6">
                 <h2 className="font-heading font-semibold mb-4">Payment Method</h2>
                 {client.paymentMethods?.length > 0 ? (
                     <div className="space-y-4">
@@ -441,10 +441,10 @@ const ClientBillingTab = ({ currentUser }) => {
                         <Button variant="outline" size="sm" onClick={() => setIsAddCardOpen(true)}>Add Payment Method</Button>
                     </div>
                 )}
-            </div>
+            </div> */}
 
             {/* Add Card Dialog */}
-            <Dialog open={isAddCardOpen} onOpenChange={setIsAddCardOpen}>
+            {/* <Dialog open={isAddCardOpen} onOpenChange={setIsAddCardOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Add New Payment Method</DialogTitle>
@@ -505,7 +505,7 @@ const ClientBillingTab = ({ currentUser }) => {
                         </Button>
                     </DialogFooter>
                 </DialogContent>
-            </Dialog>
+            </Dialog> */}
         </div>
     );
 };

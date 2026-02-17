@@ -109,7 +109,7 @@ const ClientTasksTab = ({ currentUser }) => {
         );
     }
 
-    if (!currentUser?.plan) {
+    if (!currentUser?.plan && tasks.length === 0) {
         return (
             <NoPlanState
                 title="Manage Your Projects"

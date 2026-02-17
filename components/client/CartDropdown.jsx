@@ -28,14 +28,10 @@ export default function CartDropdown({ variant = "dashboard", emptyMessage }) {
     const isPublic = variant === "public";
 
     const handleCheckout = () => {
-        if (isPublic) {
-            if (!session) {
-                router.push('/login?role=client&callbackUrl=/checkout');
-            } else {
-                router.push('/checkout');
-            }
+        if (!session) {
+            router.push('/login?role=client&callbackUrl=/checkout');
         } else {
-            router.push('/contact');
+            router.push('/checkout');
         }
     };
 
@@ -142,7 +138,7 @@ export default function CartDropdown({ variant = "dashboard", emptyMessage }) {
                             className="w-full"
                             onClick={handleCheckout}
                         >
-                            {isPublic ? "Checkout" : "Request Quote"}
+                            Checkout
                         </Button>
                     </div>
                 )}

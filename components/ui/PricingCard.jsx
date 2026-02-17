@@ -24,11 +24,13 @@ export const PricingCard = ({ plan, index }) => {
         }
     };
 
-    const handlePurchase = () => {
+    const handlePurchase = (e) => {
+        e.stopPropagation(); // Prevent card click event
+        const planId = plan.planId || plan._id || plan.id;
         if (!session) {
-            router.push(`/login?role=client&callbackUrl=/checkout?plan=${plan.id}`);
+            router.push(`/login?role=client&callbackUrl=/checkout?plan=${planId}`);
         } else {
-            router.push(`/checkout?plan=${plan.id}`);
+            router.push(`/checkout?plan=${planId}`);
         }
     };
 

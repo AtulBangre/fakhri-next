@@ -268,7 +268,7 @@ const ClientPlanTab = ({ currentUser, managerPhone, managerName }) => {
                                     <p className="text-sm text-muted-foreground">Your {client.plan} plan expired on {validUntilStr}.</p>
                                 </div>
                             </div>
-                            <Button onClick={() => router.push(`/checkout?plan=${currentPlan.id}`)}>
+                            <Button onClick={() => router.push(`/checkout?plan=${currentPlan.planId || currentPlan._id || currentPlan.id}`)}>
                                 Renew Plan
                             </Button>
                         </div>
@@ -376,18 +376,6 @@ const ClientPlanTab = ({ currentUser, managerPhone, managerName }) => {
                         </div>
                     )}
 
-                    {/* Upgrade CTA (Only if active) */}
-                    {!isExpired && (
-                        <div className="bg-card rounded-xl border p-6 text-center">
-                            <h3 className="font-heading font-semibold mb-2">Need More Features?</h3>
-                            <p className="text-sm text-muted-foreground mb-4">
-                                Upgrade your plan to get dedicated support and more features.
-                            </p>
-                            <Button className="px-6 py-2" onClick={() => router.push('/pricing')}>
-                                View Upgrade Options
-                            </Button>
-                        </div>
-                    )}
                 </>
             )}
 

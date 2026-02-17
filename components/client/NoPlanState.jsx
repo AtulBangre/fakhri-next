@@ -26,7 +26,7 @@ export const NoPlanState = ({ title, message, hideWhatsApp = false }) => {
                 <Button
                     className="w-full gap-2"
                     size="lg"
-                    onClick={() => router.push('/pricing')}
+                    onClick={() => router.push('#Plan')}
                 >
                     View Pricing Plans <ArrowRight className="h-4 w-4" />
                 </Button>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { LayoutDashboard, CreditCard, CheckSquare, FileText, Receipt, User, Menu, X, LogOut, HelpCircle, Loader2 } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ import { signOut, useSession } from "next-auth/react";
 
 export default function ClientDashboardPage() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -107,8 +109,14 @@ export default function ClientDashboardPage() {
     window.addEventListener('hashchange', handleHashChange);
     handleHashChange();
 
+
+    // Default to Dashboard or Billing if redirected from checkout
+    if (searchParams.get("orderSuccess") === "true") {
+      setActiveTab("Billing");
+    }
+
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [searchParams]);
 
   // Real-time notification polling
   const handleNotificationsUpdate = useCallback((data) => {

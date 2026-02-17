@@ -7,6 +7,7 @@ import { useState } from "react";
 import SmoothScrollProvider from "@/components/ui/SmoothScrollProvider";
 
 import { AuthProvider } from "@/context/AuthProvider";
+import { CartProvider } from "@/context/CartContext";
 
 export default function Providers({ children }) {
     const [queryClient] = useState(() => new QueryClient());
@@ -14,12 +15,14 @@ export default function Providers({ children }) {
     return (
         <QueryClientProvider client={queryClient}>
             <AuthProvider>
-                <TooltipProvider>
-                    <SmoothScrollProvider>
-                        {children}
-                        <Sonner />
-                    </SmoothScrollProvider>
-                </TooltipProvider>
+                <CartProvider>
+                    <TooltipProvider>
+                        <SmoothScrollProvider>
+                            {children}
+                            <Sonner />
+                        </SmoothScrollProvider>
+                    </TooltipProvider>
+                </CartProvider>
             </AuthProvider>
         </QueryClientProvider>
     );
