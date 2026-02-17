@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getClients, getTasks, upsertTask, deleteTask, getNotes, upsertNote, getAdmins } from "@/lib/actions/admin";
+import { getClients, getTasks, upsertTask, deleteTask, getNotes, upsertNote, getAdmins, sendClientEmail } from "@/lib/actions/admin";
 import { toast } from "sonner";
 import {
     AlertDialog,
@@ -86,7 +86,11 @@ const AdminClientsTab = ({ currentUser }) => {
                 const clientsWithCounts = uniqueClients.map(client => {
                     const clientTasks = uniqueTasks.filter(task => task.client?.id === client._id || task.clientId === client._id);
                     const activeCount = clientTasks.filter(task => task.status !== 'Completed').length;
-                    return { ...client, activeTasks: activeCount, id: client._id }; // Ensure id property exists
+                    return {
+                        ...client,
+                        activeTasks: activeCount,
+                        id: client._id || client.id || `client-${Math.random()}`
+                    };
                 });
                 setClients(clientsWithCounts);
                 setTasks(uniqueTasks);
@@ -333,11 +337,38 @@ const AdminClientsTab = ({ currentUser }) => {
         }
     };
 
-    const handleSendMail = () => {
-        toast.success(`Mail sent to ${selectedClient.email}`);
-        setShowMailForm(false);
-        setMailSubject("");
-        setMailBody("");
+    const handleSendMail = async () => {
+        if (!mailSubject || !mailBody) {
+            toast.error("Subject and message are required");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const result = await sendClientEmail({
+                to: selectedClient.email,
+                subject: mailSubject,
+                body: mailBody,
+                fromAdmin: {
+                    name: currentUser.name,
+                    email: currentUser.email
+                }
+            });
+
+            if (result.success) {
+                toast.success(`Mail sent to ${selectedClient.email}`);
+                setShowMailForm(false);
+                setMailSubject("");
+                setMailBody("");
+            } else {
+                toast.error(result.error || "Failed to send email");
+            }
+        } catch (error) {
+            console.error("Error sending mail:", error);
+            toast.error("An unexpected error occurred");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (loading) {
@@ -384,8 +415,8 @@ const AdminClientsTab = ({ currentUser }) => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredClients.map((client) => (
-                                <TableRow key={client.id} className="cursor-pointer hover:bg-accent/50" onClick={() => handleClientClick(client)}>
+                            {filteredClients.map((client, idx) => (
+                                <TableRow key={client.id || client._id || `client-${idx}`} className="cursor-pointer hover:bg-accent/50" onClick={() => handleClientClick(client)}>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
@@ -502,8 +533,8 @@ const AdminClientsTab = ({ currentUser }) => {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">All Managers</SelectItem>
-                                            {admins.map(admin => (
-                                                <SelectItem key={admin._id} value={admin.name}>{admin.name}</SelectItem>
+                                            {admins.map((admin, idx) => (
+                                                <SelectItem key={admin._id || admin.id || `admin-${idx}`} value={admin.name}>{admin.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -527,8 +558,8 @@ const AdminClientsTab = ({ currentUser }) => {
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        {admins.map(admin => (
-                                                            <SelectItem key={admin._id} value={admin.name}>{admin.name}</SelectItem>
+                                                        {admins.map((admin, idx) => (
+                                                            <SelectItem key={admin._id || admin.id || `admin-${idx}`} value={admin.name}>{admin.name}</SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
@@ -752,8 +783,8 @@ const AdminClientsTab = ({ currentUser }) => {
 
                             {/* Notes List */}
                             <div className="space-y-4">
-                                {clientNotes.length > 0 ? clientNotes.map((note) => (
-                                    <div key={note.id} className="bg-card rounded-xl border p-4">
+                                {clientNotes.length > 0 ? clientNotes.map((note, idx) => (
+                                    <div key={note._id || note.id || `note-${idx}`} className="bg-card rounded-xl border p-4">
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-medium">
@@ -903,7 +934,7 @@ const AdminClientsTab = ({ currentUser }) => {
                             </div>
                             <div className="grid gap-2">
                                 <label className="text-sm font-medium">From:</label>
-                                <Input value="Manager (manager@company.com)" disabled className="bg-muted" />
+                                <Input value={`${currentUser.name} (${currentUser.email})`} disabled className="bg-muted" />
                             </div>
                             <div className="grid gap-2">
                                 <label className="text-sm font-medium">Subject:</label>
@@ -925,10 +956,19 @@ const AdminClientsTab = ({ currentUser }) => {
                         </div>
 
                         <div className="flex justify-end gap-2 mt-6">
-                            <Button variant="outline" onClick={() => setShowMailForm(false)}>Cancel</Button>
-                            <Button onClick={handleSendMail}>
-                                <Mail className="h-4 w-4 mr-2" />
-                                Send Email
+                            <Button variant="outline" onClick={() => setShowMailForm(false)} disabled={isSubmitting}>Cancel</Button>
+                            <Button onClick={handleSendMail} disabled={isSubmitting}>
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Sending...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Mail className="h-4 w-4 mr-2" />
+                                        Send Email
+                                    </>
+                                )}
                             </Button>
                         </div>
                     </div>
@@ -949,8 +989,8 @@ const AdminClientsTab = ({ currentUser }) => {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {admins.map(admin => (
-                                                <SelectItem key={admin._id} value={admin.name}>{admin.name}</SelectItem>
+                                            {admins.map((admin, idx) => (
+                                                <SelectItem key={admin._id || admin.id || `admin-${idx}`} value={admin.name}>{admin.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>

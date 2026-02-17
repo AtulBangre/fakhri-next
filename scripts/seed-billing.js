@@ -12,7 +12,7 @@ async function clearPaymentMethods() {
         await mongoose.connect(MONGODB_URI);
         console.log('Connected to MongoDB');
 
-        const alex = await User.findOne({ email: 'alex@digitalgoods.com' });
+        const alex = await User.findOne({ email: 'mauryatech7@gmail.com' });
         if (!alex) {
             console.log('Alex not found');
             return;

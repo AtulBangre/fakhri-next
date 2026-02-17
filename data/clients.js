@@ -131,7 +131,7 @@ export const clients = [
         id: 7,
         name: "Alex Turner",
         company: "Digital Goods LLC",
-        email: "alex@digitalgoods.com",
+        email: "mauryatech7@gmail.com",
         phone: "+1 (555) 789-0123",
         plan: "Premium",
         activeTasks: 2,

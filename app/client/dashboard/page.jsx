@@ -47,7 +47,7 @@ export default function ClientDashboardPage() {
       setLoading(true);
       try {
         // Fetch specific client: Alex
-        let currentUser = await getUserByEmail('alex@digitalgoods.com');
+        let currentUser = await getUserByEmail('mauryatech7@gmail.com');
 
         // Fallback or create if not exists
         if (!currentUser) {

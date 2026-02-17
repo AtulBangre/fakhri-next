@@ -39,12 +39,16 @@ export default function AdminDashboardPage() {
     const loadInitialData = async () => {
       setLoading(true);
       try {
-        // Fetch specific admin: Sarah Mitchell
-        let admin = await getUserByEmail('sarah@fakhriit.com');
+        // Check for email in search params (for testing/multi-admin support)
+        const params = new URLSearchParams(window.location.search);
+        const targetEmail = params.get('email') || 'k6263638053@gmail.com';
+
+        // Fetch specific admin
+        let admin = await getUserByEmail(targetEmail);
 
         // Fallback or create if not exists
-        if (!admin) {
-          console.log("Sarah Mitchell not found, falling back to first admin");
+        if (!admin && targetEmail === 'k6263638053@gmail.com') {
+          console.log("Default admin not found, falling back to first available admin");
           const { users } = await getUsers({ role: 'admin', limit: 1 });
           if (users && users.length > 0) {
             admin = users[0];
