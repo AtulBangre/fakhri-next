@@ -11,6 +11,7 @@ import NotificationDropdown from "@/components/ui/NotificationDropdown";
 import { markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, clearAllNotifications } from "@/lib/actions/notification";
 import { getUsers, getUserByEmail, getUserById, updateUser } from "@/lib/actions/user";
 import useNotificationPolling from "@/hooks/useNotificationPolling";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 // Tabs
 import ClientDashboardTab from "@/components/client/tabs/DashboardTab";
@@ -37,6 +38,7 @@ export default function ClientDashboardPage() {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [notifications, setNotifications] = useState([]);
   const [user, setUser] = useState(null);
+  const { subscribeUser, unsubscribeUser } = usePushNotifications(user?._id);
   const [managerPhone, setManagerPhone] = useState("");
   const [managerName, setManagerName] = useState("");
 
@@ -88,6 +90,28 @@ export default function ClientDashboardPage() {
     };
 
     loadInitialData();
+  }, []);
+
+  // Sync tab with URL hash
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1);
+      if (hash) {
+        const validTab = navigation.find(n =>
+          n.id === hash ||
+          n.id.toLowerCase() === hash.toLowerCase() ||
+          n.name.toLowerCase() === hash.toLowerCase()
+        );
+        if (validTab) {
+          setActiveTab(validTab.id);
+        }
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange();
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   // Real-time notification polling
@@ -144,8 +168,17 @@ export default function ClientDashboardPage() {
   const handleSettingsChange = async (newSettings) => {
     if (!user) return;
     try {
+      const oldPushEnabled = user.notificationSettings?.pushNotifications;
+      const newPushEnabled = newSettings.pushNotifications;
+
       setUser(prev => ({ ...prev, notificationSettings: newSettings }));
       await updateUser(user._id, { notificationSettings: newSettings });
+
+      if (!oldPushEnabled && newPushEnabled) {
+        await subscribeUser();
+      } else if (oldPushEnabled && !newPushEnabled) {
+        await unsubscribeUser();
+      }
     } catch (error) {
       console.error("Error updating notification settings:", error);
     }

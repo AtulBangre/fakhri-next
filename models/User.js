@@ -63,7 +63,15 @@ const UserSchema = new mongoose.Schema({
         paymentAlerts: { type: Boolean, default: true },
         marketingNews: { type: Boolean, default: false },
         weeklyDigest: { type: Boolean, default: true }
-    }
+    },
+    pushSubscriptions: [{
+        endpoint: { type: String, required: true },
+        keys: {
+            p256dh: { type: String, required: true },
+            auth: { type: String, required: true }
+        },
+        createdAt: { type: Date, default: Date.now }
+    }]
 }, { timestamps: true });
 
 export default mongoose.models.User || mongoose.model('User', UserSchema);
