@@ -12,7 +12,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-export default function SignupPage() {
+import { Suspense } from "react";
+
+function SignupContent() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -172,5 +174,17 @@ export default function SignupPage() {
                 ← Back to public website
             </Link>
         </div>
+    );
+}
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-[#F4F4F5]">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            </div>
+        }>
+            <SignupContent />
+        </Suspense>
     );
 }

@@ -13,7 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
-export default function CheckoutPage() {
+import { Suspense } from "react";
+
+function CheckoutContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { data: session, status } = useSession();
@@ -382,5 +384,17 @@ export default function CheckoutPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function CheckoutPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        }>
+            <CheckoutContent />
+        </Suspense>
     );
 }

@@ -35,7 +35,9 @@ const navigation = [
 
 import { signOut, useSession } from "next-auth/react";
 
-export default function ClientDashboardPage() {
+import { Suspense } from "react";
+
+function ClientDashboardContent() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -345,6 +347,19 @@ export default function ClientDashboardPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ClientDashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-muted-foreground animate-pulse font-medium">Loading Dashboard...</p>
+      </div>
+    }>
+      <ClientDashboardContent />
+    </Suspense>
   );
 }
 
